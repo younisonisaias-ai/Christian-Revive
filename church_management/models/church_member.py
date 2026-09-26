@@ -1,5 +1,34 @@
 from odoo import models, fields, api
 
+# Profile fields a member may edit about themself from the app. Lifecycle
+# fields (status, baptism, transfer, member number) stay staff-only.
+MEMBER_SELF_EDITABLE = {
+    'email', 'phone', 'street', 'city', 'date_of_birth', 'gender', 'marital_status',
+    'wedding_anniversary', 'occupation', 'talents', 'spiritual_gifts',
+    'ministry_interests', 'emergency_contact_name', 'emergency_contact_phone',
+}
+
+# Fields that make up "profile completeness": (field, label shown to the member)
+PROFILE_CHECKLIST = [
+    ('image_1920', 'Profile photo'),
+    ('phone', 'Phone number'),
+    ('email', 'Email'),
+    ('date_of_birth', 'Date of birth'),
+    ('gender', 'Gender'),
+    ('marital_status', 'Marital status'),
+    ('city', 'City'),
+    ('occupation', 'Profession'),
+    ('emergency_contact_name', 'Emergency contact'),
+    ('emergency_contact_phone', 'Emergency contact phone'),
+]
+
+MEMBER_PROFILE_FIELDS = [
+    'member_number', 'gender', 'marital_status', 'wedding_anniversary', 'occupation',
+    'talents', 'spiritual_gifts', 'ministry_interests', 'emergency_contact_name',
+    'emergency_contact_phone', 'baptism_place', 'previous_church', 'transfer_in_date',
+    'transfer_out_date', 'transfer_to_church', 'street', 'city',
+]
+
 
 class ChurchMember(models.Model):
     _inherit = 'res.partner'
@@ -11,7 +40,66 @@ class ChurchMember(models.Model):
         ('worker', 'Worker'),
         ('leader', 'Leader'),
         ('inactive', 'Inactive'),
+        ('transferred', 'Transferred Out'),
+        ('deceased', 'Deceased'),
     ], string='Membership Status', default='visitor')
+
+    # ── Member profile ──────────────────────────────────────────
+    member_number = fields.Char(
+        string='Member No.', readonly=True, copy=False, index=True,
+        help='Assigned automatically when someone becomes a member.')
+    gender = fields.Selection([('male', 'Male'), ('female', 'Female')], string='Gender')
+    marital_status = fields.Selection([
+        ('single', 'Single'), ('married', 'Married'), ('widowed', 'Widowed'),
+        ('divorced', 'Divorced'), ('separated', 'Separated'),
+    ], string='Marital Status')
+    wedding_anniversary = fields.Date(string='Wedding Anniversary')
+    occupation = fields.Char(string='Profession / Occupation')
+    talents = fields.Char(string='Skills & Talents')
+    spiritual_gifts = fields.Char(string='Spiritual Gifts')
+    ministry_interests = fields.Char(string='Ministry Interests')
+    emergency_contact_name = fields.Char(string='Emergency Contact')
+    emergency_contact_phone = fields.Char(string='Emergency Contact Phone')
+    baptism_place = fields.Char(string='Place of Baptism')
+    previous_church = fields.Char(string='Previous Church')
+    transfer_in_date = fields.Date(string='Transferred In On')
+    transfer_out_date = fields.Date(string='Transferred Out On')
+    transfer_to_church = fields.Char(string='Transferred To')
+    profile_completeness = fields.Integer(
+        string='Profile Complete (%)', compute='_compute_profile_completeness')
+
+    def _profile_missing(self):
+        self.ensure_one()
+        return [label for field, label in PROFILE_CHECKLIST if not self[field]]
+
+    def _compute_profile_completeness(self):
+        total = len(PROFILE_CHECKLIST)
+        for partner in self:
+            missing = len(partner._profile_missing()) if partner.id else total
+            partner.profile_completeness = round((total - missing) * 100 / total)
+
+    # ── Member numbers ──────────────────────────────────────────
+
+    def _assign_member_numbers(self):
+        Sequence = self.env['ir.sequence'].sudo()
+        for partner in self.filtered(lambda p: p.is_member and not p.member_number):
+            partner.sudo().with_context(allow_member_number=True).write(
+                {'member_number': Sequence.next_by_code('church.member.number')})
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        partners = super().create(vals_list)
+        partners._assign_member_numbers()
+        return partners
+
+    def write(self, vals):
+        # Member numbers are issued by the sequence only, never typed in.
+        if 'member_number' in vals and not self.env.context.get('allow_member_number'):
+            vals = {k: v for k, v in vals.items() if k != 'member_number'}
+        result = super().write(vals)
+        if vals.get('is_member'):
+            self._assign_member_numbers()
+        return result
 
     leader_role = fields.Selection([
         ('elder', 'Elder'),
@@ -121,7 +209,7 @@ class ChurchMember(models.Model):
         members = self.sudo().search(domain, order='name')
         fields_to_read = [
             'id', 'name', 'email', 'phone', 'membership_status',
-            'member_join_date', 'family_id', 'write_date',
+            'member_join_date', 'family_id', 'write_date', 'member_number',
         ]
         if mode != 'self':
             fields_to_read.append('care_status')
@@ -151,7 +239,11 @@ class ChurchMember(models.Model):
             'water_baptism_date', 'holy_spirit_baptism_date',
             'family_id', 'is_family_head', 'guardian_id',
             'membership_type', 'contribution_preference', 'write_date',
-        ] + ([] if mode == 'self' else ['care_status', 'care_status_date']))[0]
+        ] + MEMBER_PROFILE_FIELDS
+          + ([] if mode == 'self' else ['care_status', 'care_status_date']))[0]
+        data['profile_completeness'] = member.profile_completeness
+        data['profile_missing'] = member._profile_missing()
+        data['can_edit_profile'] = mode != 'self' or member.id == scope
         return {'success': True, 'member': data}
 
     @api.model
@@ -178,10 +270,9 @@ class ChurchMember(models.Model):
         if mode == 'self':
             if member.id != scope:
                 return {'success': False, 'error': 'Not authorized for this member'}
-            # Members may edit their own contact details only — never their
-            # own membership lifecycle fields (status, baptism, family).
-            allowed = {'email', 'phone', 'street', 'city'}
-            vals = {k: v for k, v in vals.items() if k in allowed}
+            # Members may edit their own personal details only — never their
+            # own membership lifecycle fields (status, baptism, family, transfer).
+            vals = {k: v for k, v in vals.items() if k in MEMBER_SELF_EDITABLE}
         elif mode == 'assigned' and member.id not in (scope or []):
             return {'success': False, 'error': 'Not authorized for this member'}
 
@@ -206,3 +297,69 @@ class ChurchMember(models.Model):
             'family': {'id': partner.family_id.id, 'name': partner.family_id.name},
             'members': members,
         }
+
+    @api.model
+    def app_get_member_home(self, requester_partner_id):
+        """Everything the member's personal Church home screen shows, in one call."""
+        mode, scope = self._church_caller_scope(requester_partner_id=requester_partner_id)
+        if mode != 'self':
+            return {'success': False, 'error': 'Not authorized'}
+        partner = self.sudo().browse(scope)
+        status_labels = dict(self._fields['membership_status'].selection)
+
+        home = {
+            'member': {
+                'id': partner.id,
+                'name': partner.name or '',
+                'member_number': partner.member_number or '',
+                'membership_status': partner.membership_status or '',
+                'membership_status_label': status_labels.get(partner.membership_status, ''),
+                'member_join_date': fields.Date.to_string(partner.member_join_date) if partner.member_join_date else False,
+                'family': partner.family_id.name or '',
+                'write_date': fields.Datetime.to_string(partner.write_date) if partner.write_date else False,
+            },
+            'profile_completeness': partner.profile_completeness,
+            'profile_missing': partner._profile_missing(),
+        }
+
+        now = fields.Datetime.now()
+        services = self.env['church.service'].sudo().search(
+            [('is_active', '=', True), ('date_start', '>=', now)],
+            order='date_start asc', limit=2)
+        home['next_services'] = [{
+            'id': s.id, 'name': s.name, 'location': s.location or '',
+            'date_start': fields.Datetime.to_string(s.date_start),
+        } for s in services]
+
+        groups = self.env['cell.group'].sudo().search(
+            ['|', ('leader_id', '=', partner.id), ('member_ids', '=', partner.id)])
+        home['groups'] = [{
+            'id': g.id, 'name': g.name,
+            'leader': g.leader_id.name or '',
+            'is_leader': g.leader_id.id == partner.id,
+        } for g in groups]
+
+        Prayer = self.env['prayer.request'].sudo()
+        home['prayers'] = {
+            'open': Prayer.search_count([
+                ('partner_id', '=', partner.id),
+                ('care_status', 'in', ('submitted', 'assigned', 'praying', 'follow_up'))]),
+            'answered': Prayer.search_count([
+                ('partner_id', '=', partner.id), ('care_status', '=', 'answered')]),
+            'with_response': Prayer.search_count([
+                ('partner_id', '=', partner.id), ('response', '!=', False)]),
+        }
+
+        # Pledges live in church_finance (which depends on this module), so
+        # only include them when that module is installed.
+        if 'church.give.pledge' in self.env:
+            pledges = self.env['church.give.pledge'].sudo().search(
+                [('member_id', '=', partner.id), ('status', '=', 'active')])
+            home['pledges'] = {
+                'active': len(pledges),
+                'pledged': sum(pledges.mapped('pledge_amount')),
+                'paid': sum(pledges.mapped('paid_amount')),
+                'currency': pledges[:1].currency or 'PKR',
+            }
+        return {'success': True, 'home': home}
+

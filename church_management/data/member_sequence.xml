@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Member numbers: CR-00001, CR-00002, ... -->
+        <record id="seq_church_member_number" model="ir.sequence">
+            <field name="name">Church Member Number</field>
+            <field name="code">church.member.number</field>
+            <field name="prefix">CR-</field>
+            <field name="padding">5</field>
+            <field name="number_next">1</field>
+            <field name="number_increment">1</field>
+        </record>
+    </data>
+</odoo>

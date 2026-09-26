@@ -1,12 +1,14 @@
 {
     'name': 'Church Management',
-    'version': '1.2.0',
+    'version': '1.3.0',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care and attendance for Christian Revive',
     'description': """
         Christian Revive - Church Management
         =====================================
         - Membership lifecycle (visitor -> member -> leader), families/households
+        - Member profile: member number, personal details, gifts & ministry,
+          emergency contact, baptism place, transfers, profile completeness
         - Pastor-to-member assignment and senior pastor scope
         - Cell / small groups with leader and roster
         - Pastoral care notes (restricted to author + senior pastor/admin),
@@ -23,6 +25,7 @@
     'data': [
         'security/ir.model.access.csv',
         'security/church_management_security.xml',
+        'data/member_sequence.xml',
         'views/church_member_views.xml',
         'views/hr_employee_pastor_views.xml',
         'views/cell_group_views.xml',

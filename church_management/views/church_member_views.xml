@@ -8,6 +8,7 @@
         <field name="inherit_id" ref="volunteer_and_donation_management.view_member_list"/>
         <field name="arch" type="xml">
             <field name="membership_type" position="after">
+                <field name="member_number" optional="show"/>
                 <field name="membership_status"/>
                 <field name="care_status" optional="show"/>
                 <field name="member_join_date"/>
@@ -24,13 +25,40 @@
         <field name="arch" type="xml">
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="Church Membership">
+                    <div class="mb-2">
+                        <span class="text-muted">Profile complete: </span>
+                        <field name="profile_completeness" widget="progressbar" class="d-inline-block w-50"/>
+                    </div>
                     <group>
                         <group string="Lifecycle">
+                            <field name="member_number"/>
                             <field name="membership_status"/>
                             <field name="leader_role" invisible="membership_status != 'leader'"/>
                             <field name="member_join_date"/>
                             <field name="water_baptism_date"/>
+                            <field name="baptism_place"/>
                             <field name="holy_spirit_baptism_date"/>
+                        </group>
+                        <group string="Personal">
+                            <field name="gender"/>
+                            <field name="marital_status"/>
+                            <field name="wedding_anniversary" invisible="marital_status not in ('married', 'widowed')"/>
+                            <field name="occupation"/>
+                        </group>
+                        <group string="Gifts &amp; Ministry">
+                            <field name="talents"/>
+                            <field name="spiritual_gifts"/>
+                            <field name="ministry_interests"/>
+                        </group>
+                        <group string="Emergency Contact">
+                            <field name="emergency_contact_name"/>
+                            <field name="emergency_contact_phone"/>
+                        </group>
+                        <group string="Transfer">
+                            <field name="previous_church"/>
+                            <field name="transfer_in_date"/>
+                            <field name="transfer_out_date"/>
+                            <field name="transfer_to_church"/>
                         </group>
                         <group string="Family / Household">
                             <field name="family_id"/>
