@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.5.0',
+    'version': '1.5.1',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care and attendance for Christian Revive',
     'description': """
@@ -26,6 +26,7 @@
         'security/ir.model.access.csv',
         'security/church_management_security.xml',
         'data/member_sequence.xml',
+        'data/cron.xml',
         'views/church_member_views.xml',
         'views/hr_employee_pastor_views.xml',
         'views/cell_group_views.xml',

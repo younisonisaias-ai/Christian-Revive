@@ -1,4 +1,9 @@
+import logging
+from datetime import timedelta
+
 from odoo import models, fields, api
+
+_logger = logging.getLogger(__name__)
 
 # Who may read a prayer request besides the person who sent it.
 #   public       → shown on the Prayer Wall; all pastors
@@ -33,6 +38,8 @@ APP_FIELDS = [
 
 # Voice replies are capped so a stuck recording can't upload a huge file.
 MAX_VOICE_BYTES = 8 * 1024 * 1024
+# Voice replies are deleted automatically this many days after recording.
+VOICE_RETENTION_DAYS = 30
 
 
 class PrayerRequestCare(models.Model):
@@ -81,6 +88,28 @@ class PrayerRequestCare(models.Model):
     def _compute_has_response_audio(self):
         for rec in self:
             rec.has_response_audio = bool(rec.with_context(bin_size=True).response_audio)
+
+    @api.model
+    def _cron_expire_voice_replies(self):
+        """Daily: delete voice replies recorded more than VOICE_RETENTION_DAYS
+        days ago. The written reply (if any) stays; a voice-only reply's note
+        is updated so the member knows it has expired."""
+        cutoff = fields.Datetime.now() - timedelta(days=VOICE_RETENTION_DAYS)
+        expired = self.sudo().search([
+            ('has_response_audio', '=', True),
+            ('response_audio_date', '<', cutoff),
+        ])
+        for rec in expired:
+            vals = {
+                'response_audio': False, 'response_audio_filename': False,
+                'response_audio_duration': 0,
+            }
+            if (rec.response or '').startswith('🎤 Voice reply') and 'no longer available' not in rec.response:
+                vals['response'] = '%s (no longer available)' % rec.response
+            rec.write(vals)
+        _logger.info('Prayer care: deleted %s voice repl(ies) older than %s days',
+                     len(expired), VOICE_RETENTION_DAYS)
+        return len(expired)
 
     # ── Keep the Prayer Wall in step with the privacy choice ─────
 
@@ -233,4 +262,5 @@ class PrayerRequestCare(models.Model):
             'category', 'urgency', 'care_status', 'response', 'response_by',
             'response_date', 'pray_count', 'testimony',
             'has_response_audio', 'response_audio_duration', 'response_audio_by',
+            'response_audio_date',
         ])}
