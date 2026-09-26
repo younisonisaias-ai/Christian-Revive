@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Add the pastoral-care workflow to the existing prayer request form -->
+    <record id="view_prayer_request_form_care" model="ir.ui.view">
+        <field name="name">prayer.request.form.care</field>
+        <field name="model">prayer.request</field>
+        <field name="inherit_id" ref="volunteer_and_donation_management.view_prayer_request_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="care_status" widget="statusbar" clickable="1"
+                       statusbar_visible="submitted,assigned,praying,follow_up,answered,closed"/>
+            </xpath>
+            <xpath expr="//separator[@string='Prayer Message']" position="before">
+                <group string="Pastoral Care">
+                    <group>
+                        <field name="visibility"/>
+                        <field name="is_anonymous"/>
+                        <field name="requester_display_name" invisible="not is_anonymous"/>
+                        <field name="category"/>
+                    </group>
+                    <group>
+                        <field name="urgency"/>
+                        <field name="assigned_pastor_id"/>
+                        <field name="follow_up_date"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='response']" position="after">
+                <separator string="Answered / Testimony"/>
+                <field name="testimony" placeholder="How was this prayer answered?"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_prayer_request_care_list" model="ir.ui.view">
+        <field name="name">prayer.request.care.list</field>
+        <field name="model">prayer.request</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list string="Prayer Requests" decoration-danger="urgency == 'urgent'"
+                  decoration-muted="care_status in ('answered', 'closed')">
+                <field name="create_date" string="Received"/>
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="category"/>
+                <field name="visibility"/>
+                <field name="urgency"/>
+                <field name="assigned_pastor_id"/>
+                <field name="care_status"/>
+                <field name="follow_up_date" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_prayer_request_care_kanban" model="ir.ui.view">
+        <field name="name">prayer.request.care.kanban</field>
+        <field name="model">prayer.request</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="care_status" group_create="false">
+                <field name="urgency"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="subject" class="fw-bold"/>
+                        <field name="name" class="text-muted"/>
+                        <div class="d-flex justify-content-between mt-1">
+                            <field name="category"/>
+                            <span t-if="record.urgency.raw_value == 'urgent'"
+                                  class="badge text-bg-danger">Urgent</span>
+                        </div>
+                        <field name="assigned_pastor_id" class="text-muted small"/>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_prayer_request_care_search" model="ir.ui.view">
+        <field name="name">prayer.request.care.search</field>
+        <field name="model">prayer.request</field>
+        <field name="arch" type="xml">
+            <search string="Prayer Requests">
+                <field name="name"/>
+                <field name="subject"/>
+                <field name="assigned_pastor_id"/>
+                <filter name="open" string="Open"
+                        domain="[('care_status', 'in', ('submitted', 'assigned', 'praying', 'follow_up'))]"/>
+                <filter name="urgent" string="Urgent" domain="[('urgency', '=', 'urgent')]"/>
+                <filter name="unassigned" string="Unassigned" domain="[('assigned_pastor_id', '=', False)]"/>
+                <separator/>
+                <filter name="not_public" string="Not on Prayer Wall" domain="[('visibility', '!=', 'public')]"/>
+                <group>
+                    <filter name="group_status" string="Care Status" context="{'group_by': 'care_status'}"/>
+                    <filter name="group_category" string="Category" context="{'group_by': 'category'}"/>
+                    <filter name="group_pastor" string="Pastor" context="{'group_by': 'assigned_pastor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_prayer_care" model="ir.actions.act_window">
+        <field name="name">Prayer Requests</field>
+        <field name="res_model">prayer.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_prayer_request_care_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_prayer_request_care_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_prayer_request_care_list')})]"/>
+    </record>
+
+</odoo>

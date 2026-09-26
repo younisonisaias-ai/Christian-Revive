@@ -5,12 +5,16 @@
         <field name="name">pastoral.care.note.list</field>
         <field name="model">pastoral.care.note</field>
         <field name="arch" type="xml">
-            <list string="Pastoral Care Notes">
-                <field name="member_id"/>
-                <field name="author_id"/>
-                <field name="note_type"/>
+            <list string="Pastoral Care Notes"
+                  decoration-danger="is_urgent and not follow_up_done">
                 <field name="date"/>
+                <field name="member_id"/>
+                <field name="note_type"/>
+                <field name="author_id"/>
                 <field name="follow_up_date"/>
+                <field name="follow_up_assigned_to_id" optional="show"/>
+                <field name="follow_up_done" widget="boolean_toggle"/>
+                <field name="is_urgent" optional="hide"/>
             </list>
         </field>
     </record>
@@ -26,16 +30,43 @@
                             <field name="member_id"/>
                             <field name="author_id"/>
                             <field name="note_type"/>
-                        </group>
-                        <group>
                             <field name="date"/>
+                            <field name="is_urgent"/>
+                        </group>
+                        <group string="Follow-up">
                             <field name="follow_up_date"/>
+                            <field name="follow_up_assigned_to_id"/>
+                            <field name="follow_up_done"/>
                             <field name="visible_to_senior_pastor_only"/>
                         </group>
                     </group>
+                    <separator string="Notes"/>
                     <field name="content" placeholder="Confidential notes..."/>
+                    <separator string="Outcome"/>
+                    <field name="outcome" placeholder="What happened, what was agreed..."/>
                 </sheet>
             </form>
+        </field>
+    </record>
+
+    <record id="view_pastoral_care_note_search" model="ir.ui.view">
+        <field name="name">pastoral.care.note.search</field>
+        <field name="model">pastoral.care.note</field>
+        <field name="arch" type="xml">
+            <search string="Pastoral Care Notes">
+                <field name="member_id"/>
+                <field name="author_id"/>
+                <filter name="open_follow_ups" string="Open Follow-ups"
+                        domain="[('follow_up_date', '!=', False), ('follow_up_done', '=', False)]"/>
+                <filter name="urgent" string="Urgent" domain="[('is_urgent', '=', True)]"/>
+                <separator/>
+                <filter name="visits" string="Visits"
+                        domain="[('note_type', 'in', ('visit', 'hospital', 'bereavement'))]"/>
+                <group>
+                    <filter name="group_type" string="Type" context="{'group_by': 'note_type'}"/>
+                    <filter name="group_author" string="Pastor" context="{'group_by': 'author_id'}"/>
+                </group>
+            </search>
         </field>
     </record>
 
@@ -43,6 +74,7 @@
         <field name="name">Pastoral Care Notes</field>
         <field name="res_model">pastoral.care.note</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_pastoral_care_note_search"/>
     </record>
 
 </odoo>

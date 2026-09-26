@@ -34,6 +34,20 @@ class ChurchMember(models.Model):
     ], string='Leader Role',
        help='Only meaningful when Membership Status is Leader.')
 
+    # Pastoral care status — set by pastors, never by the member themself.
+    care_status = fields.Selection([
+        ('healthy', 'Doing Well'),
+        ('new_member', 'New Member'),
+        ('needs_follow_up', 'Needs Follow-Up'),
+        ('prayer_needed', 'Prayer Needed'),
+        ('hospitalized', 'Hospitalized'),
+        ('bereavement', 'Bereavement'),
+        ('counseling', 'Counseling'),
+        ('at_risk', 'At Risk'),
+        ('inactive', 'Inactive'),
+    ], string='Care Status', default='healthy')
+    care_status_date = fields.Date(string='Care Status Updated', readonly=True)
+
     member_join_date = fields.Date(string='Join Date')
     water_baptism_date = fields.Date(string='Water Baptism Date')
     holy_spirit_baptism_date = fields.Date(string='Holy Spirit Baptism Date')
@@ -105,10 +119,13 @@ class ChurchMember(models.Model):
             domain.append(('name', 'ilike', query))
 
         members = self.sudo().search(domain, order='name')
-        return {'success': True, 'members': members.read([
+        fields_to_read = [
             'id', 'name', 'email', 'phone', 'membership_status',
             'member_join_date', 'family_id', 'write_date',
-        ])}
+        ]
+        if mode != 'self':
+            fields_to_read.append('care_status')
+        return {'success': True, 'members': members.read(fields_to_read)}
 
     @api.model
     def app_get_member_detail(self, member_id, requester_partner_id=None, requester_staff_id=None):
@@ -134,7 +151,7 @@ class ChurchMember(models.Model):
             'water_baptism_date', 'holy_spirit_baptism_date',
             'family_id', 'is_family_head', 'guardian_id',
             'membership_type', 'contribution_preference', 'write_date',
-        ])[0]
+        ] + ([] if mode == 'self' else ['care_status', 'care_status_date']))[0]
         return {'success': True, 'member': data}
 
     @api.model
@@ -168,6 +185,8 @@ class ChurchMember(models.Model):
         elif mode == 'assigned' and member.id not in (scope or []):
             return {'success': False, 'error': 'Not authorized for this member'}
 
+        if 'care_status' in vals:
+            vals['care_status_date'] = fields.Date.context_today(self)
         member.sudo().write(vals)
         return {'success': True}
 
