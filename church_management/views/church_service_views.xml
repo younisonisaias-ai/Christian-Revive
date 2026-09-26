@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_church_service_list" model="ir.ui.view">
+        <field name="name">church.service.list</field>
+        <field name="model">church.service</field>
+        <field name="arch" type="xml">
+            <list string="Services &amp; Events">
+                <field name="date_start"/>
+                <field name="name"/>
+                <field name="service_type"/>
+                <field name="location" optional="show"/>
+                <field name="attendance_count"/>
+                <field name="is_active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_church_service_form" model="ir.ui.view">
+        <field name="name">church.service.form</field>
+        <field name="model">church.service</field>
+        <field name="arch" type="xml">
+            <form string="Service / Event">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_attendance" type="object"
+                                class="oe_stat_button" icon="fa-check-square-o">
+                            <field name="attendance_count" widget="statinfo" string="Checked In"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Sabbath Worship – 3 October"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="service_type"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </group>
+                        <group>
+                            <field name="location"/>
+                            <field name="is_active"/>
+                            <field name="legacy_onevoice_event_id"
+                                   invisible="not legacy_onevoice_event_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Attendance" name="attendance">
+                            <field name="attendance_ids">
+                                <list editable="bottom">
+                                    <field name="member_id"/>
+                                    <field name="check_in_time"/>
+                                    <field name="method"/>
+                                    <field name="checked_in_by_staff_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Description" name="description">
+                            <field name="description" placeholder="Notes about this service or event..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_church_service_search" model="ir.ui.view">
+        <field name="name">church.service.search</field>
+        <field name="model">church.service</field>
+        <field name="arch" type="xml">
+            <search string="Services &amp; Events">
+                <field name="name"/>
+                <field name="location"/>
+                <filter name="open" string="Open for Check-in" domain="[('is_active', '=', True)]"/>
+                <separator/>
+                <filter name="sabbath" string="Sabbath Worship" domain="[('service_type', '=', 'sabbath_worship')]"/>
+                <filter name="sabbath_school" string="Sabbath School" domain="[('service_type', '=', 'sabbath_school')]"/>
+                <filter name="prayer" string="Prayer Meeting" domain="[('service_type', '=', 'prayer_meeting')]"/>
+                <group>
+                    <filter name="group_type" string="Type" context="{'group_by': 'service_type'}"/>
+                    <filter name="group_month" string="Month" context="{'group_by': 'date_start:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_church_services" model="ir.actions.act_window">
+        <field name="name">Services &amp; Events</field>
+        <field name="res_model">church.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_church_service_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a service or event</p>
+            <p>Create Sabbath worship, Sabbath School, prayer meetings and other
+               events here. Members can then be checked in to them from the app.</p>
+        </field>
+    </record>
+
+</odoo>

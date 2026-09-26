@@ -37,10 +37,16 @@
         groups="group_church_pastor"
         sequence="5"/>
 
+    <menuitem id="menu_church_services"
+        name="Services &amp; Events"
+        parent="menu_church_management_root"
+        action="action_church_services"
+        sequence="6"/>
+
     <menuitem id="menu_church_event_attendance"
-        name="Event Attendance"
+        name="Attendance"
         parent="menu_church_management_root"
         action="action_church_event_attendance"
-        sequence="6"/>
+        sequence="7"/>
 
 </odoo>

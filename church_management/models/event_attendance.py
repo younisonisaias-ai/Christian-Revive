@@ -6,12 +6,13 @@ class ChurchEventAttendance(models.Model):
     _description = 'Event Attendance / Check-in'
     _order = 'check_in_time desc'
 
-    # Targets onevoice.event (from the onevoice27 dependency) — that model
-    # is what actually powers the app's general "Events" page today (see
-    # OdooService.fetchEvents / events_page.dart), even though its name
-    # suggests OneVoice27-only. church.event (in volunteer_and_donation_
-    # management) appears superseded by it.
-    event_id = fields.Many2one('onevoice.event', string='Event', required=True)
+    # Church Management's own services/events (church.service). Until
+    # version 1.1.0 this pointed at onevoice.event; the 1.1.0 migration moved
+    # existing check-ins across (see migrations/1.1.0).
+    event_id = fields.Many2one(
+        'church.service', string='Service / Event', required=True,
+        ondelete='cascade', index=True)
+    service_type = fields.Selection(related='event_id.service_type', store=True, string='Type')
     member_id = fields.Many2one(
         'res.partner', string='Member', required=True,
         domain=[('is_member', '=', True)],
@@ -34,24 +35,43 @@ class ChurchEventAttendance(models.Model):
     # ── Church Management RPC (Phase 2) ─────────────────────────
 
     @api.model
-    def app_check_in(self, event_id, member_id, requester_partner_id=None, requester_staff_id=None):
+    def app_check_in(self, event_id=None, member_id=None, requester_partner_id=None,
+                     requester_staff_id=None, service_id=None):
+        """Check a member in.
+
+        Current app versions pass `service_id` (a church.service id). Older
+        versions pass `event_id` positionally, which is a OneVoice27 event id;
+        that is mapped to its stand-in church service.
+        """
         ResPartner = self.env['res.partner']
         mode, scope = ResPartner._church_caller_scope(requester_partner_id, requester_staff_id)
         if mode == 'denied':
             return {'success': False, 'error': 'Not authorized'}
+        if not member_id:
+            return {'success': False, 'error': 'Missing member'}
 
         # A plain member may only self check-in.
         if mode == 'self' and member_id != scope:
             return {'success': False, 'error': 'You can only check yourself in'}
 
+        Service = self.env['church.service'].sudo()
+        if service_id:
+            service = Service.browse(int(service_id)).exists()
+        elif event_id:
+            service = Service._from_legacy_onevoice_event(int(event_id))
+        else:
+            service = Service
+        if not service:
+            return {'success': False, 'error': 'Service not found'}
+
         existing = self.sudo().search([
-            ('event_id', '=', event_id), ('member_id', '=', member_id),
+            ('event_id', '=', service.id), ('member_id', '=', member_id),
         ], limit=1)
         if existing:
             return {'success': True, 'attendance_id': existing.id, 'already_checked_in': True}
 
         record = self.sudo().create({
-            'event_id': event_id,
+            'event_id': service.id,
             'member_id': member_id,
             'method': 'self' if mode == 'self' else 'manual',
             'checked_in_by_staff_id': requester_staff_id or False,
@@ -60,6 +80,7 @@ class ChurchEventAttendance(models.Model):
 
     @api.model
     def app_get_event_attendance(self, event_id, requester_staff_id=None):
+        """Attendance for one church service (`event_id` is a church.service id)."""
         mode, _scope = self.env['res.partner']._church_caller_scope(requester_staff_id=requester_staff_id)
         if mode not in ('all', 'assigned'):
             return {'success': False, 'error': 'Not authorized'}

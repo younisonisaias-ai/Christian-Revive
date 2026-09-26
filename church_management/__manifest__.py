@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.0.0',
+    'version': '1.1.0',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care and attendance for Christian Revive',
     'description': """
@@ -10,13 +10,14 @@
         - Pastor-to-member assignment and senior pastor scope
         - Cell / small groups with leader and roster
         - Pastoral care notes (restricted to author + senior pastor/admin)
-        - Event check-in / attendance tracking
+        - Church services & events (Sabbath worship, Sabbath School, prayer
+          meeting, youth, ...) with check-in / attendance tracking
         - API endpoints for the Flutter mobile app (app_get_members,
           app_get_cell_groups, app_check_in, app_get_pastoral_notes, etc.)
     """,
     'author': 'Christian Revive',
     'website': 'https://christianrevive.com',
-    'depends': ['base', 'contacts', 'hr', 'volunteer_and_donation_management', 'onevoice27'],
+    'depends': ['base', 'contacts', 'hr', 'volunteer_and_donation_management'],
     'data': [
         'security/ir.model.access.csv',
         'security/church_management_security.xml',
@@ -24,6 +25,7 @@
         'views/hr_employee_pastor_views.xml',
         'views/cell_group_views.xml',
         'views/pastoral_care_note_views.xml',
+        'views/church_service_views.xml',
         'views/event_attendance_views.xml',
         'views/menu.xml',
     ],

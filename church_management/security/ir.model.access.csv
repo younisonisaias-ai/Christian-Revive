@@ -4,3 +4,4 @@ access_pastor_assignment,pastor.assignment,model_pastor_assignment,base.group_us
 access_cell_group,cell.group,model_cell_group,base.group_user,1,1,1,1
 access_pastoral_care_note,pastoral.care.note,model_pastoral_care_note,base.group_user,1,1,1,0
 access_church_event_attendance,church.event.attendance,model_church_event_attendance,base.group_user,1,1,1,1
+access_church_service,church.service,model_church_service,base.group_user,1,1,1,1
