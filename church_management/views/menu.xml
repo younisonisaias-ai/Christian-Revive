@@ -18,11 +18,22 @@
         action="action_church_families"
         sequence="2"/>
 
-    <menuitem id="menu_pastor_assignments"
+    <menuitem id="menu_pastor_assignments_root"
         name="Pastor Assignments"
         parent="menu_church_management_root"
-        action="action_pastor_assignments"
         sequence="3"/>
+
+    <menuitem id="menu_pastor_members"
+        name="By Pastor (assign many at once)"
+        parent="menu_pastor_assignments_root"
+        action="action_pastor_members"
+        sequence="1"/>
+
+    <menuitem id="menu_pastor_assignments"
+        name="All Assignments"
+        parent="menu_pastor_assignments_root"
+        action="action_pastor_assignments"
+        sequence="2"/>
 
     <menuitem id="menu_cell_groups"
         name="Cell Groups"

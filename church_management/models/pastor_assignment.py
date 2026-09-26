@@ -11,6 +11,37 @@ class HrEmployeeSeniorPastor(models.Model):
              'assigned to them under Church Management > Pastor Assignments.',
     )
 
+    # Edit a pastor's members all at once (pick many from a list). Reads and
+    # writes the same pastor.assignment records the app and scoping use.
+    assigned_member_ids = fields.Many2many(
+        'res.partner', string='Assigned Members',
+        compute='_compute_assigned_members', inverse='_inverse_assigned_members',
+        domain=[('is_member', '=', True)])
+    assigned_member_count = fields.Integer(
+        string='Members', compute='_compute_assigned_members')
+
+    def _compute_assigned_members(self):
+        Assignment = self.env['pastor.assignment'].sudo()
+        for employee in self:
+            pastor_id = employee._origin.id
+            members = Assignment.search([('pastor_id', '=', pastor_id)]).mapped('member_id') \
+                if pastor_id else self.env['res.partner']
+            employee.assigned_member_ids = members
+            employee.assigned_member_count = len(members)
+
+    def _inverse_assigned_members(self):
+        Assignment = self.env['pastor.assignment'].sudo()
+        for employee in self:
+            pastor_id = employee._origin.id or employee.id
+            current = Assignment.search([('pastor_id', '=', pastor_id)])
+            wanted = employee.assigned_member_ids
+            current.filtered(lambda a: a.member_id not in wanted).unlink()
+            already = current.mapped('member_id')
+            Assignment.create([
+                {'pastor_id': pastor_id, 'member_id': member.id}
+                for member in wanted - already
+            ])
+
 
 class PastorAssignment(models.Model):
     _name = 'pastor.assignment'
