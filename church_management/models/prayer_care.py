@@ -28,7 +28,11 @@ APP_FIELDS = [
     'visibility', 'is_anonymous', 'category', 'urgency', 'care_status',
     'assigned_pastor_id', 'follow_up_date', 'testimony',
     'state', 'pray_count', 'prayed_by', 'response', 'response_by', 'response_date',
+    'has_response_audio', 'response_audio_duration', 'response_audio_by', 'response_audio_date',
 ]
+
+# Voice replies are capped so a stuck recording can't upload a huge file.
+MAX_VOICE_BYTES = 8 * 1024 * 1024
 
 
 class PrayerRequestCare(models.Model):
@@ -63,6 +67,20 @@ class PrayerRequestCare(models.Model):
         'hr.employee', string='Assigned Pastor', domain=[('staff_role', '=', 'pastor')])
     follow_up_date = fields.Date(string='Follow-up Date')
     testimony = fields.Text(string='Answered / Testimony')
+
+    # Pastor's spoken reply (recorded in the app); the member can listen to it.
+    response_audio = fields.Binary(string='Voice Reply', attachment=True)
+    response_audio_filename = fields.Char(string='Voice Reply Filename')
+    response_audio_duration = fields.Integer(string='Voice Reply Length (s)')
+    response_audio_by = fields.Char(string='Voice Reply By')
+    response_audio_date = fields.Datetime(string='Voice Reply Date')
+    has_response_audio = fields.Boolean(
+        string='Has Voice Reply', compute='_compute_has_response_audio', store=True)
+
+    @api.depends('response_audio')
+    def _compute_has_response_audio(self):
+        for rec in self:
+            rec.has_response_audio = bool(rec.with_context(bin_size=True).response_audio)
 
     # ── Keep the Prayer Wall in step with the privacy choice ─────
 
@@ -172,10 +190,34 @@ class PrayerRequestCare(models.Model):
             write_vals['assigned_pastor_id'] = employee.id
             if prayer.care_status == 'submitted' and 'care_status' not in write_vals:
                 write_vals['care_status'] = 'assigned'
+        if vals.get('remove_response_audio'):
+            write_vals.update({
+                'response_audio': False, 'response_audio_filename': False,
+                'response_audio_duration': 0, 'response_audio_by': False,
+                'response_audio_date': False,
+            })
+        audio = vals.get('response_audio')
+        if audio:
+            # base64 grows data by ~4/3; check the decoded size.
+            if len(audio) * 3 // 4 > MAX_VOICE_BYTES:
+                return {'success': False, 'error': 'Voice reply is too long. Please keep it under a few minutes.'}
+            write_vals.update({
+                'response_audio': audio,
+                'response_audio_filename': 'voice_reply_%s.m4a' % prayer.id,
+                'response_audio_duration': int(vals.get('response_audio_duration') or 0),
+                'response_audio_by': employee.name,
+                'response_audio_date': fields.Datetime.now(),
+            })
         if write_vals:
             prayer.write(write_vals)
-        if (vals.get('response') or '').strip():
-            prayer.action_respond(vals['response'].strip(), employee.name)
+
+        text = (vals.get('response') or '').strip()
+        if text:
+            prayer.action_respond(text, employee.name)
+        elif audio and not (prayer.response or '').strip():
+            # Voice-only reply: leave a short note so older app versions and
+            # the Prayer Wall still show that the pastor answered.
+            prayer.action_respond('🎤 Voice reply from %s' % employee.name, employee.name)
         return {'success': True}
 
     @api.model
@@ -190,4 +232,5 @@ class PrayerRequestCare(models.Model):
             'id', 'subject', 'message', 'create_date', 'visibility', 'is_anonymous',
             'category', 'urgency', 'care_status', 'response', 'response_by',
             'response_date', 'pray_count', 'testimony',
+            'has_response_audio', 'response_audio_duration', 'response_audio_by',
         ])}

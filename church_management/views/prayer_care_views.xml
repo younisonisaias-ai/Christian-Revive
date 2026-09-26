@@ -27,6 +27,15 @@
                 </group>
             </xpath>
             <xpath expr="//field[@name='response']" position="after">
+                <separator string="Voice Reply"/>
+                <group>
+                    <field name="response_audio" filename="response_audio_filename"/>
+                    <field name="response_audio_filename" invisible="1"/>
+                    <field name="response_audio_duration" invisible="not has_response_audio"/>
+                    <field name="response_audio_by" invisible="not has_response_audio"/>
+                    <field name="response_audio_date" invisible="not has_response_audio"/>
+                    <field name="has_response_audio" invisible="1"/>
+                </group>
                 <separator string="Answered / Testimony"/>
                 <field name="testimony" placeholder="How was this prayer answered?"/>
             </xpath>
