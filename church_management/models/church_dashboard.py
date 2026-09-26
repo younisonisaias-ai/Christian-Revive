@@ -59,6 +59,46 @@ class ChurchDashboard(models.AbstractModel):
             data['giving'] = self._giving(today)
         return {'success': True, 'dashboard': data}
 
+    @api.model
+    def app_get_absent_members(self, requester_staff_id=None, days=30):
+        """Active members (in the caller's scope) with no check-in in the last
+        `days` days — the list behind the dashboard's "Absent 30+ days" card.
+        Longest-absent first; people never checked in come first of all."""
+        Partner = self.env['res.partner'].sudo()
+        mode, scope = Partner._church_caller_scope(requester_staff_id=requester_staff_id)
+        if mode not in ('all', 'assigned'):
+            return {'success': False, 'error': 'Not authorized'}
+
+        domain = [('is_member', '=', True), ('membership_status', 'in', ACTIVE_STATUSES)]
+        if mode == 'assigned':
+            domain.append(('id', 'in', scope or [0]))
+        active = Partner.search(domain)
+
+        Attendance = self.env['church.event.attendance'].sudo()
+        cutoff = fields.Datetime.now() - timedelta(days=days or 30)
+        last_seen = {}
+        for rec in Attendance.search([('member_id', 'in', active.ids or [0])],
+                                     order='check_in_time desc'):
+            last_seen.setdefault(rec.member_id.id, rec)
+
+        absent = []
+        for person in active:
+            last = last_seen.get(person.id)
+            if last and last.check_in_time >= cutoff:
+                continue
+            absent.append({
+                'id': person.id,
+                'name': person.name or '',
+                'phone': person.phone or '',
+                'member_number': person.member_number or '',
+                'care_status': person.care_status or '',
+                'write_date': fields.Datetime.to_string(person.write_date) if person.write_date else False,
+                'last_check_in': fields.Datetime.to_string(last.check_in_time) if last else False,
+                'last_service': last.event_id.name if last else '',
+            })
+        absent.sort(key=lambda a: (a['last_check_in'] or '', a['name']))
+        return {'success': True, 'days': days or 30, 'members': absent}
+
     # ── Parts ───────────────────────────────────────────────────
 
     def _attendance(self, people, mode, today, now, weeks, active):
