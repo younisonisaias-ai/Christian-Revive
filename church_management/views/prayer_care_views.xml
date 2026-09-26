@@ -11,7 +11,7 @@
                 <field name="care_status" widget="statusbar" clickable="1"
                        statusbar_visible="submitted,assigned,praying,follow_up,answered,closed"/>
             </xpath>
-            <xpath expr="//separator[@string='Prayer Message']" position="before">
+            <xpath expr="//sheet/group[1]" position="after">
                 <group string="Pastoral Care">
                     <group>
                         <field name="visibility"/>
