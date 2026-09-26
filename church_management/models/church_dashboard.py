@@ -37,6 +37,14 @@ class ChurchDashboard(models.AbstractModel):
         year_start = today.replace(month=1, day=1)
         data = {
             'scope': 'church' if mode == 'all' else 'assigned',
+            # Who is looking — for the greeting and to hide tools they can't use.
+            'viewer': {
+                'name': employee.name or '',
+                'role': employee.staff_role or '',
+                'is_senior_pastor': bool(employee.is_senior_pastor),
+                'can_assign_pastors': mode == 'all',
+                'can_manage_funds': employee.staff_role in ('admin', 'finance_officer'),
+            },
             'membership': {
                 'active_members': len(active),
                 'visitors': len(people.filtered(lambda p: p.membership_status in (False, 'visitor'))),

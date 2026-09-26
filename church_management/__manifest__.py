@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.4.2',
+    'version': '1.4.3',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care and attendance for Christian Revive',
     'description': """
