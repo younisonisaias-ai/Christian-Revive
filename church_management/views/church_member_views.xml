@@ -13,6 +13,8 @@
                 <field name="care_status" optional="show"/>
                 <field name="member_join_date"/>
                 <field name="family_id"/>
+                <field name="family_relationship" optional="hide"/>
+                <field name="family_verified" optional="hide"/>
             </field>
         </field>
     </record>
@@ -63,7 +65,10 @@
                         <group string="Family / Household">
                             <field name="family_id"/>
                             <field name="is_family_head"/>
+                            <field name="family_relationship"/>
                             <field name="guardian_id"/>
+                            <field name="added_by_partner_id" invisible="not added_by_partner_id"/>
+                            <field name="family_verified"/>
                         </group>
                         <group string="Pastoral Care">
                             <field name="care_status"/>
@@ -103,8 +108,10 @@
                     <field name="member_ids">
                         <list>
                             <field name="name"/>
+                            <field name="family_relationship"/>
                             <field name="membership_status"/>
                             <field name="guardian_id"/>
+                            <field name="family_verified" string="Verified"/>
                         </list>
                     </field>
                 </sheet>
@@ -123,6 +130,18 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('is_member','=',True)]</field>
+    </record>
+
+    <!-- Relatives members added in the app, waiting for the church to confirm -->
+    <record id="action_church_relatives_to_verify" model="ir.actions.act_window">
+        <field name="name">Relatives to Verify</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('family_verified', '=', False)]</field>
+        <field name="help" type="html">
+            <p>Relatives that members added from the app appear here.
+               Open one, check the details, then tick "Verified by Church".</p>
+        </field>
     </record>
 
     <!-- Pastor Assignment Views -->

@@ -22,6 +22,22 @@ PROFILE_CHECKLIST = [
     ('emergency_contact_phone', 'Emergency contact phone'),
 ]
 
+FAMILY_RELATIONSHIPS = [
+    ('spouse', 'Husband / Wife'),
+    ('son', 'Son'),
+    ('daughter', 'Daughter'),
+    ('father', 'Father'),
+    ('mother', 'Mother'),
+    ('brother', 'Brother'),
+    ('sister', 'Sister'),
+    ('grandparent', 'Grandparent'),
+    ('grandchild', 'Grandchild'),
+    ('other', 'Other relative'),
+]
+
+# What a member may set on a relative they add themselves.
+FAMILY_SELF_FIELDS = {'name', 'phone', 'gender', 'date_of_birth', 'family_relationship'}
+
 MEMBER_PROFILE_FIELDS = [
     'member_number', 'gender', 'marital_status', 'wedding_anniversary', 'occupation',
     'talents', 'spiritual_gifts', 'ministry_interests', 'emergency_contact_name',
@@ -82,7 +98,9 @@ class ChurchMember(models.Model):
 
     def _assign_member_numbers(self):
         Sequence = self.env['ir.sequence'].sudo()
-        for partner in self.filtered(lambda p: p.is_member and not p.member_number):
+        # Relatives added by a member get a number only once the church verifies them.
+        for partner in self.filtered(
+                lambda p: p.is_member and not p.member_number and p.family_verified):
             partner.sudo().with_context(allow_member_number=True).write(
                 {'member_number': Sequence.next_by_code('church.member.number')})
 
@@ -97,7 +115,7 @@ class ChurchMember(models.Model):
         if 'member_number' in vals and not self.env.context.get('allow_member_number'):
             vals = {k: v for k, v in vals.items() if k != 'member_number'}
         result = super().write(vals)
-        if vals.get('is_member'):
+        if vals.get('is_member') or vals.get('family_verified'):
             self._assign_member_numbers()
         return result
 
@@ -142,6 +160,16 @@ class ChurchMember(models.Model):
 
     family_id = fields.Many2one('church.family', string='Family / Household')
     is_family_head = fields.Boolean(string='Family Head')
+    family_relationship = fields.Selection(
+        FAMILY_RELATIONSHIPS, string='Relationship',
+        help='How this person is related to the family head / the member who added them.')
+    family_verified = fields.Boolean(
+        string='Verified by Church', default=True,
+        help='Unticked for relatives a member added in the app. Tick once the '
+             'church has confirmed them — they then get a member number.')
+    added_by_partner_id = fields.Many2one(
+        'res.partner', string='Added by Member', readonly=True,
+        help='The member who added this relative from the app.')
     guardian_id = fields.Many2one(
         'res.partner', string='Parent / Guardian',
         domain=[('is_member', '=', True)],
@@ -210,6 +238,7 @@ class ChurchMember(models.Model):
         fields_to_read = [
             'id', 'name', 'email', 'phone', 'membership_status',
             'member_join_date', 'family_id', 'write_date', 'member_number',
+            'family_relationship', 'family_verified', 'added_by_partner_id',
         ]
         if mode != 'self':
             fields_to_read.append('care_status')
@@ -239,11 +268,15 @@ class ChurchMember(models.Model):
             'water_baptism_date', 'holy_spirit_baptism_date',
             'family_id', 'is_family_head', 'guardian_id',
             'membership_type', 'contribution_preference', 'write_date',
+            'family_relationship', 'family_verified', 'added_by_partner_id',
         ] + MEMBER_PROFILE_FIELDS
           + ([] if mode == 'self' else ['care_status', 'care_status_date']))[0]
         data['profile_completeness'] = member.profile_completeness
         data['profile_missing'] = member._profile_missing()
         data['can_edit_profile'] = mode != 'self' or member.id == scope
+        # A member may edit/remove only relatives they added themselves.
+        data['can_edit_relative'] = mode == 'self' and member.added_by_partner_id.id == scope
+        data['can_verify'] = mode in ('all', 'assigned') and not member.family_verified
         return {'success': True, 'member': data}
 
     @api.model
@@ -297,6 +330,120 @@ class ChurchMember(models.Model):
             'family': {'id': partner.family_id.id, 'name': partner.family_id.name},
             'members': members,
         }
+
+    # ── Members adding their own relatives ──────────────────────
+
+    def _clean_relative_vals(self, vals):
+        vals = {k: v for k, v in dict(vals or {}).items() if k in FAMILY_SELF_FIELDS}
+        if 'name' in vals:
+            vals['name'] = (vals['name'] or '').strip()
+        valid = dict(FAMILY_RELATIONSHIPS)
+        if vals.get('family_relationship') not in valid:
+            vals.pop('family_relationship', None)
+        for key in ('phone', 'gender', 'date_of_birth'):
+            if key in vals and not vals[key]:
+                vals[key] = False
+        return vals
+
+    def _is_minor(self, birth_date):
+        if not birth_date:
+            return False
+        dob = fields.Date.to_date(birth_date)
+        today = fields.Date.context_today(self)
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+        return age < 18
+
+    @api.model
+    def app_add_my_family_member(self, vals, requester_partner_id=None):
+        """A logged-in member adds a relative to their household.
+
+        The relative shows in the family straight away but stays a Visitor,
+        unverified and without a member number until the church confirms them.
+        """
+        mode, scope = self._church_caller_scope(requester_partner_id=requester_partner_id)
+        if mode != 'self':
+            return {'success': False, 'error': 'Please log in as a member'}
+        me = self.sudo().browse(scope)
+        vals = self._clean_relative_vals(vals)
+        if not vals.get('name'):
+            return {'success': False, 'error': 'Please enter a name'}
+
+        family = me.family_id
+        if not family:
+            surname = (me.name or '').strip().split()[-1] if (me.name or '').strip() else ''
+            family = self.env['church.family'].sudo().create({
+                'name': f'{surname} Family'.strip() if surname else 'My Family',
+                'head_id': me.id,
+            })
+            me.sudo().write({'family_id': family.id, 'is_family_head': True})
+
+        vals.update({
+            'family_id': family.id,
+            'is_member': True,
+            'membership_status': 'visitor',
+            'family_verified': False,
+            'added_by_partner_id': me.id,
+        })
+        if self._is_minor(vals.get('date_of_birth')):
+            vals['guardian_id'] = me.id
+        relative = self.sudo().create(vals)
+
+        # Pastors who care for this member also see the relative.
+        Assignment = self.env['pastor.assignment'].sudo()
+        for pastor in Assignment.search([('member_id', '=', me.id)]).mapped('pastor_id'):
+            Assignment.create({'pastor_id': pastor.id, 'member_id': relative.id,
+                               'notes': f'Relative added by {me.name}'})
+        return {'success': True, 'member_id': relative.id, 'family_id': family.id}
+
+    def _my_relative(self, member_id, requester_partner_id):
+        mode, scope = self._church_caller_scope(requester_partner_id=requester_partner_id)
+        if mode != 'self':
+            return None, 'Please log in as a member'
+        relative = self.sudo().browse(member_id)
+        if not relative.exists() or relative.added_by_partner_id.id != scope:
+            return None, 'You can only change relatives you added'
+        return relative, None
+
+    @api.model
+    def app_update_my_family_member(self, member_id, vals, requester_partner_id=None):
+        relative, error = self._my_relative(member_id, requester_partner_id)
+        if error:
+            return {'success': False, 'error': error}
+        vals = self._clean_relative_vals(vals)
+        if 'name' in vals and not vals['name']:
+            return {'success': False, 'error': 'Please enter a name'}
+        if 'date_of_birth' in vals:
+            vals['guardian_id'] = relative.added_by_partner_id.id if self._is_minor(vals['date_of_birth']) else False
+        relative.sudo().write(vals)
+        return {'success': True}
+
+    @api.model
+    def app_remove_my_family_member(self, member_id, requester_partner_id=None):
+        """Takes the relative out of the household. Nothing is deleted: the
+        record is archived so the church keeps its history."""
+        relative, error = self._my_relative(member_id, requester_partner_id)
+        if error:
+            return {'success': False, 'error': error}
+        if relative.family_verified:
+            # Confirmed by the church: just unlink from this household.
+            relative.sudo().write({'family_id': False, 'is_family_head': False, 'guardian_id': False})
+        else:
+            relative.sudo().write({'family_id': False, 'active': False})
+        return {'success': True}
+
+    @api.model
+    def app_verify_family_member(self, member_id, requester_staff_id=None):
+        mode, scope = self._church_caller_scope(requester_staff_id=requester_staff_id)
+        if mode not in ('all', 'assigned'):
+            return {'success': False, 'error': 'Not authorized'}
+        relative = self.sudo().browse(member_id)
+        if not relative.exists():
+            return {'success': False, 'error': 'Member not found'}
+        if mode == 'assigned' and relative.id not in (scope or []) \
+                and relative.added_by_partner_id.id not in (scope or []):
+            return {'success': False, 'error': 'Not authorized for this member'}
+        relative.sudo().write({'family_verified': True})
+        return {'success': True, 'member_number': relative.member_number or ''}
 
     @api.model
     def app_get_member_home(self, requester_partner_id):

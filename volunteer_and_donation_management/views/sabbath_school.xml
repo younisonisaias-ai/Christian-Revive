@@ -75,13 +75,15 @@
                                 </group>
                                 <group string="Or use a link">
                                     <field name="theme_song_url"
-                                           placeholder="https://example.com/song.mp3"/>
+                                           placeholder="YouTube link or https://example.com/song.mp4"/>
                                     <field name="has_theme_song" readonly="1"/>
                                 </group>
                             </group>
                             <div class="text-muted">
                                 Once a theme song is added, a "Theme Song" button appears
                                 under this lesson in the app so people can listen to it.
+                                You can upload an MP3 or MP4 file, or paste a YouTube link.
+                                If both are set, the uploaded file is played.
                             </div>
                         </page>
                     </notebook>

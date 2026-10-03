@@ -37,12 +37,14 @@ class SabbathSchoolLesson(models.Model):
     audio_filename = fields.Char(string='MP3 Filename')
 
     # ── Theme song (shown as a "Theme Song" button under the lesson in the app) ──
-    theme_song_file = fields.Binary(string='Theme Song (MP3)', attachment=True)
+    theme_song_file = fields.Binary(
+        string='Theme Song (MP3 / MP4)', attachment=True,
+        help='MP3, MP4 or M4A file. For MP4 videos the app plays the sound.')
     theme_song_filename = fields.Char(string='Theme Song Filename')
     theme_song_url = fields.Char(
         string='Theme Song Link',
-        help='Optional direct link to an audio file (e.g. https://.../song.mp3). '
-             'If both a link and an uploaded file are set, the link is used.')
+        help='Optional YouTube link, or a direct link to an .mp3 / .mp4 file. '
+             'If a file is uploaded as well, the uploaded file is used.')
     has_theme_song = fields.Boolean(
         string='Has Theme Song', compute='_compute_has_theme_song', store=True)
 

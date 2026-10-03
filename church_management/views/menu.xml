@@ -18,6 +18,12 @@
         action="action_church_families"
         sequence="2"/>
 
+    <menuitem id="menu_church_relatives_to_verify"
+        name="Relatives to Verify"
+        parent="menu_church_management_root"
+        action="action_church_relatives_to_verify"
+        sequence="2"/>
+
     <menuitem id="menu_pastor_assignments_root"
         name="Pastor Assignments"
         parent="menu_church_management_root"
