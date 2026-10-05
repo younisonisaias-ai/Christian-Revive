@@ -59,10 +59,10 @@ class HymnSong(models.Model):
     category_code = fields.Char(related='category_id.code',
                                  string='Category Code', store=True)
 
-    _number_collection_unique = models.Constraint(
-        'UNIQUE(number, collection_id)',
-        'Song number must be unique within a collection!',
-    )
+    _sql_constraints = [
+        ('number_collection_unique', 'UNIQUE(number, collection_id)',
+         'Song number must be unique within a collection!'),
+    ]
 
     @api.depends('verse_ids')
     def _compute_verse_count(self):

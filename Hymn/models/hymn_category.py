@@ -17,10 +17,9 @@ class HymnCategory(models.Model):
     is_active = fields.Boolean(string='Active', default=True)
     song_count = fields.Integer(string='Songs', compute='_compute_song_count')
 
-    _code_unique = models.Constraint(
-        'UNIQUE(code)',
-        'Category code must be unique!',
-    )
+    _sql_constraints = [
+        ('code_unique', 'UNIQUE(code)', 'Category code must be unique!'),
+    ]
 
     @api.depends()
     def _compute_song_count(self):
