@@ -35,20 +35,44 @@ class ChurchEventAttendance(models.Model):
     # ── Church Management RPC (Phase 2) ─────────────────────────
 
     @api.model
+    def _member_from_code(self, code):
+        """Member from a check-in QR or a typed code.
+
+        Accepts 'CRV1:CR-00012' (membership-card QR), 'CRV1:P45' (QR of a
+        member without a number yet), a member number 'CR-00012', or a plain id.
+        """
+        code = (code or '').strip()
+        if code.upper().startswith('CRV1:'):
+            code = code[5:].strip()
+        Partner = self.env['res.partner'].sudo()
+        if code[:1] in ('P', 'p') and code[1:].isdigit():
+            return Partner.browse(int(code[1:])).exists()
+        if code.isdigit():
+            return Partner.browse(int(code)).exists()
+        return Partner.search([('member_number', '=ilike', code)], limit=1) if code else Partner
+
+    @api.model
     def app_check_in(self, event_id=None, member_id=None, requester_partner_id=None,
-                     requester_staff_id=None, service_id=None):
+                     requester_staff_id=None, service_id=None, member_code=None, method=None):
         """Check a member in.
 
         Current app versions pass `service_id` (a church.service id). Older
         versions pass `event_id` positionally, which is a OneVoice27 event id;
-        that is mapped to its stand-in church service.
+        that is mapped to its stand-in church service. Ushers may pass
+        `member_code` (scanned QR or typed member number) instead of member_id.
         """
         ResPartner = self.env['res.partner']
         mode, scope = ResPartner._church_caller_scope(requester_partner_id, requester_staff_id)
         if mode == 'denied':
             return {'success': False, 'error': 'Not authorized'}
+        if member_code and not member_id:
+            member = self._member_from_code(member_code)
+            if not member:
+                return {'success': False, 'error': 'No member found for this code'}
+            member_id = member.id
         if not member_id:
             return {'success': False, 'error': 'Missing member'}
+        member_name = ResPartner.sudo().browse(member_id).name or ''
 
         # A plain member may only self check-in.
         if mode == 'self' and member_id != scope:
@@ -68,15 +92,21 @@ class ChurchEventAttendance(models.Model):
             ('event_id', '=', service.id), ('member_id', '=', member_id),
         ], limit=1)
         if existing:
-            return {'success': True, 'attendance_id': existing.id, 'already_checked_in': True}
+            return {'success': True, 'attendance_id': existing.id, 'already_checked_in': True,
+                    'member_name': member_name}
 
+        if mode == 'self':
+            method = 'self'
+        elif method not in ('manual', 'qr', 'kiosk'):
+            method = 'manual'
         record = self.sudo().create({
             'event_id': service.id,
             'member_id': member_id,
-            'method': 'self' if mode == 'self' else 'manual',
+            'method': method,
             'checked_in_by_staff_id': requester_staff_id or False,
         })
-        return {'success': True, 'attendance_id': record.id, 'already_checked_in': False}
+        return {'success': True, 'attendance_id': record.id, 'already_checked_in': False,
+                'member_name': member_name}
 
     @api.model
     def app_get_event_attendance(self, event_id, requester_staff_id=None):
