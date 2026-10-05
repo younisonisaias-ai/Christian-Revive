@@ -9,3 +9,4 @@ from . import event_attendance
 from . import church_dashboard
 from . import member_app_data
 from . import pastor_alerts
+from . import visitors

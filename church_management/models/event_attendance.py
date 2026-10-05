@@ -105,6 +105,11 @@ class ChurchEventAttendance(models.Model):
             'method': method,
             'checked_in_by_staff_id': requester_staff_id or False,
         })
+        # A visitor who comes back is now "attending again".
+        visitor = record.member_id
+        if visitor.visitor_stage in ('new', 'contacted') and self.sudo().search_count(
+                [('member_id', '=', visitor.id)]) >= 2:
+            visitor.sudo().write({'visitor_stage': 'returning'})
         return {'success': True, 'attendance_id': record.id, 'already_checked_in': False,
                 'member_name': member_name}
 

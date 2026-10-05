@@ -70,6 +70,13 @@
                             <field name="added_by_partner_id" invisible="not added_by_partner_id"/>
                             <field name="family_verified"/>
                         </group>
+                        <group string="Visitor" invisible="not visitor_stage">
+                            <field name="visitor_stage"/>
+                            <field name="visitor_source"/>
+                            <field name="first_visit_date"/>
+                            <field name="visitor_added_by_id"/>
+                            <field name="visitor_notes"/>
+                        </group>
                         <group string="Pastoral Care">
                             <field name="care_status"/>
                             <field name="care_status_date"/>
@@ -130,6 +137,18 @@
         <field name="res_model">res.partner</field>
         <field name="view_mode">list,form</field>
         <field name="domain">[('is_member','=',True)]</field>
+    </record>
+
+    <!-- First-time visitors and where each is in follow-up -->
+    <record id="action_church_visitors" model="ir.actions.act_window">
+        <field name="name">Visitors</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('visitor_stage', '!=', False)]</field>
+        <field name="context">{'group_by': 'visitor_stage'}</field>
+        <field name="help" type="html">
+            <p>First-time visitors recorded at check-in appear here, grouped by follow-up stage.</p>
+        </field>
     </record>
 
     <!-- Relatives members added in the app, waiting for the church to confirm -->
