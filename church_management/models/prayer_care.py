@@ -136,7 +136,16 @@ class PrayerRequestCare(models.Model):
                     vals['assigned_pastor_id'] = assignment.pastor_id.id
                     vals.setdefault('care_status', 'assigned')
             prepared.append(vals)
-        return super().create(prepared)
+        records = super().create(prepared)
+        # Alert the member's pastor about urgent or pastor-only requests.
+        for rec in records:
+            if rec.urgency == 'urgent' or rec.visibility in ('pastor', 'private'):
+                who = 'Someone' if rec.is_anonymous else (rec.partner_id.name or rec.name or 'A member')
+                label = 'Urgent prayer request' if rec.urgency == 'urgent' else 'Private prayer request'
+                self.env['church.alerts'].notify_pastors(
+                    rec.partner_id, f'🙏 {label}',
+                    f'{who}: {rec.subject or "New request"}', 'prayer', rec.id)
+        return records
 
     def write(self, vals):
         return super().write(self._prepare_care_vals(vals))

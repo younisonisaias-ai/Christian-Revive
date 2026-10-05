@@ -135,10 +135,18 @@ class ChurchService(models.Model):
         else:
             count = max(0, min(int(guests or 0), 20)) if status == 'going' else 0
             vals = {'status': status, 'guests': count}
+            is_new_yes = status == 'going' and (not existing or existing.status != 'going')
             if existing:
                 existing.write(vals)
             else:
                 Rsvp.create(dict(vals, service_id=service.id, partner_id=scope))
+            # Special events: let the member's pastor know who is coming.
+            if is_new_yes and service.service_type == 'special_event':
+                member = self.env['res.partner'].sudo().browse(scope)
+                extra = f' (+{count} guests)' if count else ''
+                self.env['church.alerts'].notify_pastors(
+                    member, f'🎉 {service.name}', f'{member.name} is coming{extra}',
+                    'rsvp', service.id)
         return dict({'success': True}, **service._rsvp_summary(scope))
 
     @api.model

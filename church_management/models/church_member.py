@@ -393,6 +393,10 @@ class ChurchMember(models.Model):
         for pastor in Assignment.search([('member_id', '=', me.id)]).mapped('pastor_id'):
             Assignment.create({'pastor_id': pastor.id, 'member_id': relative.id,
                                'notes': f'Relative added by {me.name}'})
+        rel_label = dict(FAMILY_RELATIONSHIPS).get(relative.family_relationship, 'relative')
+        self.env['church.alerts'].notify_pastors(
+            me, '👪 New family member to verify',
+            f'{me.name} added {relative.name} ({rel_label})', 'relative', relative.id)
         return {'success': True, 'member_id': relative.id, 'family_id': family.id}
 
     def _my_relative(self, member_id, requester_partner_id):
