@@ -55,6 +55,25 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Who is Coming" name="rsvp">
+                            <group>
+                                <group>
+                                    <field name="rsvp_expected"/>
+                                    <field name="rsvp_going"/>
+                                </group>
+                                <group>
+                                    <field name="rsvp_guests"/>
+                                    <field name="rsvp_maybe"/>
+                                </group>
+                            </group>
+                            <field name="rsvp_ids">
+                                <list editable="bottom">
+                                    <field name="partner_id"/>
+                                    <field name="status"/>
+                                    <field name="guests"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Description" name="description">
                             <field name="description" placeholder="Notes about this service or event..."/>
                         </page>

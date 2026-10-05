@@ -473,10 +473,10 @@ class ChurchMember(models.Model):
         services = self.env['church.service'].sudo().search(
             [('is_active', '=', True), ('date_start', '>=', now)],
             order='date_start asc', limit=2)
-        home['next_services'] = [{
+        home['next_services'] = [dict({
             'id': s.id, 'name': s.name, 'location': s.location or '',
             'date_start': fields.Datetime.to_string(s.date_start),
-        } for s in services]
+        }, **s._rsvp_summary(partner.id)) for s in services]
 
         groups = self.env['cell.group'].sudo().search(
             ['|', ('leader_id', '=', partner.id), ('member_ids', '=', partner.id)])

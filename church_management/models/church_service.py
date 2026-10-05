@@ -35,6 +35,14 @@ class ChurchService(models.Model):
         help='Only active services are offered for check-in in the app.')
     attendance_ids = fields.One2many('church.event.attendance', 'event_id', string='Attendance')
     attendance_count = fields.Integer(string='Checked In', compute='_compute_attendance_count')
+    rsvp_ids = fields.One2many('church.service.rsvp', 'service_id', string='RSVPs')
+    rsvp_going = fields.Integer(string='Coming', compute='_compute_rsvp_counts',
+                                help='Members who said they are coming.')
+    rsvp_guests = fields.Integer(string='Guests', compute='_compute_rsvp_counts',
+                                 help='Extra people they are bringing.')
+    rsvp_maybe = fields.Integer(string='Maybe', compute='_compute_rsvp_counts')
+    rsvp_expected = fields.Integer(string='Expected', compute='_compute_rsvp_counts',
+                                   help='Coming + their guests.')
     # Set only for services created from old OneVoice27 events during the
     # migration, so older app versions that still send OneVoice event ids keep
     # checking people in to the right service.
@@ -44,6 +52,27 @@ class ChurchService(models.Model):
     def _compute_attendance_count(self):
         for rec in self:
             rec.attendance_count = len(rec.attendance_ids)
+
+    @api.depends('rsvp_ids.status', 'rsvp_ids.guests')
+    def _compute_rsvp_counts(self):
+        for rec in self:
+            going = rec.rsvp_ids.filtered(lambda r: r.status == 'going')
+            rec.rsvp_going = len(going)
+            rec.rsvp_guests = sum(going.mapped('guests'))
+            rec.rsvp_maybe = len(rec.rsvp_ids.filtered(lambda r: r.status == 'maybe'))
+            rec.rsvp_expected = rec.rsvp_going + rec.rsvp_guests
+
+    def _rsvp_summary(self, partner_id=None):
+        self.ensure_one()
+        mine = self.rsvp_ids.filtered(lambda r: r.partner_id.id == partner_id) if partner_id else None
+        return {
+            'my_rsvp': mine[0].status if mine else '',
+            'my_guests': mine[0].guests if mine else 0,
+            'rsvp_going': self.rsvp_going,
+            'rsvp_guests': self.rsvp_guests,
+            'rsvp_maybe': self.rsvp_maybe,
+            'rsvp_expected': self.rsvp_expected,
+        }
 
     def action_view_attendance(self):
         self.ensure_one()
@@ -74,7 +103,8 @@ class ChurchService(models.Model):
             ('date_start', '<=', now + timedelta(days=days_ahead or 0)),
         ], order='date_start asc, id asc')
         type_labels = dict(self._fields['service_type'].selection)
-        return {'success': True, 'services': [{
+        partner_id = _scope if mode == 'self' else None
+        return {'success': True, 'services': [dict({
             'id': r.id,
             'name': r.name,
             'service_type': r.service_type,
@@ -83,7 +113,74 @@ class ChurchService(models.Model):
             'date_end': fields.Datetime.to_string(r.date_end) if r.date_end else False,
             'location': r.location or '',
             'attendance_count': r.attendance_count,
-        } for r in records]}
+        }, **r._rsvp_summary(partner_id)) for r in records]}
+
+    # ── RSVP ("I am coming") ────────────────────────────────────
+
+    @api.model
+    def app_set_rsvp(self, service_id, status, guests=0, requester_partner_id=None):
+        """A member says whether they are coming. status: going / maybe /
+        not_going, or empty to clear their answer."""
+        mode, scope = self.env['res.partner']._church_caller_scope(
+            requester_partner_id=requester_partner_id)
+        if mode != 'self':
+            return {'success': False, 'error': 'Please log in as a member'}
+        service = self.sudo().browse(int(service_id)).exists()
+        if not service:
+            return {'success': False, 'error': 'Service not found'}
+        Rsvp = self.env['church.service.rsvp'].sudo()
+        existing = Rsvp.search([('service_id', '=', service.id), ('partner_id', '=', scope)], limit=1)
+        if status not in ('going', 'maybe', 'not_going'):
+            existing.unlink()
+        else:
+            count = max(0, min(int(guests or 0), 20)) if status == 'going' else 0
+            vals = {'status': status, 'guests': count}
+            if existing:
+                existing.write(vals)
+            else:
+                Rsvp.create(dict(vals, service_id=service.id, partner_id=scope))
+        return dict({'success': True}, **service._rsvp_summary(scope))
+
+    @api.model
+    def app_get_rsvps(self, service_id, requester_staff_id=None):
+        """Who said they are coming (for pastors and ushers)."""
+        mode, _scope = self.env['res.partner']._church_caller_scope(
+            requester_staff_id=requester_staff_id)
+        if mode not in ('all', 'assigned'):
+            return {'success': False, 'error': 'Not authorized'}
+        service = self.sudo().browse(int(service_id)).exists()
+        if not service:
+            return {'success': False, 'error': 'Service not found'}
+        checked_in = set(service.attendance_ids.mapped('member_id').ids)
+        rows = service.rsvp_ids.sorted(lambda r: (r.status != 'going', r.partner_id.name or ''))
+        return dict({'success': True, 'rsvps': [{
+            'partner_id': r.partner_id.id,
+            'name': r.partner_id.name or '',
+            'status': r.status,
+            'guests': r.guests,
+            'checked_in': r.partner_id.id in checked_in,
+        } for r in rows]}, **service._rsvp_summary())
+
+
+class ChurchServiceRsvp(models.Model):
+    _name = 'church.service.rsvp'
+    _description = 'Service RSVP'
+    _order = 'service_id, status, partner_id'
+
+    service_id = fields.Many2one('church.service', required=True, ondelete='cascade', index=True)
+    partner_id = fields.Many2one('res.partner', string='Member', required=True,
+                                 ondelete='cascade', index=True)
+    status = fields.Selection([
+        ('going', 'Coming'),
+        ('maybe', 'Maybe'),
+        ('not_going', 'Cannot come'),
+    ], required=True, default='going')
+    guests = fields.Integer(string='Bringing guests', default=0)
+
+    _service_partner_uniq = models.Constraint(
+        'unique(service_id, partner_id)',
+        'Each member answers once per service.',
+    )
 
     @api.model
     def _from_legacy_onevoice_event(self, onevoice_event_id):
