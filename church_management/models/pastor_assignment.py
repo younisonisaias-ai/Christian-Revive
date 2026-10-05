@@ -60,10 +60,10 @@ class PastorAssignment(models.Model):
     assigned_date = fields.Date(string='Assigned On', default=fields.Date.context_today)
     notes = fields.Char(string='Notes')
 
-    _sql_constraints = [
-        ('pastor_member_uniq', 'unique(pastor_id, member_id)',
-         'This member is already assigned to this pastor.'),
-    ]
+    _pastor_member_uniq = models.Constraint(
+        'unique(pastor_id, member_id)',
+        'This member is already assigned to this pastor.',
+    )
 
     # ── Church Management RPC ────────────────────────────────────
     # Assigning pastors controls who can see which members' data, so this

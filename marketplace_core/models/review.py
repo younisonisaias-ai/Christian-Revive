@@ -27,10 +27,10 @@ class MarketplaceReview(models.Model):
         ('hidden', 'Hidden'),
     ], default='published', required=True)
 
-    _sql_constraints = [
-        ('order_reviewer_uniq', 'unique(order_id, reviewer_id)',
-         'You have already reviewed this order.'),
-    ]
+    _order_reviewer_uniq = models.Constraint(
+        'unique(order_id, reviewer_id)',
+        'You have already reviewed this order.',
+    )
 
     @api.constrains('order_id', 'reviewer_id')
     def _check_reviewer(self):

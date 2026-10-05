@@ -15,9 +15,10 @@ class MarketplaceBrand(models.Model):
     active = fields.Boolean(default=True)
     listing_count = fields.Integer(compute='_compute_listing_count')
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'This brand already exists.'),
-    ]
+    _name_uniq = models.Constraint(
+        'unique(name)',
+        'This brand already exists.',
+    )
 
     def _compute_listing_count(self):
         counts = dict(self.env['product.template']._read_group(
@@ -55,10 +56,10 @@ class MarketplaceSize(models.Model):
     sequence = fields.Integer(default=10)
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [
-        ('name_category_uniq', 'unique(name, category)',
-         'This size already exists in this category.'),
-    ]
+    _name_category_uniq = models.Constraint(
+        'unique(name, category)',
+        'This size already exists in this category.',
+    )
 
     @api.model
     def get_or_create(self, name, category=None):
@@ -85,9 +86,10 @@ class MarketplaceBannedKeyword(models.Model):
     reason = fields.Char(help='Why items matching this keyword are banned.')
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [
-        ('name_uniq', 'unique(name)', 'This keyword is already listed.'),
-    ]
+    _name_uniq = models.Constraint(
+        'unique(name)',
+        'This keyword is already listed.',
+    )
 
     @api.model
     def _find_match(self, *texts):

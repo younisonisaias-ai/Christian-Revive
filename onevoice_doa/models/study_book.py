@@ -18,10 +18,10 @@ class StudyBook(models.Model):
     chapter_ids  = fields.One2many('onevoice.doa.chapter', 'book_id', string='Chapters')
     mcq_ids      = fields.One2many('onevoice.study.mcq', 'book_id', string='MCQs')
 
-    _sql_constraints = [
-        ('book_code_uniq', 'unique(book_code)',
-         'A book with this code already exists.'),
-    ]
+    _book_code_uniq = models.Constraint(
+        'unique(book_code)',
+        'A book with this code already exists.',
+    )
 
     @api.model
     def app_get_books(self):

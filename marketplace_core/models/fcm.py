@@ -46,9 +46,10 @@ class MarketplaceDeviceToken(models.Model):
     ], default='android')
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [
-        ('token_uniq', 'unique(token)', 'This device is already registered.'),
-    ]
+    _token_uniq = models.Constraint(
+        'unique(token)',
+        'This device is already registered.',
+    )
 
     @api.model
     def register(self, partner, token, platform=None):

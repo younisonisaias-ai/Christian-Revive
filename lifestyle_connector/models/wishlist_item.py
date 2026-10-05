@@ -11,6 +11,7 @@ class LifestyleWishlistItem(models.Model):
     partner_id = fields.Many2one('res.partner', string='Customer', required=True, ondelete='cascade', index=True)
     product_tmpl_id = fields.Many2one('product.template', string='Product', required=True, ondelete='cascade', index=True)
 
-    _sql_constraints = [
-        ('wishlist_unique', 'unique(partner_id, product_tmpl_id)', 'This product is already in the wishlist.'),
-    ]
+    _wishlist_unique = models.Constraint(
+        'unique(partner_id, product_tmpl_id)',
+        'This product is already in the wishlist.',
+    )

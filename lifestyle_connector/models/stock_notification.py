@@ -14,9 +14,10 @@ class LifestyleStockNotification(models.Model):
     email = fields.Char(string='Email', required=True)
     notified = fields.Boolean(string='Notified', default=False)
 
-    _sql_constraints = [
-        ('notification_unique', 'unique(product_tmpl_id, email)', 'This email is already on the notify list for this product.'),
-    ]
+    _notification_unique = models.Constraint(
+        'unique(product_tmpl_id, email)',
+        'This email is already on the notify list for this product.',
+    )
 
     def action_mark_notified(self):
         self.write({'notified': True})

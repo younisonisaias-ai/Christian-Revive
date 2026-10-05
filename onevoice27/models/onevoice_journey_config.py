@@ -18,10 +18,10 @@ class OnevoiceJourneyConfig(models.Model):
         help='Leave empty to lock the journey. Set a date to unlock it on that day.')
     is_active    = fields.Boolean(string='Active', default=True)
 
-    _sql_constraints = [
-        ('journey_key_uniq', 'unique(journey_key)',
-         'A journey with this key already exists.'),
-    ]
+    _journey_key_uniq = models.Constraint(
+        'unique(journey_key)',
+        'A journey with this key already exists.',
+    )
 
     @api.model
     def app_get_journey_configs(self):

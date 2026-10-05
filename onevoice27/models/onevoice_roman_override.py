@@ -14,10 +14,10 @@ class OnevoiceRomanOverride(models.Model):
     notes       = fields.Char(string='Notes (optional)',    help='Admin reference — e.g. "chapter 1 proper noun"')
     is_active   = fields.Boolean(string='Active', default=True)
 
-    _sql_constraints = [
-        ('source_text_uniq', 'unique(source_text)',
-         'An override for this word already exists.'),
-    ]
+    _source_text_uniq = models.Constraint(
+        'unique(source_text)',
+        'An override for this word already exists.',
+    )
 
     @api.model
     def app_get_roman_translations(self):

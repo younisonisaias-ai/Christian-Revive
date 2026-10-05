@@ -74,7 +74,7 @@ class LiveStream(models.Model):
 
     is_live_now = fields.Boolean(
         string='Live Now',
-        compute='_compute_status_auto',
+        compute='_compute_is_live_now',
         store=False,
     )
 
@@ -412,28 +412,33 @@ class LiveStream(models.Model):
         except Exception:
             return self.air_datetime_end
 
+    def _status_at(self, now_utc):
+        """'scheduled' / 'live' / 'ended' for this record at [now_utc]."""
+        self.ensure_one()
+        try:
+            start = self.air_datetime_start
+            end = self._active_window_utc_end()
+            if not start or not end or now_utc < start:
+                return 'scheduled'
+            if start <= now_utc <= end:
+                return 'live'
+            return 'ended'
+        except Exception:
+            return 'scheduled'
+
+    # Stored status (refreshed by the cron) and the live-now flag use
+    # separate compute methods: Odoo 19 warns when one method fills a stored
+    # and a non-stored field together.
     @api.depends('air_datetime_start', 'air_datetime_end', 'play_for_days')
     def _compute_status_auto(self):
         now_utc = datetime.utcnow()
         for rec in self:
-            try:
-                start = rec.air_datetime_start
-                end   = rec._active_window_utc_end()
-                if not start or not end:
-                    rec.status      = 'scheduled'
-                    rec.is_live_now = False
-                elif now_utc < start:
-                    rec.status      = 'scheduled'
-                    rec.is_live_now = False
-                elif start <= now_utc <= end:
-                    rec.status      = 'live'
-                    rec.is_live_now = True
-                else:
-                    rec.status      = 'ended'
-                    rec.is_live_now = False
-            except Exception:
-                rec.status      = 'scheduled'
-                rec.is_live_now = False
+            rec.status = rec._status_at(now_utc)
+
+    def _compute_is_live_now(self):
+        now_utc = datetime.utcnow()
+        for rec in self:
+            rec.is_live_now = rec._status_at(now_utc) == 'live'
 
     # ── Cron: refresh all statuses every minute ───────────────
     def action_refresh_all_statuses(self):

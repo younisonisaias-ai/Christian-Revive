@@ -21,11 +21,10 @@ class MarketplaceThread(models.Model):
     last_message_date = fields.Datetime(index=True)
     display_subject = fields.Char(compute='_compute_display_subject')
 
-    _sql_constraints = [
-        ('buyer_seller_listing_uniq',
-         'unique(buyer_partner_id, seller_id, listing_id)',
-         'A conversation for this listing already exists.'),
-    ]
+    _buyer_seller_listing_uniq = models.Constraint(
+        'unique(buyer_partner_id, seller_id, listing_id)',
+        'A conversation for this listing already exists.',
+    )
 
     @api.depends('buyer_partner_id', 'seller_id', 'listing_id')
     def _compute_display_subject(self):

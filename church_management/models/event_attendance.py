@@ -27,10 +27,10 @@ class ChurchEventAttendance(models.Model):
         ('kiosk', 'Kiosk'), ('self', 'Self Check-in'),
     ], string='Method', default='manual', required=True)
 
-    _sql_constraints = [
-        ('event_member_uniq', 'unique(event_id, member_id)',
-         'This member is already checked in to this event.'),
-    ]
+    _event_member_uniq = models.Constraint(
+        'unique(event_id, member_id)',
+        'This member is already checked in to this event.',
+    )
 
     # ── Church Management RPC (Phase 2) ─────────────────────────
 

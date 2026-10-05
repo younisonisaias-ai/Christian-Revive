@@ -30,10 +30,7 @@ class LifestyleProductColorImage(models.Model):
         help='Image shown in the Revive Lifestyle app when the customer selects this color.',
     )
 
-    _sql_constraints = [
-        (
-            'unique_product_color',
-            'unique(product_tmpl_id, color_name)',
-            'Each product can only have one app image per color/finish.',
-        ),
-    ]
+    _unique_product_color = models.Constraint(
+        'unique(product_tmpl_id, color_name)',
+        'Each product can only have one app image per color/finish.',
+    )

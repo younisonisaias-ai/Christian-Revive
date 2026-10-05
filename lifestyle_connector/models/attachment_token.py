@@ -14,9 +14,10 @@ class LifestyleAttachmentToken(models.Model):
     attachment_id = fields.Many2one('ir.attachment', string='Attachment', required=True, ondelete='cascade')
     token = fields.Char(string='Token', required=True, index=True, default=lambda self: secrets.token_urlsafe(24))
 
-    _sql_constraints = [
-        ('token_unique', 'unique(token)', 'Token must be unique.'),
-    ]
+    _token_unique = models.Constraint(
+        'unique(token)',
+        'Token must be unique.',
+    )
 
     @api.model
     def grant(self, attachment):

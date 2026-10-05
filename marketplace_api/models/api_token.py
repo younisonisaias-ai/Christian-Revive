@@ -19,9 +19,10 @@ class MarketplaceApiToken(models.Model):
     last_used_at = fields.Datetime()
     device_name = fields.Char()
 
-    _sql_constraints = [
-        ('token_uniq', 'unique(token)', 'Token collision — retry.'),
-    ]
+    _token_uniq = models.Constraint(
+        'unique(token)',
+        'Token collision — retry.',
+    )
 
     @api.model
     def issue(self, user, device_name=None):

@@ -147,11 +147,14 @@ class MarketplaceSeller(models.Model):
     wallet_balance = fields.Monetary(compute='_compute_wallet_balance')
     payout_ids = fields.One2many('marketplace.seller.payout', 'seller_id')
 
-    _sql_constraints = [
-        ('slug_uniq', 'unique(slug)', 'This shop URL is already taken.'),
-        ('partner_uniq', 'unique(partner_id)',
-         'This user already has a marketplace shop.'),
-    ]
+    _slug_uniq = models.Constraint(
+        'unique(slug)',
+        'This shop URL is already taken.',
+    )
+    _partner_uniq = models.Constraint(
+        'unique(partner_id)',
+        'This user already has a marketplace shop.',
+    )
 
     # ------------------------------------------------------------------
     # Computes / constraints

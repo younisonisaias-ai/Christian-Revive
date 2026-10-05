@@ -32,10 +32,10 @@ class MarketplaceCartItem(models.Model):
         related='product_tmpl_id.marketplace_seller_id', store=True)
     price = fields.Float(related='product_tmpl_id.list_price')
 
-    _sql_constraints = [
-        ('partner_product_uniq', 'unique(partner_id, product_tmpl_id)',
-         'This item is already in your cart.'),
-    ]
+    _partner_product_uniq = models.Constraint(
+        'unique(partner_id, product_tmpl_id)',
+        'This item is already in your cart.',
+    )
 
     @api.model
     def add_item(self, partner, product_tmpl):

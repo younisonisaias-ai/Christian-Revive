@@ -64,9 +64,13 @@ class LifestyleProductReview(models.Model):
             records |= super(LifestyleProductReview, self).create([vals])
         return records
 
-    _sql_constraints = [
-        ('rating_range', 'CHECK(rating >= 1 AND rating <= 5)', 'Rating must be between 1 and 5.'),
-        ('one_review_per_customer', 'unique(product_tmpl_id, partner_id)', 'You have already reviewed this product.'),
-    ]
+    _rating_range = models.Constraint(
+        'CHECK(rating >= 1 AND rating <= 5)',
+        'Rating must be between 1 and 5.',
+    )
+    _one_review_per_customer = models.Constraint(
+        'unique(product_tmpl_id, partner_id)',
+        'You have already reviewed this product.',
+    )
 
 

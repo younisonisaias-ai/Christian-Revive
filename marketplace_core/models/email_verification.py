@@ -19,9 +19,10 @@ class MarketplaceEmailVerification(models.Model):
     expires_at = fields.Datetime(required=True)
     used = fields.Boolean(default=False)
 
-    _sql_constraints = [
-        ('token_uniq', 'unique(token)', 'Token collision - retry.'),
-    ]
+    _token_uniq = models.Constraint(
+        'unique(token)',
+        'Token collision - retry.',
+    )
 
     @api.model
     def issue(self, partner):

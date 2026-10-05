@@ -13,9 +13,10 @@ class LifestyleDeviceToken(models.Model):
     platform = fields.Selection([('android', 'Android'), ('ios', 'iOS')], string='Platform', default='android')
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [
-        ('token_unique', 'unique(token)', 'This device token is already registered.'),
-    ]
+    _token_unique = models.Constraint(
+        'unique(token)',
+        'This device token is already registered.',
+    )
 
     @api.model
     def register(self, partner, token, platform='android'):

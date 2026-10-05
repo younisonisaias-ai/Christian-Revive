@@ -27,10 +27,10 @@ class DoaChapter(models.Model):
             book = rec.book_id.name or 'Chapter'
             rec.name = f'{book} – Ch {rec.chapter_number}'
 
-    _sql_constraints = [
-        ('chapter_book_number_uniq', 'unique(book_id, chapter_number)',
-         'A chapter with this number already exists in this book.'),
-    ]
+    _chapter_book_number_uniq = models.Constraint(
+        'unique(book_id, chapter_number)',
+        'A chapter with this number already exists in this book.',
+    )
 
     @api.model
     def app_get_chapter(self, chapter_number):
