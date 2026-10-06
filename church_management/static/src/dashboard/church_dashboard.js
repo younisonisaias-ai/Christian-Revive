@@ -22,6 +22,9 @@ export class ChurchAdminDashboard extends Component {
             searchQuery: "",
             filterPeriod: "all",
             refreshing: false,
+            activeChartTab: "attendance", // attendance | growth | services
+            hoveredPoint: null,
+            hoveredSlice: null,
         });
 
         onWillStart(async () => {
@@ -59,6 +62,10 @@ export class ChurchAdminDashboard extends Component {
         this.state.activeTab = tabName;
     }
 
+    setChartTab(chartTab) {
+        this.state.activeChartTab = chartTab;
+    }
+
     // ── Navigation & Click Actions ──────────────────────────────────
 
     openMembers(domain = null, title = null) {
@@ -81,13 +88,6 @@ export class ChurchAdminDashboard extends Component {
         this.openMembers(
             [["is_member", "=", true], ["membership_status", "in", ["new_convert", "member", "worker", "leader"]]],
             _t("Active Church Members")
-        );
-    }
-
-    openNewMembersThisMonth() {
-        this.openMembers(
-            [["is_member", "=", true]],
-            _t("Members Directory")
         );
     }
 
@@ -225,10 +225,6 @@ export class ChurchAdminDashboard extends Component {
             domain.push(["care_status", "in", ["submitted", "assigned", "praying", "follow_up"]]);
             domain.push(["urgency", "in", ["urgent", "high"]]);
             title = _t("Urgent Prayer Requests");
-        } else if (filter === "unassigned") {
-            domain.push(["care_status", "in", ["submitted", "assigned", "praying", "follow_up"]]);
-            domain.push(["assigned_pastor_id", "=", false]);
-            title = _t("Unassigned Prayer Requests");
         }
         this.actionService.doAction({
             name: title,
@@ -343,7 +339,7 @@ export class ChurchAdminDashboard extends Component {
         });
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────
+    // ── Graph & Chart Calculations (Line, Bar, Pie / Donut) ─────────
 
     get kpi() {
         return this.state.data?.kpi || {};
@@ -357,11 +353,109 @@ export class ChurchAdminDashboard extends Component {
         return this.state.data?.tables || {};
     }
 
-    get maxTrendAttendance() {
+    // LINE CHART: Attendance Points & Smooth Curved Path
+    get lineChartData() {
         const trend = this.charts.attendance_trend || [];
-        if (!trend.length) return 100;
-        const max = Math.max(...trend.map(t => t.people || 0));
-        return max > 0 ? max : 100;
+        if (!trend.length) return { points: [], linePath: "", areaPath: "", maxVal: 100 };
+
+        const width = 600;
+        const height = 200;
+        const padding = 30;
+
+        const maxVal = Math.max(...trend.map(t => t.people || 0), 10);
+        const chartHeight = height - padding * 2;
+        const stepX = (width - padding * 2) / Math.max(trend.length - 1, 1);
+
+        const points = trend.map((t, i) => {
+            const x = padding + i * stepX;
+            const y = height - padding - (t.people / maxVal) * chartHeight;
+            return {
+                x: Math.round(x * 10) / 10,
+                y: Math.round(y * 10) / 10,
+                label: t.label || t.week,
+                people: t.people,
+            };
+        });
+
+        // Generate Smooth Bezier Curve Line Path
+        let linePath = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i];
+            const p1 = points[i + 1];
+            const cx1 = p0.x + (p1.x - p0.x) / 2;
+            const cy1 = p0.y;
+            const cx2 = p0.x + (p1.x - p0.x) / 2;
+            const cy2 = p1.y;
+            linePath += ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p1.x} ${p1.y}`;
+        }
+
+        const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+
+        return { points, linePath, areaPath, maxVal, width, height, padding };
+    }
+
+    // PIE / DOUGHNUT CHART 1: Membership Lifecycle Donut Slices
+    get membershipDonutSlices() {
+        const data = this.charts.status_distribution || [];
+        return this._buildDonutSlices(data, 100, 100, 75, 45);
+    }
+
+    // PIE / DOUGHNUT CHART 2: Care Distribution Donut Slices
+    get careDonutSlices() {
+        const data = this.charts.care_distribution || [];
+        return this._buildDonutSlices(data, 100, 100, 75, 45);
+    }
+
+    _buildDonutSlices(items, cx, cy, outerRadius, innerRadius) {
+        const total = items.reduce((acc, item) => acc + (item.count || 0), 0);
+        if (!total) return [];
+
+        let currentAngle = -Math.PI / 2; // Start from top
+        const slices = [];
+
+        items.forEach((item) => {
+            if (!item.count) return;
+            const sliceAngle = (item.count / total) * 2 * Math.PI;
+            const endAngle = currentAngle + sliceAngle;
+
+            // Coordinates for outer arc
+            const x1 = cx + outerRadius * Math.cos(currentAngle);
+            const y1 = cy + outerRadius * Math.sin(currentAngle);
+            const x2 = cx + outerRadius * Math.cos(endAngle);
+            const y2 = cy + outerRadius * Math.sin(endAngle);
+
+            // Coordinates for inner arc
+            const x3 = cx + innerRadius * Math.cos(endAngle);
+            const y3 = cy + innerRadius * Math.sin(endAngle);
+            const x4 = cx + innerRadius * Math.cos(currentAngle);
+            const y4 = cy + innerRadius * Math.sin(currentAngle);
+
+            const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+
+            const path = `M ${x1} ${y1} A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2} L ${x3} ${y3} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${x4} ${y4} Z`;
+
+            const pct = Math.round((item.count / total) * 100);
+
+            slices.push({
+                label: item.label,
+                count: item.count,
+                color: item.color,
+                pct: pct,
+                path: path,
+            });
+
+            currentAngle = endAngle;
+        });
+
+        return slices;
+    }
+
+    // BAR CHART: Max values for scaling
+    get maxMonthlyGrowth() {
+        const list = this.charts.monthly_growth || [];
+        if (!list.length) return 10;
+        const max = Math.max(...list.map(m => m.count || 0));
+        return max > 0 ? max : 10;
     }
 
     get maxServiceAttendance() {
@@ -371,11 +465,11 @@ export class ChurchAdminDashboard extends Component {
         return max > 0 ? max : 100;
     }
 
-    get filteredAbsentMembers() {
-        const list = this.tables.absent_members || [];
-        if (!this.state.searchQuery) return list;
-        const q = this.state.searchQuery.toLowerCase();
-        return list.filter(m => (m.name || '').toLowerCase().includes(q) || (m.phone || '').includes(q));
+    get maxCellGroupCount() {
+        const list = this.charts.cell_groups || [];
+        if (!list.length) return 20;
+        const max = Math.max(...list.map(g => g.count || 0));
+        return max > 0 ? max : 20;
     }
 }
 

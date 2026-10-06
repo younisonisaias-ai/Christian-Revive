@@ -42,6 +42,18 @@ SERVICE_TYPE_LABELS = {
     'other': 'Other',
 }
 
+SERVICE_TYPE_COLORS = {
+    'sabbath_worship': '#2563eb',
+    'sabbath_school': '#3b82f6',
+    'prayer_meeting': '#8b5cf6',
+    'bible_study': '#10b981',
+    'youth': '#f59e0b',
+    'children': '#ec4899',
+    'small_group': '#06b6d4',
+    'special_event': '#6366f1',
+    'other': '#64748b',
+}
+
 
 class ChurchDashboard(models.AbstractModel):
     """Numbers and analytics for the Church Management dashboard in both the app
@@ -52,7 +64,7 @@ class ChurchDashboard(models.AbstractModel):
 
     @api.model
     def get_admin_dashboard_data(self, period='all'):
-        """Comprehensive bird's-eye view data for the backend Admin Dashboard."""
+        """Comprehensive bird's-eye view data with chart datasets for Admin Dashboard."""
         Partner = self.env['res.partner'].sudo()
         Attendance = self.env['church.event.attendance'].sudo()
         Service = self.env['church.service'].sudo()
@@ -67,7 +79,6 @@ class ChurchDashboard(models.AbstractModel):
         year_start = today.replace(month=1, day=1)
         month_start = today.replace(day=1)
         cutoff_30d = now - timedelta(days=30)
-        cutoff_7d = now - timedelta(days=7)
 
         # ── 1. Membership Metrics ───────────────────────────────────
         all_members = Partner.search([('is_member', '=', True)])
@@ -105,6 +116,20 @@ class ChurchDashboard(models.AbstractModel):
         if active_members:
             avg_completeness = round(sum(active_members.mapped('profile_completeness')) / len(active_members))
 
+        # Monthly Member Growth (Last 6 Months)
+        monthly_growth = []
+        for i in range(5, -1, -1):
+            m_date = (today.replace(day=1) - timedelta(days=i * 28)).replace(day=1)
+            # Find month end
+            next_m = (m_date + timedelta(days=32)).replace(day=1)
+            count = len(active_members.filtered(
+                lambda p: p.member_join_date and m_date <= p.member_join_date < next_m
+            ))
+            monthly_growth.append({
+                'month': m_date.strftime('%b %Y'),
+                'count': count,
+            })
+
         # ── 2. Cell Groups Metrics ──────────────────────────────────
         groups = Group.search([])
         in_groups = set(groups.mapped('member_ids').ids) | set(groups.mapped('leader_id').ids)
@@ -112,14 +137,22 @@ class ChurchDashboard(models.AbstractModel):
         active_without_group = len(active_members) - active_in_groups
         group_coverage_pct = round((active_in_groups / len(active_members) * 100)) if active_members else 0
 
+        cell_groups_chart = []
+        for g in groups[:8]:
+            cell_groups_chart.append({
+                'name': g.name,
+                'count': g.member_count,
+            })
+
         # ── 3. Pastoral Care & Health Metrics ───────────────────────
         care_status_counts = {}
         for code, label in CARE_STATUS_LABELS.items():
+            cnt = len(active_members.filtered(lambda p: p.care_status == code))
             care_status_counts[code] = {
                 'code': code,
                 'label': label,
                 'color': CARE_STATUS_COLORS.get(code, '#64748b'),
-                'count': len(active_members.filtered(lambda p: p.care_status == code)),
+                'count': cnt,
             }
         
         urgent_care_members = active_members.filtered(
@@ -157,6 +190,7 @@ class ChurchDashboard(models.AbstractModel):
                     'label': stype_name,
                     'services': s_count,
                     'attendance': att_count,
+                    'color': SERVICE_TYPE_COLORS.get(stype_code, '#3b82f6'),
                 })
         service_types_chart.sort(key=lambda s: s['attendance'], reverse=True)
 
@@ -253,7 +287,9 @@ class ChurchDashboard(models.AbstractModel):
         if 'church.give.transaction' in self.env:
             giving_data = self._giving(today)
 
-        status_distribution_chart = [
+        # ── 8. Chart Formatted Datasets ─────────────────────────────
+        # Pie / Donut Chart 1: Member Status Distribution
+        status_pie = [
             {'label': 'Regular Members', 'count': status_counts['member'], 'color': '#3b82f6'},
             {'label': 'Workers & Volunteers', 'count': status_counts['worker'], 'color': '#10b981'},
             {'label': 'Leaders & Pastors', 'count': status_counts['leader'], 'color': '#8b5cf6'},
@@ -262,7 +298,8 @@ class ChurchDashboard(models.AbstractModel):
             {'label': 'Inactive', 'count': status_counts['inactive'], 'color': '#94a3b8'},
         ]
 
-        care_chart_data = [
+        # Pie / Donut Chart 2: Care Status Breakdown
+        care_pie = [
             {'label': v['label'], 'count': v['count'], 'color': v['color']}
             for v in care_status_counts.values() if v['count'] > 0
         ]
@@ -306,9 +343,11 @@ class ChurchDashboard(models.AbstractModel):
             },
             'charts': {
                 'attendance_trend': attendance_overview.get('trend', []),
-                'status_distribution': status_distribution_chart,
-                'care_distribution': care_chart_data,
+                'status_distribution': status_pie,
+                'care_distribution': care_pie,
                 'service_types': service_types_chart,
+                'monthly_growth': monthly_growth,
+                'cell_groups': cell_groups_chart,
             },
             'tables': {
                 'urgent_alerts': urgent_alerts_list,
@@ -372,9 +411,6 @@ class ChurchDashboard(models.AbstractModel):
 
     @api.model
     def app_get_absent_members(self, requester_staff_id=None, days=30):
-        """Active members (in the caller's scope) with no check-in in the last
-        `days` days — the list behind the dashboard's "Absent 30+ days" card.
-        Longest-absent first; people never checked in come first of all."""
         Partner = self.env['res.partner'].sudo()
         if requester_staff_id:
             mode, scope = Partner._church_caller_scope(requester_staff_id=requester_staff_id)
@@ -487,7 +523,6 @@ class ChurchDashboard(models.AbstractModel):
         }
 
     def _celebrations(self, people, today, days=14):
-        """Birthdays and wedding anniversaries in the next `days` days."""
         upcoming = []
         for person in people:
             for kind, date in (('birthday', person.date_of_birth),
@@ -496,7 +531,7 @@ class ChurchDashboard(models.AbstractModel):
                     continue
                 try:
                     this_year = date.replace(year=today.year)
-                except ValueError:  # 29 February in a non-leap year
+                except ValueError:
                     this_year = date.replace(year=today.year, day=28)
                 if this_year < today:
                     try:

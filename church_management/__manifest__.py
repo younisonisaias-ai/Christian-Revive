@@ -50,3 +50,4 @@
     'license': 'LGPL-3',
     'sequence': 16,
 }
+

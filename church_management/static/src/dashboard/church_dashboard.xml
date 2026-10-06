@@ -9,7 +9,7 @@
                 <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
-                <h5 class="text-muted fw-normal">Gathering Church Management Analytics...</h5>
+                <h5 class="text-muted fw-normal">Gathering Church Management Analytics &amp; Graphs...</h5>
             </div>
 
             <!-- Main Dashboard Container -->
@@ -30,7 +30,7 @@
                         </div>
                         <h2 class="h3 fw-bold mb-1">Church Management Admin Dashboard</h2>
                         <p class="mb-0 text-white-50 small">
-                            Comprehensive bird's-eye view of members, pastoral health, services attendance, cell groups, and prayer care.
+                            Executive analytics with real-time Line, Bar, and Pie graphs for attendance, membership, care, and ministries.
                         </p>
                     </div>
 
@@ -70,7 +70,7 @@
                 <div class="d-flex border-bottom mb-4 gap-2 overflow-x-auto">
                     <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'overview' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
                             t-on-click="() => this.setTab('overview')">
-                        <i class="fa fa-tachometer me-1"/> Overview
+                        <i class="fa fa-tachometer me-1"/> Overview &amp; Analytics
                     </button>
                     <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'members' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
                             t-on-click="() => this.setTab('members')">
@@ -92,7 +92,7 @@
                 </div>
 
                 <!-- ══════════════════════════════════════════════════════════
-                     3. TAB CONTENT: OVERVIEW
+                     3. TAB CONTENT: OVERVIEW & ANALYTICS
                 ══════════════════════════════════════════════════════════ -->
                 <div t-if="state.activeTab === 'overview'" class="tab-overview">
 
@@ -208,106 +208,142 @@
                             </div>
                         </div>
 
-                        <!-- Tile 5: Cell Groups Coverage -->
-                        <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
-                                 t-on-click="openCellGroups">
-                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         GRAPHS SECTION: LINE GRAPH & PIE / DONUT GRAPHS
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="row g-4 mb-4">
+                        
+                        <!-- 📈 GRAPH 1: LINE GRAPH (Attendance Velocity Trajectory) -->
+                        <div class="col-12 col-lg-8">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 d-flex flex-column flex-sm-row justify-content-between align-items-sm-center pt-4 px-4 pb-0 gap-2">
                                     <div>
-                                        <div class="text-muted text-uppercase fw-bold small mb-1">Cell Groups</div>
-                                        <h2 class="display-6 fw-bold mb-1 text-purple"><t t-esc="kpi.cell_groups_count || 0"/></h2>
-                                        <div class="small text-muted mt-2">
-                                            <span class="badge bg-purple-subtle text-purple border rounded-pill">
-                                                <t t-esc="kpi.group_coverage_pct || 0"/>% Member Coverage
-                                            </span>
-                                        </div>
+                                        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                                            <i class="fa fa-line-chart text-primary"/> Attendance Growth (Line Graph)
+                                        </h5>
+                                        <span class="text-muted small">8-Week weekly attendance curve &amp; average trajectory</span>
                                     </div>
-                                    <div class="dash-icon-box bg-purple-subtle text-purple rounded-4 p-3">
-                                        <i class="fa fa-sitemap fa-2x"/>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2">
+                                            Avg: <strong class="ms-1"><t t-esc="kpi.weekly_avg_attendance || 0"/></strong>
+                                        </span>
+                                        <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                                t-on-click="openAttendance">
+                                            All Records <i class="fa fa-arrow-right ms-1"/>
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
-                                    <span class="text-muted small">
-                                        <t t-esc="kpi.members_in_groups || 0"/> active members enrolled
-                                    </span>
+                                <div class="card-body p-4">
+                                    
+                                    <!-- Interactive SVG Line Chart -->
+                                    <div t-if="lineChartData.points.length" class="svg-line-container position-relative w-100" style="height: 240px;">
+                                        <svg viewBox="0 0 600 200" preserveAspectRatio="none" class="w-100 h-100 overflow-visible">
+                                            <defs>
+                                                <!-- Gradient fill under line graph -->
+                                                <linearGradient id="attLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+                                                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                                                </linearGradient>
+                                                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#2563eb" flood-opacity="0.3"/>
+                                                </filter>
+                                            </defs>
+
+                                            <!-- Grid lines -->
+                                            <line x1="30" y1="30" x2="570" y2="30" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+                                            <line x1="30" y1="85" x2="570" y2="85" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+                                            <line x1="30" y1="140" x2="570" y2="140" stroke="#f1f5f9" stroke-width="1" stroke-dasharray="4"/>
+                                            <line x1="30" y1="170" x2="570" y2="170" stroke="#e2e8f0" stroke-width="1"/>
+
+                                            <!-- Area Fill under line -->
+                                            <path t-att-d="lineChartData.areaPath" fill="url(#attLineGrad)" />
+
+                                            <!-- Smooth Line Graph Path -->
+                                            <path t-att-d="lineChartData.linePath"
+                                                  fill="none"
+                                                  stroke="#2563eb"
+                                                  stroke-width="3.5"
+                                                  stroke-linecap="round"
+                                                  filter="url(#glow)" />
+
+                                            <!-- Interactive Data Points on Line Graph -->
+                                            <t t-foreach="lineChartData.points" t-as="pt" t-key="pt.label">
+                                                <g class="chart-point-group cursor-pointer">
+                                                    <!-- Outer pulse ring -->
+                                                    <circle t-att-cx="pt.x" t-att-cy="pt.y" r="6" fill="#ffffff" stroke="#2563eb" stroke-width="3"/>
+                                                    
+                                                    <!-- Value label above point -->
+                                                    <text t-att-x="pt.x" t-att-y="pt.y - 10" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">
+                                                        <t t-esc="pt.people"/>
+                                                    </text>
+
+                                                    <!-- Date label below axis -->
+                                                    <text t-att-x="pt.x" y="188" text-anchor="middle" font-size="10" fill="#64748b">
+                                                        <t t-esc="pt.label"/>
+                                                    </text>
+                                                </g>
+                                            </t>
+                                        </svg>
+                                    </div>
+                                    <div t-else="" class="text-center py-5 text-muted">
+                                        <i class="fa fa-line-chart fa-3x mb-2 text-muted opacity-50"/>
+                                        <p>No attendance records logged yet for the line graph.</p>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tile 6: Open Prayer Requests -->
-                        <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
-                                 t-on-click="() => this.openPrayerRequests('open')">
-                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="text-muted text-uppercase fw-bold small mb-1">Open Prayers</div>
-                                        <h2 class="display-6 fw-bold mb-1 text-warning"><t t-esc="kpi.prayers.open || 0"/></h2>
-                                        <div class="small text-muted mt-2">
-                                            <span t-if="kpi.prayers.urgent > 0" class="badge bg-warning text-dark rounded-pill">
-                                                <i class="fa fa-bolt me-1"/> <t t-esc="kpi.prayers.urgent"/> Urgent
-                                            </span>
-                                            <span class="badge bg-success-subtle text-success rounded-pill ms-1">
-                                                <t t-esc="kpi.prayers.answered || 0"/> Answered
-                                            </span>
+                        <!-- 🍩 GRAPH 2: PIE / DOUGHNUT GRAPH (Membership Lifecycle Distribution) -->
+                        <div class="col-12 col-lg-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                                        <i class="fa fa-pie-chart text-purple"/> Membership (Pie Graph)
+                                    </h5>
+                                    <span class="text-muted small">Distribution of active roles &amp; statuses</span>
+                                </div>
+                                <div class="card-body p-4 d-flex flex-column align-items-center justify-content-center">
+                                    
+                                    <!-- Donut / Pie SVG Chart -->
+                                    <div t-if="membershipDonutSlices.length" class="position-relative d-flex justify-content-center align-items-center my-2" style="width: 170px; height: 170px;">
+                                        <svg viewBox="0 0 200 200" class="w-100 h-100 overflow-visible">
+                                            <t t-foreach="membershipDonutSlices" t-as="slice" t-key="slice.label">
+                                                <path t-att-d="slice.path"
+                                                      t-att-fill="slice.color"
+                                                      class="donut-slice cursor-pointer"
+                                                      t-att-title="slice.label + ': ' + slice.count + ' (' + slice.pct + '%)'"/>
+                                            </t>
+                                        </svg>
+                                        <!-- Center Donut Label -->
+                                        <div class="position-absolute text-center">
+                                            <div class="h4 fw-bold mb-0 text-dark"><t t-esc="kpi.active_members || 0"/></div>
+                                            <div class="extra-small text-muted text-uppercase">Members</div>
                                         </div>
                                     </div>
-                                    <div class="dash-icon-box bg-warning-subtle text-warning rounded-4 p-3">
-                                        <i class="fa fa-hand-paper-o fa-2x"/>
+                                    <div t-else="" class="text-center py-4 text-muted small">
+                                        No members registered yet.
                                     </div>
-                                </div>
-                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
-                                    <span class="text-muted small">
-                                        <t t-esc="kpi.prayers.unassigned || 0"/> pending pastor assignment
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Tile 7: Monthly Giving (if enabled) -->
-                        <div t-if="kpi.giving &amp;&amp; kpi.giving.this_month_pkr !== undefined" class="col-12 col-sm-6 col-xl-3">
-                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start">
-                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="text-muted text-uppercase fw-bold small mb-1">Giving This Month</div>
-                                        <h2 class="h3 fw-bold mb-1 text-success">PKR <t t-esc="(kpi.giving.this_month_pkr || 0).toLocaleString()"/></h2>
-                                        <div class="small text-muted mt-2">
-                                            <span class="badge bg-success-subtle text-success rounded-pill">
-                                                <t t-esc="kpi.giving.this_month_count || 0"/> donations
-                                            </span>
-                                        </div>
+                                    <!-- Pie Chart Legend Items -->
+                                    <div class="w-100 mt-3 space-y-1">
+                                        <t t-foreach="charts.status_distribution" t-as="stat" t-key="stat.label">
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 rounded-2 hover-bg cursor-pointer"
+                                                 t-on-click="() => this.openMembers()">
+                                                <span class="extra-small fw-semibold d-flex align-items-center gap-2">
+                                                    <span class="d-inline-block rounded-circle" t-attf-style="width: 8px; height: 8px; background-color: #{stat.color};"/>
+                                                    <t t-esc="stat.label"/>
+                                                </span>
+                                                <span class="extra-small text-muted fw-bold">
+                                                    <t t-esc="stat.count"/> 
+                                                    <span class="text-black-50 ms-1">(<t t-esc="kpi.total_members ? Math.round(stat.count / kpi.total_members * 100) : 0"/>%)</span>
+                                                </span>
+                                            </div>
+                                        </t>
                                     </div>
-                                    <div class="dash-icon-box bg-success-subtle text-success rounded-4 p-3">
-                                        <i class="fa fa-money fa-2x"/>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
-                                    <span class="text-muted small">
-                                        Last month: PKR <t t-esc="(kpi.giving.last_month_pkr || 0).toLocaleString()"/>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <!-- Tile 8: Pending Relatives & Families -->
-                        <div class="col-12 col-sm-6 col-xl-3">
-                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
-                                 t-on-click="openRelativesToVerify">
-                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <div class="text-muted text-uppercase fw-bold small mb-1">Relatives to Verify</div>
-                                        <h2 class="display-6 fw-bold mb-1 text-secondary"><t t-esc="kpi.relatives_to_verify || 0"/></h2>
-                                        <div class="small text-muted mt-2">
-                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">
-                                                <t t-esc="kpi.total_families || 0"/> Registered Families
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div class="dash-icon-box bg-secondary-subtle text-secondary rounded-4 p-3">
-                                        <i class="fa fa-id-card-o fa-2x"/>
-                                    </div>
-                                </div>
-                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
-                                    <span class="text-muted small">Awaiting church administrator confirmation</span>
                                 </div>
                             </div>
                         </div>
@@ -315,71 +351,92 @@
                     </div>
 
                     <!-- ══════════════════════════════════════════════════════
-                         VISUAL ANALYTICS & CHARTS ROW
+                         GRAPHS SECTION 2: BAR GRAPHS & CARE PIE GRAPH
                     ══════════════════════════════════════════════════════ -->
                     <div class="row g-4 mb-4">
-                        
-                        <!-- Chart 1: Attendance Velocity (Weekly Trend) -->
-                        <div class="col-12 col-lg-8">
+
+                        <!-- 📊 GRAPH 3: BAR GRAPH (Service Types Attendance) -->
+                        <div class="col-12 col-lg-7">
                             <div class="card border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-0">
+                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-2">
                                     <div>
-                                        <h5 class="fw-bold mb-0">Weekly Attendance Trend</h5>
-                                        <span class="text-muted small">Attendance trajectory across past 8 weeks</span>
+                                        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                                            <i class="fa fa-bar-chart text-success"/> Ministry &amp; Service Attendance (Bar Graph)
+                                        </h5>
+                                        <span class="text-muted small">Check-ins breakdown by service category</span>
                                     </div>
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-                                            t-on-click="openAttendance">
-                                        View All Records <i class="fa fa-arrow-right ms-1"/>
+                                    <button class="btn btn-sm btn-outline-success rounded-pill px-3" t-on-click="openServices">
+                                        Services <i class="fa fa-arrow-right ms-1"/>
                                     </button>
                                 </div>
-                                <div class="card-body p-4">
-                                    <div t-if="charts.attendance_trend &amp;&amp; charts.attendance_trend.length" class="d-flex align-items-end justify-content-between gap-2 pt-4 pb-2" style="height: 220px;">
-                                        <t t-foreach="charts.attendance_trend" t-as="item" t-key="item.week">
-                                            <div class="d-flex flex-column align-items-center flex-grow-1 h-100 justify-content-end">
-                                                <span class="small fw-bold text-primary mb-1"><t t-esc="item.people"/></span>
-                                                <div class="w-100 rounded-3 bg-primary bg-opacity-75 dash-chart-bar position-relative"
-                                                     t-attf-style="height: #{ (item.people / maxTrendAttendance) * 160 + 10 }px;"
-                                                     t-att-title="item.label + ': ' + item.people + ' attendees'">
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="charts.service_types &amp;&amp; charts.service_types.length" class="space-y-3">
+                                        <t t-foreach="charts.service_types" t-as="stype" t-key="stype.type">
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="fw-semibold small d-flex align-items-center gap-2">
+                                                        <span class="d-inline-block rounded-circle" t-attf-style="width: 8px; height: 8px; background-color: #{stype.color};"/>
+                                                        <t t-esc="stype.label"/>
+                                                        <span class="badge bg-light text-muted border extra-small"><t t-esc="stype.services"/> services</span>
+                                                    </span>
+                                                    <span class="fw-bold small text-dark"><t t-esc="stype.attendance"/> attendees</span>
                                                 </div>
-                                                <span class="small text-muted mt-2 text-nowrap"><t t-esc="item.label"/></span>
+                                                <div class="progress rounded-pill" style="height: 10px; background-color: #f1f5f9;">
+                                                    <div class="progress-bar rounded-pill"
+                                                         role="progressbar"
+                                                         t-attf-style="width: #{ (stype.attendance / maxServiceAttendance) * 100 }%; background-color: #{stype.color};"/>
+                                                </div>
                                             </div>
                                         </t>
                                     </div>
-                                    <div t-else="" class="text-center py-5 text-muted">
-                                        <i class="fa fa-bar-chart fa-3x mb-2 text-muted opacity-50"/>
-                                        <p>No attendance records logged yet for the past 8 weeks.</p>
+                                    <div t-else="" class="text-center py-4 text-muted small">
+                                        No service check-in data recorded yet.
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Chart 2: Member Status Breakdown -->
-                        <div class="col-12 col-lg-4">
+                        <!-- 🥧 GRAPH 4: PIE / DOUGHNUT GRAPH (Pastoral Care Health Status) -->
+                        <div class="col-12 col-lg-5">
                             <div class="card border-0 shadow-sm rounded-4 h-100">
-                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
-                                    <h5 class="fw-bold mb-0">Membership Lifecycle</h5>
-                                    <span class="text-muted small">Distribution of active church roles</span>
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
+                                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                                        <i class="fa fa-heartbeat text-danger"/> Pastoral Care Health (Pie Graph)
+                                    </h5>
+                                    <span class="text-muted small">Current care wellness spectrum of members</span>
                                 </div>
-                                <div class="card-body p-4 d-flex flex-column justify-content-around">
-                                    <t t-foreach="charts.status_distribution" t-as="stat" t-key="stat.label">
-                                        <div class="mb-3 cursor-pointer" t-on-click="() => this.openMembers()">
-                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                <span class="fw-semibold small d-flex align-items-center gap-2">
-                                                    <span class="d-inline-block rounded-circle" t-attf-style="width: 10px; height: 10px; background-color: #{stat.color};"/>
-                                                    <t t-esc="stat.label"/>
-                                                </span>
-                                                <span class="fw-bold small"><t t-esc="stat.count"/></span>
-                                            </div>
-                                            <div class="progress" style="height: 8px;">
-                                                <div class="progress-bar rounded-pill"
-                                                     role="progressbar"
-                                                     t-attf-style="width: #{ kpi.total_members ? (stat.count / kpi.total_members * 100) : 0 }%; background-color: #{stat.color};"
-                                                     t-att-aria-valuenow="stat.count"
-                                                     aria-valuemin="0"
-                                                     t-att-aria-valuemax="kpi.total_members"/>
-                                            </div>
+                                <div class="card-body p-4 pt-2 d-flex flex-column align-items-center justify-content-center">
+                                    
+                                    <div t-if="careDonutSlices.length" class="position-relative d-flex justify-content-center align-items-center my-2" style="width: 160px; height: 160px;">
+                                        <svg viewBox="0 0 200 200" class="w-100 h-100 overflow-visible">
+                                            <t t-foreach="careDonutSlices" t-as="cSlice" t-key="cSlice.label">
+                                                <path t-att-d="cSlice.path"
+                                                      t-att-fill="cSlice.color"
+                                                      class="donut-slice cursor-pointer"
+                                                      t-att-title="cSlice.label + ': ' + cSlice.count"/>
+                                            </t>
+                                        </svg>
+                                        <div class="position-absolute text-center">
+                                            <div class="h5 fw-bold mb-0 text-danger"><t t-esc="kpi.needs_attention_count || 0"/></div>
+                                            <div class="extra-small text-muted">Need Care</div>
                                         </div>
-                                    </t>
+                                    </div>
+
+                                    <div class="w-100 mt-2 space-y-1">
+                                        <t t-foreach="charts.care_distribution" t-as="care" t-key="care.label">
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 rounded-2 hover-bg cursor-pointer"
+                                                 t-on-click="() => this.openCareMembers(care.label)">
+                                                <span class="extra-small fw-semibold d-flex align-items-center gap-2">
+                                                    <span class="d-inline-block rounded-circle" t-attf-style="width: 8px; height: 8px; background-color: #{care.color};"/>
+                                                    <t t-esc="care.label"/>
+                                                </span>
+                                                <span class="extra-small fw-bold" t-attf-style="color: #{care.color};">
+                                                    <t t-esc="care.count"/>
+                                                </span>
+                                            </div>
+                                        </t>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -732,7 +789,7 @@
                         <div class="col-12 col-md-4">
                             <div class="card border-0 shadow-sm rounded-4 p-4">
                                 <h5 class="fw-bold mb-2">Profile Completeness</h5>
-                                <p class="text-muted small mb-3">Quality of demographic, baptism, emergency contact, and spiritual gifts data</p>
+                                <p class="text-muted small mb-3">Demographics, baptism dates, and emergency contacts</p>
                                 <div class="d-flex align-items-center gap-3 mb-3">
                                     <div class="display-5 fw-bold text-primary"><t t-esc="kpi.avg_completeness"/>%</div>
                                     <div class="flex-grow-1">
@@ -743,7 +800,7 @@
                                     </div>
                                 </div>
                                 <span class="small text-muted">
-                                    Members can complete their profile via Christian Revive mobile app.
+                                    Members can update their profiles directly via the Christian Revive app.
                                 </span>
                             </div>
                         </div>
