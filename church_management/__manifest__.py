@@ -1,11 +1,12 @@
 {
     'name': 'Church Management',
-    'version': '1.10.0',
+    'version': '1.11.0',
     'category': 'Church',
-    'summary': 'Membership CRM, cell groups, pastoral care and attendance for Christian Revive',
+    'summary': 'Membership CRM, cell groups, pastoral care, attendance and admin dashboard for Christian Revive',
     'description': """
         Christian Revive - Church Management
         =====================================
+        - Interactive Admin Dashboard with real-time analytics, KPI cards, attendance trends, care alerts, and absenteeism watchlist
         - Membership lifecycle (visitor -> member -> leader), families/households
         - Member profile: member number, personal details, gifts & ministry,
           emergency contact, baptism place, transfers, profile completeness
@@ -27,6 +28,7 @@
         'security/church_management_security.xml',
         'data/member_sequence.xml',
         'data/cron.xml',
+        'views/church_dashboard_views.xml',
         'views/church_member_views.xml',
         'views/hr_employee_pastor_views.xml',
         'views/cell_group_views.xml',
@@ -36,6 +38,13 @@
         'views/event_attendance_views.xml',
         'views/menu.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'church_management/static/src/dashboard/church_dashboard.js',
+            'church_management/static/src/dashboard/church_dashboard.xml',
+            'church_management/static/src/dashboard/church_dashboard.scss',
+        ],
+    },
     'installable': True,
     'application': True,
     'license': 'LGPL-3',

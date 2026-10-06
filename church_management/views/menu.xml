@@ -4,7 +4,6 @@
     <menuitem
         id="menu_church_management_root"
         name="Church Management"
-        action="action_church_dashboard"
         sequence="16"/>
 
     <menuitem id="menu_church_dashboard"
