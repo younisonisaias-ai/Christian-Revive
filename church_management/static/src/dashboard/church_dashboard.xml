@@ -1,0 +1,950 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="church_management.AdminDashboard">
+        <div class="o_church_dashboard h-100 overflow-auto bg-view p-3 p-md-4">
+
+            <!-- Loading Overlay -->
+            <div t-if="state.loading" class="d-flex flex-column align-items-center justify-content-center py-5">
+                <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <h5 class="text-muted fw-normal">Gathering Church Management Analytics...</h5>
+            </div>
+
+            <!-- Main Dashboard Container -->
+            <div t-else="" class="o_church_dashboard_content">
+
+                <!-- ══════════════════════════════════════════════════════════
+                     1. HEADER BANNER & QUICK ACTIONS
+                ══════════════════════════════════════════════════════════ -->
+                <div class="church-dash-header rounded-4 p-4 mb-4 text-white shadow-sm d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-white bg-opacity-25 px-3 py-1 rounded-pill text-white fw-semibold">
+                                <i class="fa fa-cross me-1"/> Christian Revive CRM
+                            </span>
+                            <span class="badge bg-dark bg-opacity-25 px-3 py-1 rounded-pill text-white-50">
+                                <i class="fa fa-calendar me-1"/> <t t-esc="state.data.today_formatted"/>
+                            </span>
+                        </div>
+                        <h2 class="h3 fw-bold mb-1">Church Management Admin Dashboard</h2>
+                        <p class="mb-0 text-white-50 small">
+                            Comprehensive bird's-eye view of members, pastoral health, services attendance, cell groups, and prayer care.
+                        </p>
+                    </div>
+
+                    <!-- Quick Creation Action Buttons -->
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <button class="btn btn-light btn-sm fw-semibold shadow-sm d-flex align-items-center gap-2"
+                                t-on-click="createMember">
+                            <i class="fa fa-user-plus text-primary"/> Add Member
+                        </button>
+                        <button class="btn btn-light btn-sm fw-semibold shadow-sm d-flex align-items-center gap-2"
+                                t-on-click="createVisitor">
+                            <i class="fa fa-user-o text-info"/> New Visitor
+                        </button>
+                        <button class="btn btn-light btn-sm fw-semibold shadow-sm d-flex align-items-center gap-2"
+                                t-on-click="createService">
+                            <i class="fa fa-calendar-plus-o text-success"/> New Service
+                        </button>
+                        <button class="btn btn-light btn-sm fw-semibold shadow-sm d-flex align-items-center gap-2"
+                                t-on-click="createCareNote">
+                            <i class="fa fa-heartbeat text-danger"/> Care Note
+                        </button>
+                        <button class="btn btn-light btn-sm fw-semibold shadow-sm d-flex align-items-center gap-2"
+                                t-on-click="createPrayerRequest">
+                            <i class="fa fa-hand-paper-o text-warning"/> Prayer
+                        </button>
+                        <button class="btn btn-outline-light btn-sm shadow-sm"
+                                title="Refresh data"
+                                t-on-click="refresh">
+                            <i t-attf-class="fa fa-refresh #{state.refreshing ? 'fa-spin' : ''}"/>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     2. TAB NAVIGATION
+                ══════════════════════════════════════════════════════════ -->
+                <div class="d-flex border-bottom mb-4 gap-2 overflow-x-auto">
+                    <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'overview' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
+                            t-on-click="() => this.setTab('overview')">
+                        <i class="fa fa-tachometer me-1"/> Overview
+                    </button>
+                    <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'members' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
+                            t-on-click="() => this.setTab('members')">
+                        <i class="fa fa-users me-1"/> Members &amp; Growth
+                    </button>
+                    <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'care' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
+                            t-on-click="() => this.setTab('care')">
+                        <i class="fa fa-heartbeat me-1"/> Pastoral Care &amp; Health
+                        <span t-if="kpi.urgent_care_count > 0" class="badge bg-danger rounded-pill ms-1"><t t-esc="kpi.urgent_care_count"/></span>
+                    </button>
+                    <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'attendance' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
+                            t-on-click="() => this.setTab('attendance')">
+                        <i class="fa fa-check-square-o me-1"/> Services &amp; Attendance
+                    </button>
+                    <button t-attf-class="btn btn-link nav-link px-3 py-2 fw-semibold text-decoration-none border-bottom border-2 rounded-0 #{state.activeTab === 'community' ? 'border-primary text-primary active' : 'border-transparent text-muted'}"
+                            t-on-click="() => this.setTab('community')">
+                        <i class="fa fa-sitemap me-1"/> Cell Groups &amp; Prayers
+                    </button>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     3. TAB CONTENT: OVERVIEW
+                ══════════════════════════════════════════════════════════ -->
+                <div t-if="state.activeTab === 'overview'" class="tab-overview">
+
+                    <!-- Metric Tiles Grid -->
+                    <div class="row g-3 mb-4">
+                        
+                        <!-- Tile 1: Active Members -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="openActiveMembers">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Active Members</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-primary"><t t-esc="kpi.active_members || 0"/></h2>
+                                        <div class="small text-muted d-flex flex-wrap gap-1 mt-2">
+                                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill">
+                                                <t t-esc="kpi.status_counts.leader || 0"/> Leaders
+                                            </span>
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                <t t-esc="kpi.status_counts.worker || 0"/> Workers
+                                            </span>
+                                            <span class="badge bg-warning-subtle text-warning border border-warning-subtle rounded-pill">
+                                                <t t-esc="kpi.status_counts.new_convert || 0"/> New
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-primary-subtle text-primary rounded-4 p-3">
+                                        <i class="fa fa-users fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-success small fw-semibold">
+                                        <i class="fa fa-arrow-up me-1"/>+<t t-esc="kpi.new_this_year || 0"/> this year
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 2: Visitors & Inflow -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="openVisitors">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Total Visitors</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-info"><t t-esc="kpi.total_visitors || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span class="badge bg-info-subtle text-info border border-info-subtle rounded-pill">
+                                                <i class="fa fa-clock-o me-1"/> <t t-esc="kpi.new_visitors_30d || 0"/> in last 30 days
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-info-subtle text-info rounded-4 p-3">
+                                        <i class="fa fa-user-circle-o fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">Follow-up tracking &amp; door check-in</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 3: Weekly Attendance -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="openAttendance">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Weekly Attendance</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-success"><t t-esc="kpi.weekly_avg_attendance || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                <t t-esc="kpi.this_week_attendance || 0"/> this week
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-success-subtle text-success rounded-4 p-3">
+                                        <i class="fa fa-line-chart fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">Avg. over 4 complete weeks</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 4: Pastoral Health & Care Attention -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="() => this.openCareMembers()">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Care Attention</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-danger"><t t-esc="kpi.needs_attention_count || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span t-if="kpi.urgent_care_count > 0" class="badge bg-danger text-white rounded-pill">
+                                                <i class="fa fa-exclamation-triangle me-1"/> <t t-esc="kpi.urgent_care_count"/> Urgent
+                                            </span>
+                                            <span t-else="" class="badge bg-success-subtle text-success rounded-pill">
+                                                All healthy
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-danger-subtle text-danger rounded-4 p-3">
+                                        <i class="fa fa-heartbeat fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-danger small fw-semibold">
+                                        Hospitalized, At Risk, Bereavement, Follow-up
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 5: Cell Groups Coverage -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="openCellGroups">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Cell Groups</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-purple"><t t-esc="kpi.cell_groups_count || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span class="badge bg-purple-subtle text-purple border rounded-pill">
+                                                <t t-esc="kpi.group_coverage_pct || 0"/>% Member Coverage
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-purple-subtle text-purple rounded-4 p-3">
+                                        <i class="fa fa-sitemap fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">
+                                        <t t-esc="kpi.members_in_groups || 0"/> active members enrolled
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 6: Open Prayer Requests -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="() => this.openPrayerRequests('open')">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Open Prayers</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-warning"><t t-esc="kpi.prayers.open || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span t-if="kpi.prayers.urgent > 0" class="badge bg-warning text-dark rounded-pill">
+                                                <i class="fa fa-bolt me-1"/> <t t-esc="kpi.prayers.urgent"/> Urgent
+                                            </span>
+                                            <span class="badge bg-success-subtle text-success rounded-pill ms-1">
+                                                <t t-esc="kpi.prayers.answered || 0"/> Answered
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-warning-subtle text-warning rounded-4 p-3">
+                                        <i class="fa fa-hand-paper-o fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">
+                                        <t t-esc="kpi.prayers.unassigned || 0"/> pending pastor assignment
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 7: Monthly Giving (if enabled) -->
+                        <div t-if="kpi.giving &amp;&amp; kpi.giving.this_month_pkr !== undefined" class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Giving This Month</div>
+                                        <h2 class="h3 fw-bold mb-1 text-success">PKR <t t-esc="(kpi.giving.this_month_pkr || 0).toLocaleString()"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span class="badge bg-success-subtle text-success rounded-pill">
+                                                <t t-esc="kpi.giving.this_month_count || 0"/> donations
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-success-subtle text-success rounded-4 p-3">
+                                        <i class="fa fa-money fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">
+                                        Last month: PKR <t t-esc="(kpi.giving.last_month_pkr || 0).toLocaleString()"/>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tile 8: Pending Relatives & Families -->
+                        <div class="col-12 col-sm-6 col-xl-3">
+                            <div class="card dash-card border-0 shadow-sm h-100 cursor-pointer text-start"
+                                 t-on-click="openRelativesToVerify">
+                                <div class="card-body p-3 p-xl-4 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="text-muted text-uppercase fw-bold small mb-1">Relatives to Verify</div>
+                                        <h2 class="display-6 fw-bold mb-1 text-secondary"><t t-esc="kpi.relatives_to_verify || 0"/></h2>
+                                        <div class="small text-muted mt-2">
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill">
+                                                <t t-esc="kpi.total_families || 0"/> Registered Families
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="dash-icon-box bg-secondary-subtle text-secondary rounded-4 p-3">
+                                        <i class="fa fa-id-card-o fa-2x"/>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0 px-3 px-xl-4 pb-3">
+                                    <span class="text-muted small">Awaiting church administrator confirmation</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         VISUAL ANALYTICS & CHARTS ROW
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="row g-4 mb-4">
+                        
+                        <!-- Chart 1: Attendance Velocity (Weekly Trend) -->
+                        <div class="col-12 col-lg-8">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-0">
+                                    <div>
+                                        <h5 class="fw-bold mb-0">Weekly Attendance Trend</h5>
+                                        <span class="text-muted small">Attendance trajectory across past 8 weeks</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+                                            t-on-click="openAttendance">
+                                        View All Records <i class="fa fa-arrow-right ms-1"/>
+                                    </button>
+                                </div>
+                                <div class="card-body p-4">
+                                    <div t-if="charts.attendance_trend &amp;&amp; charts.attendance_trend.length" class="d-flex align-items-end justify-content-between gap-2 pt-4 pb-2" style="height: 220px;">
+                                        <t t-foreach="charts.attendance_trend" t-as="item" t-key="item.week">
+                                            <div class="d-flex flex-column align-items-center flex-grow-1 h-100 justify-content-end">
+                                                <span class="small fw-bold text-primary mb-1"><t t-esc="item.people"/></span>
+                                                <div class="w-100 rounded-3 bg-primary bg-opacity-75 dash-chart-bar position-relative"
+                                                     t-attf-style="height: #{ (item.people / maxTrendAttendance) * 160 + 10 }px;"
+                                                     t-att-title="item.label + ': ' + item.people + ' attendees'">
+                                                </div>
+                                                <span class="small text-muted mt-2 text-nowrap"><t t-esc="item.label"/></span>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <div t-else="" class="text-center py-5 text-muted">
+                                        <i class="fa fa-bar-chart fa-3x mb-2 text-muted opacity-50"/>
+                                        <p>No attendance records logged yet for the past 8 weeks.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Member Status Breakdown -->
+                        <div class="col-12 col-lg-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                                    <h5 class="fw-bold mb-0">Membership Lifecycle</h5>
+                                    <span class="text-muted small">Distribution of active church roles</span>
+                                </div>
+                                <div class="card-body p-4 d-flex flex-column justify-content-around">
+                                    <t t-foreach="charts.status_distribution" t-as="stat" t-key="stat.label">
+                                        <div class="mb-3 cursor-pointer" t-on-click="() => this.openMembers()">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-semibold small d-flex align-items-center gap-2">
+                                                    <span class="d-inline-block rounded-circle" t-attf-style="width: 10px; height: 10px; background-color: #{stat.color};"/>
+                                                    <t t-esc="stat.label"/>
+                                                </span>
+                                                <span class="fw-bold small"><t t-esc="stat.count"/></span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar rounded-pill"
+                                                     role="progressbar"
+                                                     t-attf-style="width: #{ kpi.total_members ? (stat.count / kpi.total_members * 100) : 0 }%; background-color: #{stat.color};"
+                                                     t-att-aria-valuenow="stat.count"
+                                                     aria-valuemin="0"
+                                                     t-att-aria-valuemax="kpi.total_members"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         DUAL ACTION CENTER: URGENT CARE & ABSENTEEISM
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="row g-4 mb-4">
+
+                        <!-- Panel 1: Urgent Pastoral Care Alerts -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="fw-bold mb-0 text-danger">
+                                                <i class="fa fa-exclamation-triangle me-1"/> Urgent Care &amp; Health Alerts
+                                            </h5>
+                                            <span t-if="tables.urgent_alerts.length" class="badge bg-danger rounded-pill">
+                                                <t t-esc="tables.urgent_alerts.length"/>
+                                            </span>
+                                        </div>
+                                        <span class="text-muted small">Members marked Hospitalized, Bereavement, or At Risk</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                            t-on-click="() => this.openCareMembers()">
+                                        View All Care
+                                    </button>
+                                </div>
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="tables.urgent_alerts &amp;&amp; tables.urgent_alerts.length" class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="text-muted small">
+                                                <tr>
+                                                    <th>Member</th>
+                                                    <th>Status</th>
+                                                    <th>Contact</th>
+                                                    <th class="text-end">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="tables.urgent_alerts" t-as="alert" t-key="alert.id">
+                                                    <tr>
+                                                        <td>
+                                                            <div class="fw-semibold text-dark cursor-pointer"
+                                                                 t-on-click="() => this.openMember(alert.id)">
+                                                                <t t-esc="alert.name"/>
+                                                            </div>
+                                                            <div class="text-muted extra-small">No: <t t-esc="alert.member_number"/></div>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge rounded-pill text-white"
+                                                                  t-attf-style="background-color: #{alert.status_color};">
+                                                                <t t-esc="alert.care_status_label"/>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="small text-muted"><t t-esc="alert.phone"/></span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-light text-primary py-1 px-2 me-1"
+                                                                    title="Log Care Note"
+                                                                    t-on-click="() => this.createCareNote(alert.id)">
+                                                                <i class="fa fa-pencil-square-o"/> Note
+                                                            </button>
+                                                            <button class="btn btn-sm btn-light text-secondary py-1 px-2"
+                                                                    title="Open Profile"
+                                                                    t-on-click="() => this.openMember(alert.id)">
+                                                                <i class="fa fa-external-link"/>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div t-else="" class="text-center py-4 text-muted">
+                                        <i class="fa fa-check-circle text-success fa-2x mb-2"/>
+                                        <p class="mb-0">Praise God! No critical or urgent pastoral care alerts right now.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel 2: Absenteeism Tracker (30+ Days) -->
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pt-4 px-4 pb-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="fw-bold mb-0 text-dark">
+                                                <i class="fa fa-user-times text-warning me-1"/> Absenteeism Watchlist (30+ Days)
+                                            </h5>
+                                            <span t-if="tables.absent_members.length" class="badge bg-warning text-dark rounded-pill">
+                                                <t t-esc="tables.absent_members.length"/>
+                                            </span>
+                                        </div>
+                                        <span class="text-muted small">Active members with no recorded check-ins recently</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-warning rounded-pill px-3"
+                                            t-on-click="openAttendance">
+                                        Attendance Log
+                                    </button>
+                                </div>
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="tables.absent_members &amp;&amp; tables.absent_members.length" class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0">
+                                            <thead class="text-muted small">
+                                                <tr>
+                                                    <th>Member</th>
+                                                    <th>Last Checked In</th>
+                                                    <th>Care Status</th>
+                                                    <th class="text-end">Outreach</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="tables.absent_members" t-as="abs" t-key="abs.id">
+                                                    <tr>
+                                                        <td>
+                                                            <div class="fw-semibold text-dark cursor-pointer"
+                                                                 t-on-click="() => this.openMember(abs.id)">
+                                                                <t t-esc="abs.name"/>
+                                                            </div>
+                                                            <div class="text-muted extra-small"><t t-esc="abs.phone || 'No phone'"/></div>
+                                                        </td>
+                                                        <td>
+                                                            <span t-if="abs.last_check_in" class="small text-muted">
+                                                                <t t-esc="abs.last_check_in.split(' ')[0]"/>
+                                                                <div class="extra-small text-muted"><t t-esc="abs.last_service"/></div>
+                                                            </span>
+                                                            <span t-else="" class="badge bg-danger-subtle text-danger rounded-pill">
+                                                                Never Checked In
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-light text-muted border">
+                                                                <t t-esc="abs.care_status_label || abs.care_status || 'healthy'"/>
+                                                            </span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <button class="btn btn-sm btn-light text-primary py-1 px-2"
+                                                                    title="Log Visit/Call Note"
+                                                                    t-on-click="() => this.createCareNote(abs.id)">
+                                                                <i class="fa fa-phone"/> Follow Up
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div t-else="" class="text-center py-4 text-muted">
+                                        <i class="fa fa-thumbs-o-up text-success fa-2x mb-2"/>
+                                        <p class="mb-0">All active members have attended services within the last 30 days.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════════
+                         OPERATIONAL HUBS (Celebrations, Services, Prayers)
+                    ══════════════════════════════════════════════════════ -->
+                    <div class="row g-4">
+
+                        <!-- Widget 1: Upcoming Celebrations -->
+                        <div class="col-12 col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="fw-bold mb-0">🎂 Celebrations</h5>
+                                        <span class="text-muted small">Next 14 days</span>
+                                    </div>
+                                    <span class="badge bg-info-subtle text-info rounded-pill">
+                                        <t t-esc="tables.celebrations.length"/>
+                                    </span>
+                                </div>
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="tables.celebrations &amp;&amp; tables.celebrations.length" class="list-group list-group-flush">
+                                        <t t-foreach="tables.celebrations" t-as="cel" t-key="cel.member_id + '_' + cel.type">
+                                            <div class="list-group-item border-0 px-0 py-2 d-flex justify-content-between align-items-center cursor-pointer"
+                                                 t-on-click="() => this.openMember(cel.member_id)">
+                                                <div>
+                                                    <div class="fw-semibold small text-dark"><t t-esc="cel.name"/></div>
+                                                    <div class="extra-small text-muted">
+                                                        <t t-esc="cel.type_label"/> (<t t-esc="cel.years"/> yrs) • <t t-esc="cel.date_formatted"/>
+                                                    </div>
+                                                </div>
+                                                <span t-attf-class="badge rounded-pill #{cel.in_days === 0 ? 'bg-danger text-white' : (cel.in_days === 1 ? 'bg-warning text-dark' : 'bg-light text-muted border')}">
+                                                    <t t-esc="cel.days_label"/>
+                                                </span>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <div t-else="" class="text-center py-4 text-muted small">
+                                        No birthdays or anniversaries in the next 14 days.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Widget 2: Recent Services & Check-in Rates -->
+                        <div class="col-12 col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="fw-bold mb-0">⛪ Recent Services</h5>
+                                        <span class="text-muted small">Check-ins &amp; RSVP</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-link text-primary p-0 text-decoration-none"
+                                            t-on-click="openServices">
+                                        All Services
+                                    </button>
+                                </div>
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="tables.recent_services &amp;&amp; tables.recent_services.length" class="list-group list-group-flush">
+                                        <t t-foreach="tables.recent_services" t-as="serv" t-key="serv.id">
+                                            <div class="list-group-item border-0 px-0 py-2 d-flex justify-content-between align-items-center cursor-pointer"
+                                                 t-on-click="() => this.openService(serv.id)">
+                                                <div>
+                                                    <div class="fw-semibold small text-dark text-truncate" style="max-width: 170px;">
+                                                        <t t-esc="serv.name"/>
+                                                    </div>
+                                                    <div class="extra-small text-muted">
+                                                        <t t-esc="serv.type_label"/> • <t t-esc="serv.date_start ? serv.date_start.split(' ')[0] : ''"/>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill">
+                                                        <i class="fa fa-check me-1"/><t t-esc="serv.attendance_count"/> In
+                                                    </span>
+                                                    <div t-if="serv.rsvp_expected" class="extra-small text-muted">
+                                                        <t t-esc="serv.rsvp_expected"/> RSVP
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <div t-else="" class="text-center py-4 text-muted small">
+                                        No services scheduled yet.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Widget 3: Active Prayer Requests Queue -->
+                        <div class="col-12 col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="fw-bold mb-0">🙏 Prayer Requests</h5>
+                                        <span class="text-muted small">Active care queue</span>
+                                    </div>
+                                    <button class="btn btn-sm btn-link text-warning p-0 text-decoration-none"
+                                            t-on-click="() => this.openPrayerRequests('open')">
+                                        Open Wall
+                                    </button>
+                                </div>
+                                <div class="card-body p-4 pt-2">
+                                    <div t-if="tables.recent_prayers &amp;&amp; tables.recent_prayers.length" class="list-group list-group-flush">
+                                        <t t-foreach="tables.recent_prayers" t-as="pray" t-key="pray.id">
+                                            <div class="list-group-item border-0 px-0 py-2 d-flex justify-content-between align-items-center cursor-pointer"
+                                                 t-on-click="() => this.openPrayerRequest(pray.id)">
+                                                <div>
+                                                    <div class="fw-semibold small text-dark text-truncate" style="max-width: 170px;">
+                                                        <t t-esc="pray.subject"/>
+                                                    </div>
+                                                    <div class="extra-small text-muted">
+                                                        By <t t-esc="pray.name"/> • <t t-esc="pray.pastor_name"/>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span t-attf-class="badge rounded-pill #{pray.urgency === 'urgent' ? 'bg-danger' : (pray.urgency === 'high' ? 'bg-warning text-dark' : 'bg-light text-muted border')}">
+                                                        <t t-esc="pray.urgency"/>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                    <div t-else="" class="text-center py-4 text-muted small">
+                                        No active prayer requests pending.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     4. TAB CONTENT: MEMBERS & GROWTH
+                ══════════════════════════════════════════════════════════ -->
+                <div t-if="state.activeTab === 'members'" class="tab-members">
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-md-8">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <h5 class="fw-bold mb-3">Membership Directory &amp; Role Segmentation</h5>
+                                <div class="row g-3">
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="openActiveMembers">
+                                            <div class="text-muted small">Active Members</div>
+                                            <div class="h4 fw-bold text-primary mb-0"><t t-esc="kpi.active_members"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="() => this.openMembers([['membership_status', '=', 'leader']])">
+                                            <div class="text-muted small">Church Leaders</div>
+                                            <div class="h4 fw-bold text-purple mb-0"><t t-esc="kpi.status_counts.leader || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="() => this.openMembers([['membership_status', '=', 'worker']])">
+                                            <div class="text-muted small">Workers &amp; Volunteers</div>
+                                            <div class="h4 fw-bold text-success mb-0"><t t-esc="kpi.status_counts.worker || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="() => this.openMembers([['membership_status', '=', 'new_convert']])">
+                                            <div class="text-muted small">New Converts</div>
+                                            <div class="h4 fw-bold text-warning mb-0"><t t-esc="kpi.status_counts.new_convert || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="openVisitors">
+                                            <div class="text-muted small">First-Time Visitors</div>
+                                            <div class="h4 fw-bold text-info mb-0"><t t-esc="kpi.total_visitors || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6 col-md-4">
+                                        <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="() => this.openMembers([['membership_status', '=', 'inactive']])">
+                                            <div class="text-muted small">Inactive Members</div>
+                                            <div class="h4 fw-bold text-secondary mb-0"><t t-esc="kpi.status_counts.inactive || 0"/></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 d-flex gap-2">
+                                    <button class="btn btn-primary rounded-pill px-4" t-on-click="openActiveMembers">
+                                        <i class="fa fa-list me-1"/> Open Full Directory
+                                    </button>
+                                    <button class="btn btn-outline-secondary rounded-pill px-4" t-on-click="createMember">
+                                        <i class="fa fa-user-plus me-1"/> Register New Member
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <h5 class="fw-bold mb-2">Profile Completeness</h5>
+                                <p class="text-muted small mb-3">Quality of demographic, baptism, emergency contact, and spiritual gifts data</p>
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    <div class="display-5 fw-bold text-primary"><t t-esc="kpi.avg_completeness"/>%</div>
+                                    <div class="flex-grow-1">
+                                        <div class="progress" style="height: 12px;">
+                                            <div class="progress-bar bg-primary rounded-pill"
+                                                 t-attf-style="width: #{kpi.avg_completeness}%;"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <span class="small text-muted">
+                                    Members can complete their profile via Christian Revive mobile app.
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     5. TAB CONTENT: PASTORAL CARE & HEALTH
+                ══════════════════════════════════════════════════════════ -->
+                <div t-if="state.activeTab === 'care'" class="tab-care">
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-md-8">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold mb-0">Pastoral Care Status Breakdown</h5>
+                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" t-on-click="createCareNote">
+                                        <i class="fa fa-plus me-1"/> Log New Note
+                                    </button>
+                                </div>
+                                <div class="row g-3 mb-4">
+                                    <t t-foreach="charts.care_distribution" t-as="care" t-key="care.label">
+                                        <div class="col-6 col-md-4">
+                                            <div class="p-3 bg-light rounded-4 cursor-pointer" t-on-click="() => this.openCareMembers(care.label)">
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="d-inline-block rounded-circle" t-attf-style="width: 10px; height: 10px; background-color: #{care.color};"/>
+                                                    <span class="small text-muted text-truncate"><t t-esc="care.label"/></span>
+                                                </div>
+                                                <div class="h4 fw-bold mb-0" t-attf-style="color: #{care.color};"><t t-esc="care.count"/></div>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary rounded-pill px-4" t-on-click="openCareNotes">
+                                        <i class="fa fa-book me-1"/> Pastoral Care Notes
+                                    </button>
+                                    <button class="btn btn-outline-primary rounded-pill px-4" t-on-click="openPastorAssignments">
+                                        <i class="fa fa-user-circle me-1"/> Pastor Assignments
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <h5 class="fw-bold mb-3">Pastoral Staff Scoping</h5>
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Active Pastors</span>
+                                        <span><t t-esc="kpi.pastor_stats.total_pastors || 0"/></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Senior Pastors</span>
+                                        <span><t t-esc="kpi.pastor_stats.senior_pastors || 0"/></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Assigned Active Members</span>
+                                        <span><t t-esc="kpi.pastor_stats.assigned_members || 0"/></span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small fw-semibold mb-1">
+                                        <span>Unassigned Members</span>
+                                        <span class="text-warning"><t t-esc="kpi.pastor_stats.unassigned_members || 0"/></span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline-secondary btn-sm w-100 rounded-pill" t-on-click="openPastorAssignments">
+                                    Manage Pastoral Assignments
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     6. TAB CONTENT: SERVICES & ATTENDANCE
+                ══════════════════════════════════════════════════════════ -->
+                <div t-if="state.activeTab === 'attendance'" class="tab-attendance">
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-lg-8">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold mb-0">Service Types &amp; Engagement</h5>
+                                    <button class="btn btn-sm btn-success rounded-pill px-3" t-on-click="createService">
+                                        <i class="fa fa-plus me-1"/> Create Service
+                                    </button>
+                                </div>
+                                <div t-if="charts.service_types &amp;&amp; charts.service_types.length" class="space-y-3">
+                                    <t t-foreach="charts.service_types" t-as="stype" t-key="stype.type">
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="fw-semibold small"><t t-esc="stype.label"/> (<t t-esc="stype.services"/> services)</span>
+                                                <span class="fw-bold small text-success"><t t-esc="stype.attendance"/> check-ins</span>
+                                            </div>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar bg-success rounded-pill"
+                                                     t-attf-style="width: #{ (stype.attendance / maxServiceAttendance) * 100 }%;"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                                <div t-else="" class="text-center py-4 text-muted">
+                                    No service check-in data yet.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-4">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <h5 class="fw-bold mb-3">Check-in Summary</h5>
+                                <div class="p-3 bg-light rounded-4 mb-3">
+                                    <div class="text-muted small">Total Check-ins All Time</div>
+                                    <div class="h3 fw-bold text-success mb-0"><t t-esc="kpi.total_checkins || 0"/></div>
+                                </div>
+                                <div class="p-3 bg-light rounded-4 mb-3">
+                                    <div class="text-muted small">Total Services Held</div>
+                                    <div class="h3 fw-bold text-primary mb-0"><t t-esc="kpi.total_services || 0"/></div>
+                                </div>
+                                <button class="btn btn-primary rounded-pill w-100" t-on-click="openAttendance">
+                                    <i class="fa fa-check-square-o me-1"/> View Live Attendance
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════════════
+                     7. TAB CONTENT: CELL GROUPS & PRAYERS
+                ══════════════════════════════════════════════════════════ -->
+                <div t-if="state.activeTab === 'community'" class="tab-community">
+                    <div class="row g-4 mb-4">
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold mb-0">Cell Groups Roster</h5>
+                                    <button class="btn btn-sm btn-outline-purple rounded-pill px-3" t-on-click="createCellGroup">
+                                        <i class="fa fa-plus me-1"/> New Group
+                                    </button>
+                                </div>
+                                <div t-if="tables.cell_groups &amp;&amp; tables.cell_groups.length" class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead class="text-muted small">
+                                            <tr>
+                                                <th>Group Name</th>
+                                                <th>Leader</th>
+                                                <th>Meeting</th>
+                                                <th class="text-end">Members</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="tables.cell_groups" t-as="group" t-key="group.id">
+                                                <tr class="cursor-pointer" t-on-click="() => this.openCellGroup(group.id)">
+                                                    <td class="fw-semibold text-dark"><t t-esc="group.name"/></td>
+                                                    <td class="small text-muted"><t t-esc="group.leader_name"/></td>
+                                                    <td class="small text-muted"><t t-esc="group.meeting_day"/> <t t-esc="group.meeting_time"/></td>
+                                                    <td class="text-end"><span class="badge bg-purple-subtle text-purple rounded-pill"><t t-esc="group.member_count"/></span></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div t-else="" class="text-center py-4 text-muted">
+                                    No cell groups created yet.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4 p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 class="fw-bold mb-0">Prayer Ministry</h5>
+                                    <button class="btn btn-sm btn-warning rounded-pill px-3" t-on-click="createPrayerRequest">
+                                        <i class="fa fa-plus me-1"/> New Request
+                                    </button>
+                                </div>
+                                <div class="row g-3 mb-3">
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded-4 text-center cursor-pointer" t-on-click="() => this.openPrayerRequests('open')">
+                                            <div class="text-muted small">Open</div>
+                                            <div class="h4 fw-bold text-warning mb-0"><t t-esc="kpi.prayers.open || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded-4 text-center cursor-pointer" t-on-click="() => this.openPrayerRequests('urgent')">
+                                            <div class="text-muted small">Urgent</div>
+                                            <div class="h4 fw-bold text-danger mb-0"><t t-esc="kpi.prayers.urgent || 0"/></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="p-3 bg-light rounded-4 text-center cursor-pointer" t-on-click="() => this.openPrayerRequests()">
+                                            <div class="text-muted small">Answered</div>
+                                            <div class="h4 fw-bold text-success mb-0"><t t-esc="kpi.prayers.answered || 0"/></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-outline-warning rounded-pill w-100" t-on-click="() => this.openPrayerRequests('open')">
+                                    <i class="fa fa-hand-paper-o me-1"/> View Prayer Care Queue
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </t>
+
+</templates>

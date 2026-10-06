@@ -4,7 +4,14 @@
     <menuitem
         id="menu_church_management_root"
         name="Church Management"
+        action="action_church_dashboard"
         sequence="16"/>
+
+    <menuitem id="menu_church_dashboard"
+        name="Admin Dashboard"
+        parent="menu_church_management_root"
+        action="action_church_dashboard"
+        sequence="0"/>
 
     <menuitem id="menu_church_members"
         name="Members"
