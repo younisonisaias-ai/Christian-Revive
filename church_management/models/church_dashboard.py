@@ -120,6 +120,7 @@ class ChurchDashboard(models.AbstractModel):
         monthly_growth = []
         for i in range(5, -1, -1):
             m_date = (today.replace(day=1) - timedelta(days=i * 28)).replace(day=1)
+            # Find month end
             next_m = (m_date + timedelta(days=32)).replace(day=1)
             count = len(active_members.filtered(
                 lambda p: p.member_join_date and m_date <= p.member_join_date < next_m
@@ -241,40 +242,18 @@ class ChurchDashboard(models.AbstractModel):
             last_note = Note.search([('member_id', '=', person.id)], order='date desc', limit=1)
             urgent_alerts_list.append({
                 'id': person.id,
-                'name': person.name or '',
+                'name': person.name,
                 'phone': person.phone or 'No phone',
                 'member_number': person.member_number or '-',
-                'care_status': person.care_status or 'at_risk',
-                'care_status_label': CARE_STATUS_LABELS.get(person.care_status, person.care_status or 'At Risk'),
+                'care_status': person.care_status,
+                'care_status_label': CARE_STATUS_LABELS.get(person.care_status, person.care_status),
                 'status_color': CARE_STATUS_COLORS.get(person.care_status, '#dc2626'),
-                'last_note': (last_note.content[:60] + '...') if last_note and last_note.content else 'No note recorded',
-                'last_note_date': fields.Date.to_string(last_note.date) if last_note and last_note.date else '',
+                'last_note': last_note.content[:60] + '...' if last_note and last_note.content else 'No note recorded',
+                'last_note_date': fields.Date.to_string(last_note.date) if last_note else '',
             })
 
-        # Absent Active Members (Not seen in 30+ days)
-        recently_seen_ids = set(Attendance.search([
-            ('member_id', 'in', active_members.ids or [0]),
-            ('check_in_time', '>=', cutoff_30d)
-        ]).mapped('member_id').ids)
-        absent_people = [p for p in active_members if p.id not in recently_seen_ids]
-        
-        last_seen = {}
-        for rec in Attendance.search([('member_id', 'in', [p.id for p in absent_people] or [0])], order='check_in_time desc'):
-            last_seen.setdefault(rec.member_id.id, rec)
-        
-        absent_members_list = []
-        for person in absent_people[:10]:
-            last = last_seen.get(person.id)
-            absent_members_list.append({
-                'id': person.id,
-                'name': person.name or '',
-                'phone': person.phone or '',
-                'member_number': person.member_number or '-',
-                'care_status': person.care_status or 'healthy',
-                'care_status_label': CARE_STATUS_LABELS.get(person.care_status, person.care_status or 'Doing Well'),
-                'last_check_in': fields.Datetime.to_string(last.check_in_time) if last else False,
-                'last_service': last.event_id.name if last and last.event_id else '',
-            })
+        absent_data = self.app_get_absent_members(requester_staff_id=None, days=30)
+        absent_members_list = absent_data.get('members', [])[:10] if absent_data.get('success') else []
 
         celebrations = self._celebrations(all_members, today, days=14)
 
@@ -282,11 +261,11 @@ class ChurchDashboard(models.AbstractModel):
         for s in Service.search([], order='date_start desc', limit=5):
             recent_services.append({
                 'id': s.id,
-                'name': s.name or '',
-                'service_type': s.service_type or 'sabbath_worship',
+                'name': s.name,
+                'service_type': s.service_type,
                 'type_label': SERVICE_TYPE_LABELS.get(s.service_type, s.service_type or ''),
                 'date_start': fields.Datetime.to_string(s.date_start) if s.date_start else '',
-                'attendance_count': s.attendance_count or 0,
+                'attendance_count': s.attendance_count,
                 'rsvp_expected': s.rsvp_expected or 0,
                 'location': s.location or '',
                 'is_active': s.is_active,
@@ -296,9 +275,9 @@ class ChurchDashboard(models.AbstractModel):
         for g in groups[:6]:
             cell_groups_summary.append({
                 'id': g.id,
-                'name': g.name or '',
+                'name': g.name,
                 'leader_name': g.leader_id.name if g.leader_id else 'Unassigned',
-                'member_count': g.member_count or 0,
+                'member_count': g.member_count,
                 'meeting_day': g.meeting_day.title() if g.meeting_day else 'TBD',
                 'meeting_time': g.meeting_time or '',
                 'zone': g.zone or '',
@@ -308,6 +287,8 @@ class ChurchDashboard(models.AbstractModel):
         if 'church.give.transaction' in self.env:
             giving_data = self._giving(today)
 
+        # ── 8. Chart Formatted Datasets ─────────────────────────────
+        # Pie / Donut Chart 1: Member Status Distribution
         status_pie = [
             {'label': 'Regular Members', 'count': status_counts['member'], 'color': '#3b82f6'},
             {'label': 'Workers & Volunteers', 'count': status_counts['worker'], 'color': '#10b981'},
@@ -317,6 +298,7 @@ class ChurchDashboard(models.AbstractModel):
             {'label': 'Inactive', 'count': status_counts['inactive'], 'color': '#94a3b8'},
         ]
 
+        # Pie / Donut Chart 2: Care Status Breakdown
         care_pie = [
             {'label': v['label'], 'count': v['count'], 'color': v['color']}
             for v in care_status_counts.values() if v['count'] > 0
@@ -326,7 +308,7 @@ class ChurchDashboard(models.AbstractModel):
             'success': True,
             'today_formatted': today.strftime('%A, %d %B %Y'),
             'viewer': {
-                'name': self.env.user.name or 'Admin',
+                'name': self.env.user.name,
                 'is_admin': self.env.user.has_group('church_management.group_church_admin') or self.env.user.has_group('base.group_system'),
             },
             'kpi': {
@@ -346,7 +328,7 @@ class ChurchDashboard(models.AbstractModel):
                 'checkins_this_month': checkins_this_month,
                 'weekly_avg_attendance': attendance_overview.get('weekly_average', 0),
                 'this_week_attendance': attendance_overview.get('this_week', 0),
-                'absent_30d_count': len(absent_people),
+                'absent_30d_count': attendance_overview.get('not_seen_30d') or len(absent_members_list),
                 'cell_groups_count': len(groups),
                 'members_in_groups': active_in_groups,
                 'members_without_group': active_without_group,

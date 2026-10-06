@@ -56,14 +56,37 @@
         }
     }
 
-    .dash-chart-bar {
-        transition: height 0.3s ease, background-color 0.2s ease;
-        min-width: 24px;
-        cursor: pointer;
+    // Line chart hover and glow
+    .chart-point-group {
+        circle {
+            transition: r 0.2s ease, fill 0.2s ease;
+        }
+        &:hover {
+            circle {
+                r: 8px;
+                fill: #1e3a8a;
+            }
+            text {
+                font-weight: 800;
+            }
+        }
+    }
+
+    // Pie / Donut Chart Hover
+    .donut-slice {
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        transform-origin: center;
 
         &:hover {
-            background-color: #2563eb !important;
-            filter: brightness(1.1);
+            opacity: 0.85;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+    }
+
+    .hover-bg {
+        transition: background-color 0.15s ease;
+        &:hover {
+            background-color: #f1f5f9;
         }
     }
 
