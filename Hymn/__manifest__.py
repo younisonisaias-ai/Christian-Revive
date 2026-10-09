@@ -1,6 +1,6 @@
 {
     'name': 'Hymn & Song Management',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Church',
     'summary': 'Manage hymns, songs, geet & zaboor collections with multi-language support',
     'description': """
