@@ -7,3 +7,4 @@ access_church_event_attendance,church.event.attendance,model_church_event_attend
 access_church_service,church.service,model_church_service,base.group_user,1,1,1,1
 access_church_member_app_data,church.member.app.data,model_church_member_app_data,base.group_user,1,1,1,1
 access_church_service_rsvp,church.service.rsvp,model_church_service_rsvp,base.group_user,1,1,1,1
+access_church_service_schedule,church.service.schedule,model_church_service_schedule,base.group_user,1,1,1,1

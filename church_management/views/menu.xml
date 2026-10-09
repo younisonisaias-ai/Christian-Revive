@@ -80,6 +80,12 @@
         action="action_church_services"
         sequence="6"/>
 
+    <menuitem id="menu_church_service_schedules"
+        name="Weekly Services"
+        parent="menu_church_management_root"
+        action="action_church_service_schedules"
+        sequence="6"/>
+
     <menuitem id="menu_church_event_attendance"
         name="Attendance"
         parent="menu_church_management_root"

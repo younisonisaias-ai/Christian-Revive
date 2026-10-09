@@ -12,6 +12,7 @@
                 <field name="location" optional="show"/>
                 <field name="attendance_count"/>
                 <field name="is_active" widget="boolean_toggle"/>
+                <field name="schedule_id" optional="hide"/>
             </list>
         </field>
     </record>
@@ -112,6 +113,80 @@
             <p class="o_view_nocontent_smiling_face">Add a service or event</p>
             <p>Create Sabbath worship, Sabbath School, prayer meetings and other
                events here. Members can then be checked in to them from the app.</p>
+        </field>
+    </record>
+
+    <!-- Weekly repeating services -->
+    <record id="view_church_service_schedule_list" model="ir.ui.view">
+        <field name="name">church.service.schedule.list</field>
+        <field name="model">church.service.schedule</field>
+        <field name="arch" type="xml">
+            <list string="Weekly Services">
+                <field name="weekday"/>
+                <field name="start_time" widget="float_time"/>
+                <field name="name"/>
+                <field name="service_type"/>
+                <field name="location" optional="show"/>
+                <field name="next_date"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_church_service_schedule_form" model="ir.ui.view">
+        <field name="name">church.service.schedule.form</field>
+        <field name="model">church.service.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Weekly Service">
+                <header>
+                    <button name="action_generate_services" type="object" class="btn-primary"
+                            string="Create upcoming services now"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Sabbath Worship"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="service_type"/>
+                            <field name="weekday"/>
+                            <field name="start_time" widget="float_time"/>
+                            <field name="duration_hours" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="location"/>
+                            <field name="weeks_ahead"/>
+                            <field name="next_date"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        The next weeks' services are created automatically every day,
+                        so members can check in, RSVP and scan their QR code.
+                        Edit a single week's service under Services &amp; Events.
+                    </div>
+                    <separator string="Services created"/>
+                    <field name="service_ids" readonly="1">
+                        <list>
+                            <field name="date_start"/>
+                            <field name="name"/>
+                            <field name="attendance_count"/>
+                            <field name="rsvp_expected"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_church_service_schedules" model="ir.actions.act_window">
+        <field name="name">Weekly Services</field>
+        <field name="res_model">church.service.schedule</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a weekly service</p>
+            <p>For example "Sabbath Worship, every Saturday at 10:00". The upcoming
+               weeks are created automatically.</p>
         </field>
     </record>
 

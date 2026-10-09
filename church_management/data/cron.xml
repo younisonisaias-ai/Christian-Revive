@@ -12,4 +12,16 @@
             <field name="active" eval="True"/>
         </record>
     </data>
+    <data noupdate="1">
+        <!-- Keep the next weeks of repeating services created. -->
+        <record id="cron_generate_weekly_services" model="ir.cron">
+            <field name="name">Church: create upcoming weekly services</field>
+            <field name="model_id" ref="model_church_service_schedule"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_generate_services()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
 </odoo>
