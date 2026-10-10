@@ -21,7 +21,7 @@ class CampVisit(models.Model):
     _name = 'camp.visit'
     _description = 'Camp Visit'
     _inherit = ['camp.sync.mixin', 'mail.thread']
-    _order = 'priority_rank desc, token_no'
+    _order = 'priority_rank desc, arrived_at, token_no'   # urgent first, then first come
     _rec_names_search = ['patient_id', 'qr_code']
 
     camp_id = fields.Many2one('camp.camp', required=True, ondelete='restrict', index=True, tracking=True)
@@ -118,6 +118,9 @@ class CampVisit(models.Model):
     def action_done(self):
         for v in self:
             v.state = 'referred' if v.referral_ids else 'done'
+            if v.priority == 'urgent' and not v.referral_ids:
+                flags = ', '.join(v.flag_rule_ids.mapped('name')) or _('urgent at triage')
+                self.env['camp.followup']._ensure(v, 'red_flag', _('Urgent red flag: %s', flags), days=2)
 
     def action_cancel(self):
         self.write({'state': 'cancelled'})

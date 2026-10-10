@@ -142,6 +142,77 @@ class TestCampSync(TestCampFlow):
         status = self.api(self.coordinator).close_camp(self.camp.id)
         self.assertEqual(status['camp']['state'], 'closed')
 
+    def test_followups_created_and_called(self):
+        _p, visit = self._register('Follow Me')
+        hospital = self.env['res.partner'].create({'name': 'FU Hospital', 'camp_is_hospital': True})
+        referral = self.env['camp.referral'].with_user(self.doctor).create({
+            'visit_id': visit.id, 'hospital_id': hospital.id, 'reason': 'Eye', 'urgency': 'urgent'})
+        fu = self.env['camp.followup'].search([('visit_id', '=', visit.id), ('kind', '=', 'referral')])
+        self.assertEqual(len(fu), 1)
+        self.assertEqual(fu.due_date, fields.Date.today() + timedelta(days=1))
+
+        consult = self.env['camp.consultation'].with_user(self.doctor).create({
+            'visit_id': visit.id, 'follow_up_needed': True, 'follow_up_reason': 'Check sugar'})
+        consult.with_user(self.doctor).action_finish()
+        self.assertTrue(self.env['camp.followup'].search([('visit_id', '=', visit.id), ('kind', '=', 'doctor')]))
+
+        followup_user = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Caller', 'login': 'camp_caller',
+            'group_ids': [(6, 0, [self.env.ref('revive_medical_camp.group_camp_followup').id])]})
+        self.env['camp.team.member'].create({'camp_id': self.camp.id, 'user_id': followup_user.id, 'role': 'followup'})
+        boot = self.api(followup_user).bootstrap(self.camp.id)
+        self.assertEqual(len(boot['followups']), 2)
+        self.assertEqual(boot['consultations'], [])   # callers never see clinical notes
+        res = self.api(followup_user).sync(self.camp.id, {'followup_calls': [
+            {'client_uuid': _uuid(), 'followup': fu.id, 'result': 'reached',
+             'notes': 'Went yesterday', 'outcome': 'Surgery booked', 'referral_attended': True}]})
+        self.assertEqual(res['results']['followup_calls'][0]['status'], 'updated')
+        self.assertEqual(fu.state, 'reached')
+        self.assertEqual(fu.call_count, 1)
+        self.assertEqual(referral.status, 'attended')
+
+    def test_urgent_without_referral_gets_followup(self):
+        _p, visit = self._register('Urgent Only')
+        self.env['camp.vitals'].with_user(self.nurse).create({'visit_id': visit.id, 'bp_systolic': 200})
+        visit.sudo().action_done()
+        self.assertTrue(self.env['camp.followup'].search([('visit_id', '=', visit.id), ('kind', '=', 'red_flag')]))
+
+    def test_stock_count(self):
+        res = self.api(self.pharmacist).sync(self.camp.id, {'stock_counts': [
+            {'client_uuid': 'count-1', 'lines': [{'formulary_id': self.formulary.id, 'counted_qty': 140}]}]})
+        self.assertEqual(res['results']['stock_counts'][0]['status'], 'created')
+        count = self.env['camp.stock.count'].search([('client_uuid', '=', 'count-1')])
+        self.assertEqual(count.line_ids.expected_qty, 156)   # 6 + 100 + 50 expired, all batches
+        self.assertEqual(count.line_ids.difference, -16)
+        again = self.api(self.pharmacist).sync(self.camp.id, {'stock_counts': [{'client_uuid': 'count-1', 'lines': []}]})
+        self.assertEqual(again['results']['stock_counts'][0]['status'], 'exists')
+        denied = self.api(self.registration).sync(self.camp.id, {'stock_counts': [
+            {'client_uuid': 'count-2', 'lines': []}]})
+        self.assertEqual(denied['results']['stock_counts'][0]['status'], 'error')
+        html = self.env['ir.actions.report']._render_qweb_html(
+            'revive_medical_camp.action_report_camp_summary', self.camp.ids)[0]
+        self.assertIn(b'Stock check', html)
+
+    def test_returning_patients_by_area_and_recent(self):
+        self.camp.area = 'Youhanabad, Lahore'
+        Patient = self.env['camp.patient']
+        near = Patient.create({'name': 'Near', 'sex': 'male', 'area': 'youhanabad'})
+        far = Patient.create({'name': 'Far', 'sex': 'male', 'area': 'Karachi'})
+        old = Patient.create({'name': 'Old', 'sex': 'male', 'area': 'Youhanabad'})
+        self.env.cr.execute("UPDATE camp_patient SET create_date = now() - interval '3 years' WHERE id = %s", (old.id,))
+        self.env.invalidate_all()
+        ids = [p['id'] for p in self.api(self.registration).bootstrap(self.camp.id)['patients']]
+        self.assertIn(near.id, ids)
+        self.assertNotIn(far.id, ids)
+        self.assertNotIn(old.id, ids)
+
+    def test_closed_camp_stays_for_followup(self):
+        self.camp.sudo().state = 'closed'
+        coord_camps = [c['id'] for c in self.api(self.coordinator).me()['camps']]
+        self.assertIn(self.camp.id, coord_camps)
+        reg_camps = [c['id'] for c in self.api(self.registration).me()['camps']]
+        self.assertNotIn(self.camp.id, reg_camps)
+
     def test_outsider_cannot_bootstrap_other_camp(self):
         with self.assertRaises(Exception):
             self.api(self.outsider_reg).bootstrap(self.camp.id)

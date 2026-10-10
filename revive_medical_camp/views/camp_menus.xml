@@ -18,6 +18,10 @@
               action="action_camp_patient" groups="group_camp_registration,group_camp_pharmacist,group_camp_followup"/>
     <menuitem id="menu_camp_referrals" name="Referrals" parent="menu_camp_root" sequence="40"
               action="action_camp_referral" groups="group_camp_doctor,group_camp_followup"/>
+    <menuitem id="menu_camp_followups" name="Follow-up calls" parent="menu_camp_root" sequence="45"
+              action="action_camp_followup" groups="group_camp_followup,group_camp_doctor"/>
+    <menuitem id="menu_camp_stock_counts" name="Stock counts" parent="menu_camp_stations" sequence="40"
+              action="action_camp_stock_count" groups="group_camp_pharmacist,group_camp_coordinator"/>
 
     <menuitem id="menu_camp_config" name="Configuration" parent="menu_camp_root" sequence="90"
               groups="group_camp_lead"/>

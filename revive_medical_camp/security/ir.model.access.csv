@@ -49,3 +49,12 @@ access_camp_rx_ph,camp.prescription.line pharmacist,model_camp_prescription_line
 access_camp_referral_doctor,camp.referral doctor,model_camp_referral,group_camp_doctor,1,1,1,0
 access_camp_referral_fu,camp.referral followup,model_camp_referral,group_camp_followup,1,1,0,0
 access_camp_referral_lead,camp.referral lead,model_camp_referral,group_camp_lead,1,1,1,1
+access_camp_followup_fu,camp.followup followup,model_camp_followup,group_camp_followup,1,1,0,0
+access_camp_followup_doctor,camp.followup doctor,model_camp_followup,group_camp_doctor,1,0,0,0
+access_camp_followup_coord,camp.followup coordinator,model_camp_followup,group_camp_coordinator,1,1,1,1
+access_camp_stock_count_ph,camp.stock.count pharmacist,model_camp_stock_count,group_camp_pharmacist,1,1,1,0
+access_camp_stock_count_coord,camp.stock.count coordinator,model_camp_stock_count,group_camp_coordinator,1,0,0,0
+access_camp_stock_count_lead,camp.stock.count lead,model_camp_stock_count,group_camp_lead,1,1,1,1
+access_camp_stock_count_line_ph,camp.stock.count.line pharmacist,model_camp_stock_count_line,group_camp_pharmacist,1,1,1,0
+access_camp_stock_count_line_coord,camp.stock.count.line coordinator,model_camp_stock_count_line,group_camp_coordinator,1,0,0,0
+access_camp_stock_count_line_lead,camp.stock.count.line lead,model_camp_stock_count_line,group_camp_lead,1,1,1,1

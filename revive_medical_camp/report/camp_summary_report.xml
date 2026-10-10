@@ -66,6 +66,23 @@
                         </table>
                         <p t-else="" class="text-muted">None recorded.</p>
 
+                        <t t-if="s['count_gaps'] or s['shortages']">
+                            <h5 class="mt-3">Stock check</h5>
+                            <table class="camp-table" style="width: 100%;" t-if="s['count_gaps']">
+                                <thead><tr><th>Medicine</th><th>System</th><th>Counted</th><th>Difference</th></tr></thead>
+                                <tr t-foreach="s['count_gaps']" t-as="g">
+                                    <td t-esc="g[0]"/><td t-esc="'%g' % g[1]"/><td t-esc="'%g' % g[2]"/><td t-esc="'%+g' % g[3]"/>
+                                </tr>
+                            </table>
+                            <p t-if="s['shortages']" class="camp-small">
+                                Given offline without enough recorded stock:
+                                <t t-foreach="s['shortages']" t-as="sh"><span t-esc="sh[0]"/> (<span t-esc="'%g' % sh[1]"/>)<t t-if="not sh_last">, </t></t>
+                            </p>
+                        </t>
+                        <p class="mt-2" t-if="s['followups_open']">
+                            Follow-up calls still to do: <strong t-esc="s['followups_open']"/>
+                        </p>
+
                         <h5 class="mt-3">Team and cost</h5>
                         <table class="camp-table" style="width: 100%;">
                             <tr><th style="width: 50%;">Volunteer hours</th><td t-esc="s['team_hours']"/></tr>

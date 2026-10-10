@@ -28,9 +28,9 @@ A login without any camp role gets `403`. Logins with two-step verification get 
 Returns everything a station needs offline: `camp`, `me`, `team`,
 `flag_rules`, `dose_templates`, `diagnosis_codes`, `formulary` (with
 `stock_qty` from the camp location, expired batches excluded), `hospitals`,
-`patients` (this camp's and the area's returning patients), `visits`,
+`patients` (this camp's, plus patients from any part of the camp's area seen or registered in the last 2 years), `visits`,
 `vitals`, `consultations`, `prescription_lines`, `referrals`,
-`education_sessions`, `stock`, `server_time`.
+`education_sessions`, `followups`, `stock`, `server_time`.
 
 Sections the worker's role cannot read come back empty.
 
@@ -68,6 +68,8 @@ can go up in one call. They are saved in this order:
 | `checkins` | `member_id, checked_in_at, checked_out_at` (yourself; coordinators anyone) |
 | `dispenses` | `line, quantity, substitute_formulary_id, reason, not_given` |
 | `visit_actions` | `visit, action: send_to_doctor / done / cancel` |
+| `followup_calls` | `followup (id), result: reached / no_answer / closed, notes, outcome, referral_attended` |
+| `stock_counts` | `lines: [{formulary_id, counted_qty}], notes` (pharmacists; the server records the expected stock and the difference) |
 
 Reply:
 

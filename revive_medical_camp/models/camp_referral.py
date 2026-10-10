@@ -1,5 +1,5 @@
 """Referral to a partner hospital, tracked until the patient attends."""
-from odoo import api, fields, models
+from odoo import _, api, fields, models
 
 
 class CampReferral(models.Model):
@@ -31,7 +31,12 @@ class CampReferral(models.Model):
         for vals in vals_list:
             if vals.get('consultation_id') and not vals.get('visit_id'):
                 vals['visit_id'] = self.env['camp.consultation'].browse(vals['consultation_id']).visit_id.id
-        return super().create(vals_list)
+        referrals = super().create(vals_list)
+        for r in referrals:
+            self.env['camp.followup']._ensure(
+                r.visit_id, 'referral', _('Check the patient went to %s', r.hospital_id.name),
+                referral=r, days=1 if r.urgency == 'urgent' else 3)
+        return referrals
 
     def action_attended(self):
         self.write({'status': 'attended'})

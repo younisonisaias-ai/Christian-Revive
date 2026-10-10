@@ -7,10 +7,13 @@ idempotent: each record carries the phone's own id (client_uuid); sending
 the same batch again updates or skips, it never duplicates.
 """
 import logging
+import re
+from datetime import timedelta
 
 from psycopg2 import IntegrityError
 
 from odoo import _, api, fields, models
+from odoo.fields import Domain
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
@@ -26,6 +29,8 @@ ROLE_GROUPS = [
 ]
 MAX_ITEMS = 500           # per kind, per upload
 RETURNING_PATIENTS = 3000  # patients from the camp's area sent to phones
+RETURNING_YEARS = 2        # only patients seen (or registered) in the last 2 years
+FOLLOWUP_DAYS = 60         # closed camps stay in Camp Mode this long for follow-up calls
 
 PATIENT_FIELDS = ['name', 'date_of_birth', 'age_years', 'sex', 'phone', 'area', 'guardian_name',
                   'consent_care', 'consent_media', 'consent_messages']
@@ -62,7 +67,12 @@ class CampApi(models.AbstractModel):
     @api.model
     def me(self):
         user = self.env.user
-        camps = self.env['camp.camp'].search([('state', '!=', 'closed')], order='date_start')
+        domain = [('state', '!=', 'closed')]
+        if {'followup', 'coordinator'} & set(self._roles(user)):
+            # Follow-up calls happen after the camp: keep recent closed camps.
+            recent = fields.Date.context_today(self) - timedelta(days=FOLLOWUP_DAYS)
+            domain = ['|', ('state', '!=', 'closed'), ('date_start', '>=', recent)]
+        camps = self.env['camp.camp'].search(domain, order='date_start')
         return {
             'user': {
                 'id': user.id, 'name': user.name, 'login': user.login,
@@ -106,7 +116,7 @@ class CampApi(models.AbstractModel):
         }
         if can('camp.patient'):
             area_patients = Env['camp.patient'].search(
-                [('area', '=ilike', camp.area)], limit=RETURNING_PATIENTS, order='id desc') if camp.area else Env['camp.patient']
+                self._returning_domain(camp), limit=RETURNING_PATIENTS, order='id desc')                 if camp.area else Env['camp.patient']
             camp_patients = Env['camp.visit'].search([('camp_id', '=', camp.id)]).patient_id
             data['patients'] = [self._patient(p) for p in (camp_patients | area_patients)]
         if reserve_tokens and 'registration' in self._roles():
@@ -142,6 +152,8 @@ class CampApi(models.AbstractModel):
                                     'attendees_count': s.attendees_count}
                                    for s in Env['camp.education.session'].search(dom)],
             'stock': {f['id']: f['stock_qty'] for f in self._formulary(camp)} if can('camp.formulary') else {},
+            'followups': [self._followup(f) for f in Env['camp.followup'].search(dom)]
+            if can('camp.followup') else [],
         }
         return out
 
@@ -211,6 +223,8 @@ class CampApi(models.AbstractModel):
             ('checkins', lambda item: self._sync_checkin(camp, item)),
             ('dispenses', lambda item: self._sync_dispense(item, batch)),
             ('visit_actions', lambda item: self._sync_visit_action(item)),
+            ('followup_calls', lambda item: self._sync_followup_call(item)),
+            ('stock_counts', lambda item: self._sync_stock_count(camp, item)),
         ]
         for kind, handler in steps:
             items = payload.get(kind) or []
@@ -387,6 +401,30 @@ class CampApi(models.AbstractModel):
                                             qty=line.shortage_qty, med=line.dispensed_product_id.display_name))
         return line, 'updated'
 
+    def _sync_followup_call(self, item):
+        followup = self._ref('camp.followup', item.get('followup'))
+        followup.log_call(item.get('result'), notes=item.get('notes'), outcome=item.get('outcome'),
+                          referral_attended=bool(item.get('referral_attended')))
+        return followup, 'updated'
+
+    def _sync_stock_count(self, camp, item):
+        existing = self.env['camp.stock.count'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
+        if existing:
+            return existing, 'exists'
+        if 'pharmacist' not in self._roles():
+            raise AccessError(_('Only pharmacists can send a stock count.'))
+        loc = camp.stock_location_id
+        lines = []
+        for row in item.get('lines') or []:
+            formulary = self._ref('camp.formulary', row.get('formulary_id'))
+            expected = formulary.product_id.with_context(location=loc.id).qty_available if loc else 0.0
+            lines.append((0, 0, {'formulary_id': formulary.id, 'expected_qty': expected,
+                                 'counted_qty': float(row.get('counted_qty') or 0)}))
+        count = self.env['camp.stock.count'].create({
+            'camp_id': camp.id, 'client_uuid': item['client_uuid'],
+            'notes': item.get('notes') or False, 'line_ids': lines})
+        return count, 'created'
+
     def _sync_visit_action(self, item):
         visit = self._ref('camp.visit', item.get('visit'))
         action = item.get('action')
@@ -403,6 +441,15 @@ class CampApi(models.AbstractModel):
         return visit, 'updated'
 
     # ── Helpers ─────────────────────────────────────────────────
+    def _returning_domain(self, camp):
+        """Patients from the camp's area — any part of it ("Youhanabad, Lahore"
+        matches "Youhanabad") — seen or registered in the last two years."""
+        parts = [p.strip() for p in re.split(r'[,/]', camp.area or '') if len(p.strip()) >= 3]
+        area = Domain.OR([Domain('area', 'ilike', p) for p in parts]) if parts else Domain.FALSE
+        since = fields.Datetime.now() - timedelta(days=365 * RETURNING_YEARS)
+        recent = Domain('create_date', '>=', since) | Domain('visit_ids.arrived_at', '>=', since)
+        return area & recent
+
     def _get_camp(self, camp_id):
         camp = self.env['camp.camp'].browse(int(camp_id)).exists()
         if not camp:
@@ -514,6 +561,15 @@ class CampApi(models.AbstractModel):
                 'dispensed_qty': line.dispensed_qty, 'shortage_qty': line.shortage_qty,
                 'substitute_formulary_id': line.substitute_formulary_id.id or None,
                 'substitution_reason': line.substitution_reason or ''}
+
+    def _followup(self, f):
+        return {'id': f.id, 'client_uuid': f.client_uuid, 'visit_id': f.visit_id.id,
+                'patient_name': f.patient_id.name, 'patient_phone': f.patient_phone or '',
+                'kind': f.kind, 'reason': f.reason, 'state': f.state,
+                'due_date': fields.Date.to_string(f.due_date) if f.due_date else None,
+                'call_count': f.call_count, 'outcome': f.outcome or '',
+                'referral_id': f.referral_id.id or None,
+                'hospital_name': f.referral_id.hospital_id.name or ''}
 
     def _referral(self, r):
         return {'id': r.id, 'client_uuid': r.client_uuid, 'visit_id': r.visit_id.id,

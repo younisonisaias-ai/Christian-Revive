@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Follow-up calls -->
+    <record id="view_camp_followup_search" model="ir.ui.view">
+        <field name="name">camp.followup.search</field>
+        <field name="model">camp.followup</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="camp_id"/>
+                <field name="assigned_to_id"/>
+                <filter name="open" string="Still to do" domain="[('state', 'in', ('to_call', 'no_answer'))]"/>
+                <filter name="due" string="Due now" domain="[('state', 'in', ('to_call', 'no_answer')), ('due_date', '&lt;=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="mine" string="Assigned to me" domain="[('assigned_to_id', '=', uid)]"/>
+                <separator/>
+                <filter name="group_kind" string="Reason" context="{'group_by': 'kind'}"/>
+                <filter name="group_camp" string="Camp" context="{'group_by': 'camp_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_followup_list" model="ir.ui.view">
+        <field name="name">camp.followup.list</field>
+        <field name="model">camp.followup</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="state == 'no_answer'" decoration-muted="state == 'closed'">
+                <field name="due_date"/>
+                <field name="patient_id"/>
+                <field name="patient_phone" widget="phone"/>
+                <field name="kind"/>
+                <field name="reason"/>
+                <field name="assigned_to_id" optional="show"/>
+                <field name="call_count" optional="show"/>
+                <field name="camp_id" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'reached'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_followup_form" model="ir.ui.view">
+        <field name="name">camp.followup.form</field>
+        <field name="model">camp.followup</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_reached" type="object" string="Reached" class="btn-primary"
+                            invisible="state == 'closed'"/>
+                    <button name="action_no_answer" type="object" string="No answer" invisible="state == 'closed'"/>
+                    <button name="action_close" type="object" string="Close" invisible="state == 'closed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="to_call,reached,closed"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="patient_id"/>
+                            <field name="patient_phone" widget="phone"/>
+                            <field name="visit_id"/>
+                            <field name="camp_id"/>
+                        </group>
+                        <group>
+                            <field name="kind"/>
+                            <field name="reason"/>
+                            <field name="referral_id"/>
+                            <field name="due_date"/>
+                            <field name="assigned_to_id"/>
+                            <field name="call_count"/>
+                            <field name="last_call_at"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="outcome"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_followup" model="ir.actions.act_window">
+        <field name="name">Follow-up calls</field>
+        <field name="res_model">camp.followup</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No follow-up calls</p>
+            <p>Calls are added automatically for referred patients, patients the doctor marked for follow-up,
+               and urgent red flags that were not referred.</p>
+        </field>
+    </record>
+
+    <!-- Stock counts -->
+    <record id="view_camp_stock_count_list" model="ir.ui.view">
+        <field name="name">camp.stock.count.list</field>
+        <field name="model">camp.stock.count</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="counted_at"/>
+                <field name="camp_id"/>
+                <field name="counted_by_id"/>
+                <field name="difference_count" decoration-danger="difference_count &gt; 0"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_stock_count_form" model="ir.ui.view">
+        <field name="name">camp.stock.count.form</field>
+        <field name="model">camp.stock.count</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="camp_id"/>
+                            <field name="counted_by_id"/>
+                            <field name="counted_at"/>
+                        </group>
+                        <group>
+                            <field name="difference_count"/>
+                            <field name="notes"/>
+                        </group>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom" decoration-danger="difference &lt; 0" decoration-warning="difference &gt; 0">
+                            <field name="formulary_id"/>
+                            <field name="expected_qty"/>
+                            <field name="counted_qty"/>
+                            <field name="difference"/>
+                        </list>
+                    </field>
+                    <div class="text-muted">
+                        Negative = units missing compared with the system. Fix the stock in
+                        Inventory (camp stock location) after checking the reason.
+                    </div>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_stock_count" model="ir.actions.act_window">
+        <field name="name">Stock counts</field>
+        <field name="res_model">camp.stock.count</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No stock counts yet</p>
+            <p>The pharmacist counts the medicines left at the end of the camp in Camp Mode.</p>
+        </field>
+    </record>
+</odoo>

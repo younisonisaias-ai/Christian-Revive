@@ -80,4 +80,17 @@
         <field name="domain_force">[(1, '=', 1)]</field>
         <field name="groups" eval="[(4, ref('group_camp_coordinator'))]"/>
     </record>
+
+    <record id="rule_followup_team_only" model="ir.rule">
+        <field name="name">Follow-up: own team camps</field>
+        <field name="model_id" ref="model_camp_followup"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_followup')), (4, ref('group_camp_doctor'))]"/>
+    </record>
+    <record id="rule_followup_all" model="ir.rule">
+        <field name="name">Follow-up: all camps (coordinator)</field>
+        <field name="model_id" ref="model_camp_followup"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_coordinator'))]"/>
+    </record>
 </odoo>

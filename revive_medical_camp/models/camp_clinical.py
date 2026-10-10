@@ -54,6 +54,8 @@ class CampConsultation(models.Model):
         """Doctor is done: the patient goes to the pharmacy if medicines were given."""
         for c in self:
             c.state = 'done'
+            if c.follow_up_needed:
+                self.env['camp.followup']._ensure(c.visit_id, 'doctor', c.follow_up_reason or _('Doctor asked for a follow-up call'))
             if c.prescription_line_ids.filtered(lambda l: l.state == 'prescribed'):
                 c.visit_id.state = 'at_pharmacy'
             else:

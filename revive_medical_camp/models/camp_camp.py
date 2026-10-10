@@ -196,6 +196,13 @@ class CampCamp(models.Model):
             'cost': self.budget_actual,
             'cost_per_patient': self.cost_per_patient,
             'min_group': min_group,
+            'shortages': [(l.dispensed_product_id.display_name or l.product_id.display_name, l.shortage_qty)
+                          for l in visits.prescription_line_ids if l.shortage_qty],
+            'count_gaps': [(l.formulary_id.display_name, l.expected_qty, l.counted_qty, l.difference)
+                           for l in self.env['camp.stock.count'].search(
+                               [('camp_id', '=', self.id)], limit=1).line_ids if abs(l.difference) > 0.001],
+            'followups_open': self.env['camp.followup'].search_count(
+                [('camp_id', '=', self.id), ('state', 'in', ('to_call', 'no_answer'))]),
         }
 
 
