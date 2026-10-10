@@ -114,9 +114,10 @@ class CampCamp(models.Model):
 
     def action_close(self):
         for camp in self:
-            waiting = camp.visit_ids.filtered(lambda v: v.state in ('registered', 'triaged', 'with_doctor'))
+            waiting = camp.visit_ids.filtered(
+                lambda v: v.state in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))
             if waiting:
-                raise UserError(_('%(count)s patients are still waiting (not seen by a doctor). '
+                raise UserError(_('%(count)s patients are still waiting (doctor or pharmacy). '
                                   'Finish or cancel their visits before closing the camp.',
                                   count=len(waiting)))
         self.write({'state': 'closed'})

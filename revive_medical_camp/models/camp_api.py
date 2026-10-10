@@ -453,6 +453,8 @@ class CampApi(models.AbstractModel):
             value = field.to_string(field.to_date(value) if field.type == 'date' else field.to_datetime(value)) \
                 if value else False
         elif field.type == 'binary':
+            # Stored as base64 bytes; the phone sends a base64 string.
+            current = current.decode() if isinstance(current, bytes) else (current or '')
             return bool(value) and value != current
         return current != value
 
