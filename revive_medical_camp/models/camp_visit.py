@@ -93,9 +93,11 @@ class CampVisit(models.Model):
 
     def _next_token(self, camp_id):
         # Lock the camp row so two registration desks never get the same token.
-        self.env.cr.execute('SELECT id FROM camp_camp WHERE id = %s FOR UPDATE', (camp_id,))
+        # Tokens reserved for offline phones (token_reserved_upto) are skipped.
+        self.env.cr.execute('SELECT token_reserved_upto FROM camp_camp WHERE id = %s FOR UPDATE', (camp_id,))
+        reserved = self.env.cr.fetchone()[0] or 0
         self.env.cr.execute('SELECT COALESCE(MAX(token_no), 0) FROM camp_visit WHERE camp_id = %s', (camp_id,))
-        return self.env.cr.fetchone()[0] + 1
+        return max(self.env.cr.fetchone()[0], reserved) + 1
 
     def _apply_flag_priority(self):
         """Red flags move the patient up the doctor's queue (never down)."""

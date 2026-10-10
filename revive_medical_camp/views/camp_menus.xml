@@ -26,4 +26,5 @@
     <menuitem id="menu_camp_dose_templates" name="Dose templates" parent="menu_camp_config" sequence="30" action="action_camp_dose_template"/>
     <menuitem id="menu_camp_diagnosis_codes" name="Diagnosis codes" parent="menu_camp_config" sequence="40" action="action_camp_diagnosis_code"/>
     <menuitem id="menu_camp_specialities" name="Specialities" parent="menu_camp_config" sequence="50" action="action_camp_speciality"/>
+    <menuitem id="menu_camp_hospitals" name="Referral hospitals" parent="menu_camp_config" sequence="60" action="action_camp_hospitals"/>
 </odoo>

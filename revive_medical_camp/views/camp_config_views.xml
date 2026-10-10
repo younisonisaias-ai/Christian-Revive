@@ -108,6 +108,34 @@
         <field name="view_mode">list</field>
     </record>
 
+    <!-- Referral hospitals (contacts offered to doctors in Camp Mode) -->
+    <record id="view_partner_camp_hospital_list" model="ir.ui.view">
+        <field name="name">res.partner.camp.hospital.list</field>
+        <field name="model">res.partner</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="city"/>
+                <field name="phone"/>
+                <field name="camp_is_hospital" column_invisible="1"/>
+                <field name="is_company" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_hospitals" model="ir.actions.act_window">
+        <field name="name">Referral hospitals</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_partner_camp_hospital_list"/>
+        <field name="domain">[('camp_is_hospital', '=', True)]</field>
+        <field name="context">{'default_camp_is_hospital': True, 'default_is_company': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add the hospitals your doctors refer patients to</p>
+            <p>They appear in Camp Mode when a doctor writes a referral.</p>
+        </field>
+    </record>
+
     <!-- Specialities -->
     <record id="view_camp_speciality_list" model="ir.ui.view">
         <field name="name">camp.speciality.list</field>

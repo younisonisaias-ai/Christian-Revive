@@ -1,6 +1,14 @@
 from odoo import fields, models
 
 
+class ResPartner(models.Model):
+    _inherit = 'res.partner'
+
+    camp_is_hospital = fields.Boolean(
+        string='Medical camp referral hospital',
+        help='Offered to camp doctors when they refer a patient.')
+
+
 class ResUsers(models.Model):
     _inherit = 'res.users'
 

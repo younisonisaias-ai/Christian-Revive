@@ -49,6 +49,7 @@
         <field name="name">United Christian Hospital (demo)</field>
         <field name="is_company" eval="True"/>
         <field name="city">Lahore</field>
+        <field name="camp_is_hospital" eval="True"/>
     </record>
 
     <record id="demo_camp" model="camp.camp">

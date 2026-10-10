@@ -48,6 +48,10 @@ class CampCamp(models.Model):
         string='Clear phones after (days)', default=7,
         help='Patient data saved on camp phones is deleted this many days after the camp closes.')
     notes = fields.Html()
+    token_reserved_upto = fields.Integer(
+        readonly=True, copy=False,
+        help='Highest token number handed out to camp phones in advance, so phones '
+             'working offline never give two patients the same token.')
 
     team_member_ids = fields.One2many('camp.team.member', 'camp_id', string='Team')
     budget_line_ids = fields.One2many('camp.budget.line', 'camp_id', string='Budget')
@@ -119,6 +123,18 @@ class CampCamp(models.Model):
 
     def action_reopen(self):
         self.write({'state': 'running'})
+
+    def _reserve_tokens(self, count=50):
+        """Hand a block of token numbers to a phone for offline registration."""
+        self.ensure_one()
+        self.env.cr.execute('SELECT token_reserved_upto FROM camp_camp WHERE id = %s FOR UPDATE', (self.id,))
+        reserved = self.env.cr.fetchone()[0] or 0
+        self.env.cr.execute('SELECT COALESCE(MAX(token_no), 0) FROM camp_visit WHERE camp_id = %s', (self.id,))
+        start = max(self.env.cr.fetchone()[0], reserved) + 1
+        end = start + max(1, min(count, 500)) - 1
+        self.env.cr.execute('UPDATE camp_camp SET token_reserved_upto = %s WHERE id = %s', (end, self.id))
+        self.invalidate_recordset(['token_reserved_upto'])
+        return {'from': start, 'to': end}
 
     # ── Report data ─────────────────────────────────────────────
     def _report_stats(self, min_group=1):
