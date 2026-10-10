@@ -166,6 +166,10 @@ class CampApiController(http.Controller):
         camp = request.env['camp.api']._get_camp(camp_id)
         return _json(camp.sudo()._reserve_tokens(count))
 
+    @camp_route('/api/camp/<int:camp_id>/close', ['POST'])
+    def close(self, camp_id, **kwargs):
+        return _json(request.env['camp.api'].close_camp(camp_id))
+
     @camp_route('/api/camp/<int:camp_id>/sync', ['POST'])
     def sync(self, camp_id, **kwargs):
         return _json(request.env['camp.api'].sync(camp_id, _body()))

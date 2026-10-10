@@ -181,6 +181,16 @@ class CampApi(models.AbstractModel):
         return {'camp': self._camp(camp), 'visits_by_state': counts,
                 'waiting': sum(counts.get(s, 0) for s in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))}
 
+    @api.model
+    def close_camp(self, camp_id):
+        """Coordinator closes the camp from the phone (after everything is synced)."""
+        camp = self._get_camp(camp_id)
+        if 'coordinator' not in self._roles():
+            raise AccessError(_('Only the camp coordinator can close the camp.'))
+        if camp.state != 'closed':
+            camp.action_close()
+        return self.camp_status(camp.id)
+
     # ── Upload ──────────────────────────────────────────────────
     @api.model
     def sync(self, camp_id, payload):

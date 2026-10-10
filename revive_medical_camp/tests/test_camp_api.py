@@ -132,6 +132,16 @@ class TestCampSync(TestCampFlow):
         self.assertTrue(reg['diagnosis_codes'] is not None)
         self.assertIn('server_time', reg)
 
+    def test_close_camp_from_phone(self):
+        _p, visit = self._register('Waiting')
+        with self.assertRaises(Exception):
+            self.api(self.registration).close_camp(self.camp.id)     # not a coordinator
+        with self.assertRaises(Exception):
+            self.api(self.coordinator).close_camp(self.camp.id)      # a patient is still waiting
+        visit.sudo().action_cancel()
+        status = self.api(self.coordinator).close_camp(self.camp.id)
+        self.assertEqual(status['camp']['state'], 'closed')
+
     def test_outsider_cannot_bootstrap_other_camp(self):
         with self.assertRaises(Exception):
             self.api(self.outsider_reg).bootstrap(self.camp.id)

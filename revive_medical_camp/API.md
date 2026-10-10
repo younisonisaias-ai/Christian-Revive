@@ -47,6 +47,7 @@ give the same token. Ask for more with `POST /api/camp/<id>/tokens {count}`.
 | `GET /api/camp/<id>/queue/<station>` | live queue: `registration`, `triage`, `doctor`, `pharmacy` |
 | `GET /api/camp/patients?q=<name/phone/code>` | search returning patients online |
 | `GET /api/camp/<id>/status` | visits by state + `waiting` count (close-camp screen) |
+| `POST /api/camp/<id>/close` | coordinator closes the camp (refused while patients are waiting) |
 
 ## Upload (`sync`)
 
