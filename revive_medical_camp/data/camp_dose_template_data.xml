@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="dose_1_0_0" model="camp.dose.template">
+            <field name="name">1+0+0 (morning)</field>
+            <field name="name_ur">صبح ایک</field>
+            <field name="sequence">1</field>
+            <field name="doses_per_day">1</field>
+        </record>
+        <record id="dose_0_0_1" model="camp.dose.template">
+            <field name="name">0+0+1 (night)</field>
+            <field name="name_ur">رات ایک</field>
+            <field name="sequence">2</field>
+            <field name="doses_per_day">1</field>
+        </record>
+        <record id="dose_1_0_1" model="camp.dose.template">
+            <field name="name">1+0+1 (morning, night)</field>
+            <field name="name_ur">صبح ایک، رات ایک</field>
+            <field name="sequence">3</field>
+            <field name="doses_per_day">2</field>
+        </record>
+        <record id="dose_1_1_1" model="camp.dose.template">
+            <field name="name">1+1+1 (three times)</field>
+            <field name="name_ur">صبح، دوپہر، رات ایک ایک</field>
+            <field name="sequence">4</field>
+            <field name="doses_per_day">3</field>
+        </record>
+        <record id="dose_1_1_1_1" model="camp.dose.template">
+            <field name="name">1+1+1+1 (four times)</field>
+            <field name="name_ur">دن میں چار بار ایک</field>
+            <field name="sequence">5</field>
+            <field name="doses_per_day">4</field>
+        </record>
+        <record id="dose_half_0_half" model="camp.dose.template">
+            <field name="name">½+0+½ (half tablet twice)</field>
+            <field name="name_ur">صبح آدھی، رات آدھی</field>
+            <field name="sequence">6</field>
+            <field name="doses_per_day">1</field>
+        </record>
+        <record id="dose_sos" model="camp.dose.template">
+            <field name="name">SOS (when needed)</field>
+            <field name="name_ur">ضرورت کے وقت</field>
+            <field name="sequence">7</field>
+            <field name="doses_per_day">1</field>
+            <field name="as_needed" eval="True"/>
+        </record>
+        <record id="dose_once" model="camp.dose.template">
+            <field name="name">Single dose</field>
+            <field name="name_ur">صرف ایک خوراک</field>
+            <field name="sequence">8</field>
+            <field name="doses_per_day">1</field>
+        </record>
+    </data>
+</odoo>

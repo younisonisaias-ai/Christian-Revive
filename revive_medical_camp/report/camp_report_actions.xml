@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_camp_card" model="report.paperformat">
+        <field name="name">Camp patient card</field>
+        <field name="format">custom</field>
+        <field name="page_width">86</field>
+        <field name="page_height">54</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="paperformat_camp_a5" model="report.paperformat">
+        <field name="name">Camp prescription slip (A5)</field>
+        <field name="format">A5</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">42</field>
+        <field name="margin_bottom">15</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">36</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_patient_card" model="ir.actions.report">
+        <field name="name">Patient card</field>
+        <field name="model">camp.visit</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">revive_medical_camp.report_patient_card</field>
+        <field name="report_file">revive_medical_camp.report_patient_card</field>
+        <field name="print_report_name">'Card %s' % (object.token_no)</field>
+        <field name="paperformat_id" ref="paperformat_camp_card"/>
+        <field name="binding_model_id" ref="model_camp_visit"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_prescription_slip" model="ir.actions.report">
+        <field name="name">Prescription slip</field>
+        <field name="model">camp.consultation</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">revive_medical_camp.report_prescription_slip</field>
+        <field name="report_file">revive_medical_camp.report_prescription_slip</field>
+        <field name="print_report_name">'Prescription %s' % (object.patient_id.patient_code or '')</field>
+        <field name="paperformat_id" ref="paperformat_camp_a5"/>
+        <field name="binding_model_id" ref="model_camp_consultation"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_referral_letter" model="ir.actions.report">
+        <field name="name">Referral letter</field>
+        <field name="model">camp.referral</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">revive_medical_camp.report_referral_letter</field>
+        <field name="report_file">revive_medical_camp.report_referral_letter</field>
+        <field name="print_report_name">'Referral %s' % (object.patient_id.patient_code or '')</field>
+        <field name="binding_model_id" ref="model_camp_referral"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_camp_summary" model="ir.actions.report">
+        <field name="name">Camp summary</field>
+        <field name="model">camp.camp</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">revive_medical_camp.report_camp_summary</field>
+        <field name="report_file">revive_medical_camp.report_camp_summary</field>
+        <field name="print_report_name">'Camp summary - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_camp_camp"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <record id="action_report_camp_sponsor" model="ir.actions.report">
+        <field name="name">Sponsor report (anonymised)</field>
+        <field name="model">camp.camp</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">revive_medical_camp.report_camp_sponsor</field>
+        <field name="report_file">revive_medical_camp.report_camp_sponsor</field>
+        <field name="print_report_name">'Sponsor report - %s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_camp_camp"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

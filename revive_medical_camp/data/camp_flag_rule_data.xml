@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Starting thresholds for adults. The medical lead should review and
+         change them under Medical Camps > Configuration > Red-flag rules. -->
+    <data noupdate="1">
+        <record id="flag_bp_sys_urgent" model="camp.flag.rule">
+            <field name="name">Very high blood pressure</field>
+            <field name="name_ur">بلڈ پریشر بہت زیادہ</field>
+            <field name="measure">bp_systolic</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">180</field>
+            <field name="priority">urgent</field>
+        </record>
+        <record id="flag_bp_sys_high" model="camp.flag.rule">
+            <field name="name">High blood pressure</field>
+            <field name="name_ur">بلڈ پریشر زیادہ</field>
+            <field name="sequence">20</field>
+            <field name="measure">bp_systolic</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">140</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_bp_sys_low" model="camp.flag.rule">
+            <field name="name">Low blood pressure</field>
+            <field name="name_ur">بلڈ پریشر کم</field>
+            <field name="sequence">30</field>
+            <field name="measure">bp_systolic</field>
+            <field name="operator">&lt;</field>
+            <field name="value">90</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_bp_dia_urgent" model="camp.flag.rule">
+            <field name="name">Very high diastolic pressure</field>
+            <field name="name_ur">نچلا بلڈ پریشر بہت زیادہ</field>
+            <field name="measure">bp_diastolic</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">110</field>
+            <field name="priority">urgent</field>
+        </record>
+        <record id="flag_spo2_urgent" model="camp.flag.rule">
+            <field name="name">Very low oxygen</field>
+            <field name="name_ur">آکسیجن بہت کم</field>
+            <field name="measure">spo2</field>
+            <field name="operator">&lt;</field>
+            <field name="value">92</field>
+            <field name="priority">urgent</field>
+        </record>
+        <record id="flag_spo2_high" model="camp.flag.rule">
+            <field name="name">Low oxygen</field>
+            <field name="name_ur">آکسیجن کم</field>
+            <field name="sequence">20</field>
+            <field name="measure">spo2</field>
+            <field name="operator">&lt;</field>
+            <field name="value">95</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_temp_high" model="camp.flag.rule">
+            <field name="name">High fever</field>
+            <field name="name_ur">تیز بخار</field>
+            <field name="measure">temperature</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">39</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_pulse_fast" model="camp.flag.rule">
+            <field name="name">Very fast pulse</field>
+            <field name="name_ur">نبض بہت تیز</field>
+            <field name="measure">pulse</field>
+            <field name="operator">&gt;</field>
+            <field name="value">120</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_pulse_slow" model="camp.flag.rule">
+            <field name="name">Very slow pulse</field>
+            <field name="name_ur">نبض بہت آہستہ</field>
+            <field name="sequence">20</field>
+            <field name="measure">pulse</field>
+            <field name="operator">&lt;</field>
+            <field name="value">50</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_sugar_very_high" model="camp.flag.rule">
+            <field name="name">Very high blood sugar</field>
+            <field name="name_ur">شوگر بہت زیادہ</field>
+            <field name="measure">blood_sugar</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">300</field>
+            <field name="priority">urgent</field>
+        </record>
+        <record id="flag_sugar_high" model="camp.flag.rule">
+            <field name="name">High blood sugar</field>
+            <field name="name_ur">شوگر زیادہ</field>
+            <field name="sequence">20</field>
+            <field name="measure">blood_sugar</field>
+            <field name="operator">&gt;=</field>
+            <field name="value">200</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_sugar_low" model="camp.flag.rule">
+            <field name="name">Low blood sugar</field>
+            <field name="name_ur">شوگر کم</field>
+            <field name="sequence">30</field>
+            <field name="measure">blood_sugar</field>
+            <field name="operator">&lt;</field>
+            <field name="value">70</field>
+            <field name="priority">urgent</field>
+        </record>
+        <record id="flag_bmi_low" model="camp.flag.rule">
+            <field name="name">Severely underweight</field>
+            <field name="name_ur">وزن بہت کم</field>
+            <field name="measure">bmi</field>
+            <field name="operator">&lt;</field>
+            <field name="value">16</field>
+            <field name="priority">high</field>
+        </record>
+        <record id="flag_hb_low" model="camp.flag.rule">
+            <field name="name">Severe anaemia</field>
+            <field name="name_ur">خون کی شدید کمی</field>
+            <field name="measure">hemoglobin</field>
+            <field name="operator">&lt;</field>
+            <field name="value">7</field>
+            <field name="priority">urgent</field>
+        </record>
+    </data>
+</odoo>

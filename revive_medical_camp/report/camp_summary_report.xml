@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Totals tables shared by the summary and the sponsor report.
+         Expects `s` = camp._report_stats(); hidden small groups are None. -->
+    <template id="camp_report_totals">
+        <t t-set="fmt" t-value="lambda n: '&lt;%s' % s['min_group'] if n is None else n"/>
+        <table class="camp-table" style="width: 100%;">
+            <tr><th style="width: 50%;">Patients seen</th><td t-esc="s['patients']"/></tr>
+            <tr><th>Male / Female</th><td><span t-esc="fmt(s['male'])"/> / <span t-esc="fmt(s['female'])"/></td></tr>
+            <tr><th>Referred to hospital</th><td t-esc="fmt(s['referrals'])"/></tr>
+            <tr><th>Health-talk attendance</th><td t-esc="s['talk_attendees']"/></tr>
+            <tr><th>Team members</th><td t-esc="s['team']"/></tr>
+        </table>
+
+        <h5 class="mt-3">Patients by age and sex</h5>
+        <table class="camp-table" style="width: 100%;">
+            <thead><tr><th>Age</th><th>Male</th><th>Female</th><th>Other</th><th>Total</th></tr></thead>
+            <tbody>
+                <tr t-foreach="s['age_rows']" t-as="row">
+                    <td t-esc="row['band']"/>
+                    <td t-esc="fmt(row['male'])"/>
+                    <td t-esc="fmt(row['female'])"/>
+                    <td t-esc="fmt(row['other'])"/>
+                    <td t-esc="fmt(row['total'])"/>
+                </tr>
+            </tbody>
+        </table>
+
+        <h5 class="mt-3">Top diagnoses</h5>
+        <table class="camp-table" style="width: 100%;" t-if="s['top_diagnoses']">
+            <tr t-foreach="s['top_diagnoses']" t-as="d"><td t-esc="d[0]"/><td style="width: 15%;" t-esc="d[1]"/></tr>
+        </table>
+        <p t-else="" class="text-muted">None recorded.</p>
+
+        <h5 class="mt-3">Red flags found at triage</h5>
+        <table class="camp-table" style="width: 100%;" t-if="s['flags']">
+            <tr t-foreach="s['flags']" t-as="f"><td t-esc="f[0]"/><td style="width: 15%;" t-esc="f[1]"/></tr>
+        </table>
+        <p t-else="" class="text-muted">None.</p>
+    </template>
+
+    <template id="report_camp_summary">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-call="revive_medical_camp.camp_report_style"/>
+                    <t t-set="s" t-value="o._report_stats()"/>
+                    <div class="page">
+                        <h3>Camp summary — <span t-esc="o.name"/></h3>
+                        <p class="text-muted">
+                            <span t-field="o.date_start"/>
+                            <t t-if="o.site"> · <span t-esc="o.site"/></t>
+                            <t t-if="o.area"> · <span t-esc="o.area"/></t>
+                        </p>
+                        <t t-call="revive_medical_camp.camp_report_totals"/>
+
+                        <h5 class="mt-3">Medicines dispensed</h5>
+                        <table class="camp-table" style="width: 100%;" t-if="s['medicines']">
+                            <tr t-foreach="s['medicines']" t-as="m"><td t-esc="m[0]"/><td style="width: 15%;" t-esc="'%g' % m[1]"/></tr>
+                        </table>
+                        <p t-else="" class="text-muted">None recorded.</p>
+
+                        <h5 class="mt-3">Health talks</h5>
+                        <table class="camp-table" style="width: 100%;" t-if="s['talks']">
+                            <tr t-foreach="s['talks']" t-as="t"><td t-esc="t[0]"/><td style="width: 15%;" t-esc="t[1]"/></tr>
+                        </table>
+                        <p t-else="" class="text-muted">None recorded.</p>
+
+                        <h5 class="mt-3">Team and cost</h5>
+                        <table class="camp-table" style="width: 100%;">
+                            <tr><th style="width: 50%;">Volunteer hours</th><td t-esc="s['team_hours']"/></tr>
+                            <tr><th>Total cost</th><td t-esc="s['cost']" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/></tr>
+                            <tr><th>Cost per patient</th><td t-esc="s['cost_per_patient']" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/></tr>
+                        </table>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

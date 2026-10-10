@@ -1,0 +1,1022 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Common medical-camp diagnoses. The full ICD-10 list can be imported
+         from Configuration > Diagnosis codes (Import). -->
+    <data noupdate="1">
+        <record id="icd_a09" model="camp.diagnosis.code">
+            <field name="code">A09</field>
+            <field name="name">Diarrhoea and gastroenteritis of infectious origin</field>
+            <field name="name_ur">اسہال / پیٹ کا انفیکشن</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_a01_0" model="camp.diagnosis.code">
+            <field name="code">A01.0</field>
+            <field name="name">Typhoid fever</field>
+            <field name="name_ur">ٹائیفائیڈ</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_a06_0" model="camp.diagnosis.code">
+            <field name="code">A06.0</field>
+            <field name="name">Acute amoebic dysentery</field>
+            <field name="name_ur">پیچش (امیبا)</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_a15_0" model="camp.diagnosis.code">
+            <field name="code">A15.0</field>
+            <field name="name">Tuberculosis of lung (confirmed)</field>
+            <field name="name_ur">پھیپھڑوں کی ٹی بی</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_a16_2" model="camp.diagnosis.code">
+            <field name="code">A16.2</field>
+            <field name="name">Tuberculosis of lung (suspected)</field>
+            <field name="name_ur">ٹی بی کا شبہ</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_a90" model="camp.diagnosis.code">
+            <field name="code">A90</field>
+            <field name="name">Dengue fever</field>
+            <field name="name_ur">ڈینگی بخار</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_b05_9" model="camp.diagnosis.code">
+            <field name="code">B05.9</field>
+            <field name="name">Measles</field>
+            <field name="name_ur">خسرہ</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b01_9" model="camp.diagnosis.code">
+            <field name="code">B01.9</field>
+            <field name="name">Chickenpox</field>
+            <field name="name_ur">چکن پاکس</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b16_9" model="camp.diagnosis.code">
+            <field name="code">B16.9</field>
+            <field name="name">Acute hepatitis B</field>
+            <field name="name_ur">ہیپاٹائٹس بی</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b17_1" model="camp.diagnosis.code">
+            <field name="code">B17.1</field>
+            <field name="name">Acute hepatitis C</field>
+            <field name="name_ur">ہیپاٹائٹس سی</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b15_9" model="camp.diagnosis.code">
+            <field name="code">B15.9</field>
+            <field name="name">Hepatitis A</field>
+            <field name="name_ur">ہیپاٹائٹس اے / یرقان</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b35_4" model="camp.diagnosis.code">
+            <field name="code">B35.4</field>
+            <field name="name">Ringworm of the body (tinea corporis)</field>
+            <field name="name_ur">داد</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_b37_9" model="camp.diagnosis.code">
+            <field name="code">B37.9</field>
+            <field name="name">Candidiasis (thrush)</field>
+            <field name="name_ur">فنگل انفیکشن</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b50_9" model="camp.diagnosis.code">
+            <field name="code">B50.9</field>
+            <field name="name">Malaria (falciparum)</field>
+            <field name="name_ur">ملیریا (فیلسی پیرم)</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b54" model="camp.diagnosis.code">
+            <field name="code">B54</field>
+            <field name="name">Malaria, unspecified</field>
+            <field name="name_ur">ملیریا</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_b65_9" model="camp.diagnosis.code">
+            <field name="code">B65.9</field>
+            <field name="name">Schistosomiasis</field>
+            <field name="name_ur">شسٹوسومیاسس</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b77_9" model="camp.diagnosis.code">
+            <field name="code">B77.9</field>
+            <field name="name">Roundworm (ascariasis)</field>
+            <field name="name_ur">پیٹ کے کیڑے</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_b82_9" model="camp.diagnosis.code">
+            <field name="code">B82.9</field>
+            <field name="name">Intestinal parasites, unspecified</field>
+            <field name="name_ur">آنتوں کے کیڑے</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_b86" model="camp.diagnosis.code">
+            <field name="code">B86</field>
+            <field name="name">Scabies</field>
+            <field name="name_ur">خارش (سکیبیز)</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_b85_2" model="camp.diagnosis.code">
+            <field name="code">B85.2</field>
+            <field name="name">Head lice</field>
+            <field name="name_ur">جوئیں</field>
+            <field name="chapter">Infections</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_d50_9" model="camp.diagnosis.code">
+            <field name="code">D50.9</field>
+            <field name="name">Iron deficiency anaemia</field>
+            <field name="name_ur">خون کی کمی (آئرن)</field>
+            <field name="chapter">Blood</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_d64_9" model="camp.diagnosis.code">
+            <field name="code">D64.9</field>
+            <field name="name">Anaemia, unspecified</field>
+            <field name="name_ur">خون کی کمی</field>
+            <field name="chapter">Blood</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_e03_9" model="camp.diagnosis.code">
+            <field name="code">E03.9</field>
+            <field name="name">Hypothyroidism</field>
+            <field name="name_ur">تھائیرائیڈ کی کمی</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e05_9" model="camp.diagnosis.code">
+            <field name="code">E05.9</field>
+            <field name="name">Hyperthyroidism</field>
+            <field name="name_ur">تھائیرائیڈ کی زیادتی</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e11_9" model="camp.diagnosis.code">
+            <field name="code">E11.9</field>
+            <field name="name">Type 2 diabetes without complications</field>
+            <field name="name_ur">شوگر (ذیابیطس ٹائپ 2)</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_e11_65" model="camp.diagnosis.code">
+            <field name="code">E11.65</field>
+            <field name="name">Type 2 diabetes with high blood sugar</field>
+            <field name="name_ur">بے قابو شوگر</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e10_9" model="camp.diagnosis.code">
+            <field name="code">E10.9</field>
+            <field name="name">Type 1 diabetes</field>
+            <field name="name_ur">شوگر (ٹائپ 1)</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e44_0" model="camp.diagnosis.code">
+            <field name="code">E44.0</field>
+            <field name="name">Moderate malnutrition</field>
+            <field name="name_ur">درمیانی غذائی کمی</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_e43" model="camp.diagnosis.code">
+            <field name="code">E43</field>
+            <field name="name">Severe malnutrition</field>
+            <field name="name_ur">شدید غذائی کمی</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_e55_9" model="camp.diagnosis.code">
+            <field name="code">E55.9</field>
+            <field name="name">Vitamin D deficiency</field>
+            <field name="name_ur">وٹامن ڈی کی کمی</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_e53_8" model="camp.diagnosis.code">
+            <field name="code">E53.8</field>
+            <field name="name">Vitamin B12 deficiency</field>
+            <field name="name_ur">وٹامن بی 12 کی کمی</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e66_9" model="camp.diagnosis.code">
+            <field name="code">E66.9</field>
+            <field name="name">Obesity</field>
+            <field name="name_ur">موٹاپا</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e78_5" model="camp.diagnosis.code">
+            <field name="code">E78.5</field>
+            <field name="name">High cholesterol</field>
+            <field name="name_ur">کولیسٹرول زیادہ</field>
+            <field name="chapter">Endocrine</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_e86_0" model="camp.diagnosis.code">
+            <field name="code">E86.0</field>
+            <field name="name">Dehydration</field>
+            <field name="name_ur">پانی کی کمی</field>
+            <field name="chapter">Nutrition</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_f32_9" model="camp.diagnosis.code">
+            <field name="code">F32.9</field>
+            <field name="name">Depression</field>
+            <field name="name_ur">ڈپریشن</field>
+            <field name="chapter">Mental health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_f41_9" model="camp.diagnosis.code">
+            <field name="code">F41.9</field>
+            <field name="name">Anxiety</field>
+            <field name="name_ur">گھبراہٹ / بے چینی</field>
+            <field name="chapter">Mental health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_f51_0" model="camp.diagnosis.code">
+            <field name="code">F51.0</field>
+            <field name="name">Insomnia</field>
+            <field name="name_ur">نیند نہ آنا</field>
+            <field name="chapter">Mental health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_g40_9" model="camp.diagnosis.code">
+            <field name="code">G40.9</field>
+            <field name="name">Epilepsy</field>
+            <field name="name_ur">مرگی</field>
+            <field name="chapter">Nervous system</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_g43_9" model="camp.diagnosis.code">
+            <field name="code">G43.9</field>
+            <field name="name">Migraine</field>
+            <field name="name_ur">آدھے سر کا درد</field>
+            <field name="chapter">Nervous system</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_g44_2" model="camp.diagnosis.code">
+            <field name="code">G44.2</field>
+            <field name="name">Tension headache</field>
+            <field name="name_ur">سر درد (تناؤ)</field>
+            <field name="chapter">Nervous system</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_g56_0" model="camp.diagnosis.code">
+            <field name="code">G56.0</field>
+            <field name="name">Carpal tunnel syndrome</field>
+            <field name="name_ur">ہاتھ سن ہونا</field>
+            <field name="chapter">Nervous system</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_g62_9" model="camp.diagnosis.code">
+            <field name="code">G62.9</field>
+            <field name="name">Peripheral neuropathy</field>
+            <field name="name_ur">ہاتھ پاؤں میں جلن / سن ہونا</field>
+            <field name="chapter">Nervous system</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h10_9" model="camp.diagnosis.code">
+            <field name="code">H10.9</field>
+            <field name="name">Conjunctivitis</field>
+            <field name="name_ur">آنکھ آنا</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h25_9" model="camp.diagnosis.code">
+            <field name="code">H25.9</field>
+            <field name="name">Age-related cataract</field>
+            <field name="name_ur">موتیا</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h40_9" model="camp.diagnosis.code">
+            <field name="code">H40.9</field>
+            <field name="name">Glaucoma</field>
+            <field name="name_ur">کالا موتیا</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h52_1" model="camp.diagnosis.code">
+            <field name="code">H52.1</field>
+            <field name="name">Short sight (myopia)</field>
+            <field name="name_ur">دور کی نظر کمزور</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h52_4" model="camp.diagnosis.code">
+            <field name="code">H52.4</field>
+            <field name="name">Presbyopia (reading glasses)</field>
+            <field name="name_ur">قریب کی نظر کمزور</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h04_1" model="camp.diagnosis.code">
+            <field name="code">H04.1</field>
+            <field name="name">Dry eye</field>
+            <field name="name_ur">آنکھوں کی خشکی</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h00_0" model="camp.diagnosis.code">
+            <field name="code">H00.0</field>
+            <field name="name">Stye</field>
+            <field name="name_ur">گوہانجنی</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h54_7" model="camp.diagnosis.code">
+            <field name="code">H54.7</field>
+            <field name="name">Visual impairment</field>
+            <field name="name_ur">نظر کی کمزوری</field>
+            <field name="chapter">Eye</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h60_9" model="camp.diagnosis.code">
+            <field name="code">H60.9</field>
+            <field name="name">Outer ear infection</field>
+            <field name="name_ur">کان کا بیرونی انفیکشن</field>
+            <field name="chapter">Ear</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_h66_9" model="camp.diagnosis.code">
+            <field name="code">H66.9</field>
+            <field name="name">Middle ear infection (otitis media)</field>
+            <field name="name_ur">کان کا انفیکشن</field>
+            <field name="chapter">Ear</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h61_2" model="camp.diagnosis.code">
+            <field name="code">H61.2</field>
+            <field name="name">Impacted ear wax</field>
+            <field name="name_ur">کان میں میل</field>
+            <field name="chapter">Ear</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_h91_9" model="camp.diagnosis.code">
+            <field name="code">H91.9</field>
+            <field name="name">Hearing loss</field>
+            <field name="name_ur">کم سنائی دینا</field>
+            <field name="chapter">Ear</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i10" model="camp.diagnosis.code">
+            <field name="code">I10</field>
+            <field name="name">High blood pressure (hypertension)</field>
+            <field name="name_ur">ہائی بلڈ پریشر</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_i20_9" model="camp.diagnosis.code">
+            <field name="code">I20.9</field>
+            <field name="name">Angina</field>
+            <field name="name_ur">دل کا درد (انجائنا)</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i25_9" model="camp.diagnosis.code">
+            <field name="code">I25.9</field>
+            <field name="name">Chronic heart disease</field>
+            <field name="name_ur">دل کی پرانی بیماری</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i50_9" model="camp.diagnosis.code">
+            <field name="code">I50.9</field>
+            <field name="name">Heart failure</field>
+            <field name="name_ur">دل کی کمزوری</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i64" model="camp.diagnosis.code">
+            <field name="code">I64</field>
+            <field name="name">Stroke</field>
+            <field name="name_ur">فالج</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i83_9" model="camp.diagnosis.code">
+            <field name="code">I83.9</field>
+            <field name="name">Varicose veins of legs</field>
+            <field name="name_ur">ٹانگوں کی ابھری رگیں</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_i95_9" model="camp.diagnosis.code">
+            <field name="code">I95.9</field>
+            <field name="name">Low blood pressure</field>
+            <field name="name_ur">لو بلڈ پریشر</field>
+            <field name="chapter">Heart &amp; circulation</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_j00" model="camp.diagnosis.code">
+            <field name="code">J00</field>
+            <field name="name">Common cold</field>
+            <field name="name_ur">زکام</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j02_9" model="camp.diagnosis.code">
+            <field name="code">J02.9</field>
+            <field name="name">Sore throat (pharyngitis)</field>
+            <field name="name_ur">گلے کی خرابی</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j03_9" model="camp.diagnosis.code">
+            <field name="code">J03.9</field>
+            <field name="name">Tonsillitis</field>
+            <field name="name_ur">ٹانسلز</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j01_9" model="camp.diagnosis.code">
+            <field name="code">J01.9</field>
+            <field name="name">Sinusitis</field>
+            <field name="name_ur">سائنس</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_j06_9" model="camp.diagnosis.code">
+            <field name="code">J06.9</field>
+            <field name="name">Upper respiratory infection</field>
+            <field name="name_ur">نزلہ زکام / گلے کا انفیکشن</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j11_1" model="camp.diagnosis.code">
+            <field name="code">J11.1</field>
+            <field name="name">Influenza</field>
+            <field name="name_ur">فلو</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_j18_9" model="camp.diagnosis.code">
+            <field name="code">J18.9</field>
+            <field name="name">Pneumonia</field>
+            <field name="name_ur">نمونیا</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j20_9" model="camp.diagnosis.code">
+            <field name="code">J20.9</field>
+            <field name="name">Acute bronchitis</field>
+            <field name="name_ur">سینے کا انفیکشن</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j30_4" model="camp.diagnosis.code">
+            <field name="code">J30.4</field>
+            <field name="name">Allergic rhinitis</field>
+            <field name="name_ur">الرجی (ناک)</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_j44_9" model="camp.diagnosis.code">
+            <field name="code">J44.9</field>
+            <field name="name">COPD</field>
+            <field name="name_ur">سانس کی پرانی بیماری (COPD)</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_j45_9" model="camp.diagnosis.code">
+            <field name="code">J45.9</field>
+            <field name="name">Asthma</field>
+            <field name="name_ur">دمہ</field>
+            <field name="chapter">Respiratory</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r05" model="camp.diagnosis.code">
+            <field name="code">R05</field>
+            <field name="name">Cough</field>
+            <field name="name_ur">کھانسی</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k02_9" model="camp.diagnosis.code">
+            <field name="code">K02.9</field>
+            <field name="name">Dental caries (tooth decay)</field>
+            <field name="name_ur">دانت کا کیڑا</field>
+            <field name="chapter">Teeth &amp; mouth</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k04_7" model="camp.diagnosis.code">
+            <field name="code">K04.7</field>
+            <field name="name">Dental abscess</field>
+            <field name="name_ur">دانت میں پیپ</field>
+            <field name="chapter">Teeth &amp; mouth</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k05_1" model="camp.diagnosis.code">
+            <field name="code">K05.1</field>
+            <field name="name">Gum disease (gingivitis)</field>
+            <field name="name_ur">مسوڑھوں کی سوجن</field>
+            <field name="chapter">Teeth &amp; mouth</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k08_1" model="camp.diagnosis.code">
+            <field name="code">K08.1</field>
+            <field name="name">Tooth loss</field>
+            <field name="name_ur">دانت گرنا</field>
+            <field name="chapter">Teeth &amp; mouth</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k12_0" model="camp.diagnosis.code">
+            <field name="code">K12.0</field>
+            <field name="name">Mouth ulcers</field>
+            <field name="name_ur">منہ کے چھالے</field>
+            <field name="chapter">Teeth &amp; mouth</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k21_9" model="camp.diagnosis.code">
+            <field name="code">K21.9</field>
+            <field name="name">Acid reflux (GERD)</field>
+            <field name="name_ur">تیزابیت / سینے کی جلن</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k29_7" model="camp.diagnosis.code">
+            <field name="code">K29.7</field>
+            <field name="name">Gastritis</field>
+            <field name="name_ur">معدے کی سوزش</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k30" model="camp.diagnosis.code">
+            <field name="code">K30</field>
+            <field name="name">Indigestion (dyspepsia)</field>
+            <field name="name_ur">بدہضمی</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k27_9" model="camp.diagnosis.code">
+            <field name="code">K27.9</field>
+            <field name="name">Peptic ulcer</field>
+            <field name="name_ur">معدے کا السر</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k40_9" model="camp.diagnosis.code">
+            <field name="code">K40.9</field>
+            <field name="name">Inguinal hernia</field>
+            <field name="name_ur">ہرنیا</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k59_0" model="camp.diagnosis.code">
+            <field name="code">K59.0</field>
+            <field name="name">Constipation</field>
+            <field name="name_ur">قبض</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k64_9" model="camp.diagnosis.code">
+            <field name="code">K64.9</field>
+            <field name="name">Piles (haemorrhoids)</field>
+            <field name="name_ur">بواسیر</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_k58_9" model="camp.diagnosis.code">
+            <field name="code">K58.9</field>
+            <field name="name">Irritable bowel syndrome</field>
+            <field name="name_ur">آنتوں کی حساسیت (IBS)</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k80_2" model="camp.diagnosis.code">
+            <field name="code">K80.2</field>
+            <field name="name">Gallstones</field>
+            <field name="name_ur">پتے کی پتھری</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_k76_0" model="camp.diagnosis.code">
+            <field name="code">K76.0</field>
+            <field name="name">Fatty liver</field>
+            <field name="name_ur">جگر پر چربی</field>
+            <field name="chapter">Digestive</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l01_0" model="camp.diagnosis.code">
+            <field name="code">L01.0</field>
+            <field name="name">Impetigo</field>
+            <field name="name_ur">جلد کا انفیکشن (امپیٹیگو)</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l02_9" model="camp.diagnosis.code">
+            <field name="code">L02.9</field>
+            <field name="name">Boil / skin abscess</field>
+            <field name="name_ur">پھوڑا</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_l20_9" model="camp.diagnosis.code">
+            <field name="code">L20.9</field>
+            <field name="name">Eczema (atopic dermatitis)</field>
+            <field name="name_ur">ایگزیما</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_l30_9" model="camp.diagnosis.code">
+            <field name="code">L30.9</field>
+            <field name="name">Dermatitis</field>
+            <field name="name_ur">جلد کی سوزش</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_l50_9" model="camp.diagnosis.code">
+            <field name="code">L50.9</field>
+            <field name="name">Urticaria (hives)</field>
+            <field name="name_ur">چھپاکی</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l70_0" model="camp.diagnosis.code">
+            <field name="code">L70.0</field>
+            <field name="name">Acne</field>
+            <field name="name_ur">کیل مہاسے</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l40_9" model="camp.diagnosis.code">
+            <field name="code">L40.9</field>
+            <field name="name">Psoriasis</field>
+            <field name="name_ur">چنبل</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l80" model="camp.diagnosis.code">
+            <field name="code">L80</field>
+            <field name="name">Vitiligo</field>
+            <field name="name_ur">سفید داغ (برص)</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_l21_9" model="camp.diagnosis.code">
+            <field name="code">L21.9</field>
+            <field name="name">Dandruff / seborrhoeic dermatitis</field>
+            <field name="name_ur">خشکی (سر)</field>
+            <field name="chapter">Skin</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_m15_9" model="camp.diagnosis.code">
+            <field name="code">M15.9</field>
+            <field name="name">Osteoarthritis (multiple joints)</field>
+            <field name="name_ur">جوڑوں کا درد (گٹھیا)</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_m17_9" model="camp.diagnosis.code">
+            <field name="code">M17.9</field>
+            <field name="name">Knee osteoarthritis</field>
+            <field name="name_ur">گھٹنوں کا درد</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_m06_9" model="camp.diagnosis.code">
+            <field name="code">M06.9</field>
+            <field name="name">Rheumatoid arthritis</field>
+            <field name="name_ur">گٹھیا (رومیٹائیڈ)</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_m10_9" model="camp.diagnosis.code">
+            <field name="code">M10.9</field>
+            <field name="name">Gout</field>
+            <field name="name_ur">گاؤٹ</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_m54_5" model="camp.diagnosis.code">
+            <field name="code">M54.5</field>
+            <field name="name">Low back pain</field>
+            <field name="name_ur">کمر درد</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_m54_2" model="camp.diagnosis.code">
+            <field name="code">M54.2</field>
+            <field name="name">Neck pain</field>
+            <field name="name_ur">گردن درد</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_m79_1" model="camp.diagnosis.code">
+            <field name="code">M79.1</field>
+            <field name="name">Muscle pain</field>
+            <field name="name_ur">پٹھوں کا درد</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_m75_0" model="camp.diagnosis.code">
+            <field name="code">M75.0</field>
+            <field name="name">Frozen shoulder</field>
+            <field name="name_ur">کندھا جم جانا</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_m81_0" model="camp.diagnosis.code">
+            <field name="code">M81.0</field>
+            <field name="name">Osteoporosis</field>
+            <field name="name_ur">ہڈیوں کی کمزوری</field>
+            <field name="chapter">Bones &amp; joints</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n39_0" model="camp.diagnosis.code">
+            <field name="code">N39.0</field>
+            <field name="name">Urinary tract infection</field>
+            <field name="name_ur">پیشاب کی نالی کا انفیکشن</field>
+            <field name="chapter">Urinary</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_n20_0" model="camp.diagnosis.code">
+            <field name="code">N20.0</field>
+            <field name="name">Kidney stone</field>
+            <field name="name_ur">گردے کی پتھری</field>
+            <field name="chapter">Urinary</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n18_9" model="camp.diagnosis.code">
+            <field name="code">N18.9</field>
+            <field name="name">Chronic kidney disease</field>
+            <field name="name_ur">گردوں کی پرانی بیماری</field>
+            <field name="chapter">Urinary</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n40" model="camp.diagnosis.code">
+            <field name="code">N40</field>
+            <field name="name">Enlarged prostate</field>
+            <field name="name_ur">غدود کا بڑھنا (پروسٹیٹ)</field>
+            <field name="chapter">Urinary</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n76_0" model="camp.diagnosis.code">
+            <field name="code">N76.0</field>
+            <field name="name">Vaginal infection (vaginitis)</field>
+            <field name="name_ur">اندرونی انفیکشن (خواتین)</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_n92_0" model="camp.diagnosis.code">
+            <field name="code">N92.0</field>
+            <field name="name">Heavy periods</field>
+            <field name="name_ur">ماہواری زیادہ آنا</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_n94_6" model="camp.diagnosis.code">
+            <field name="code">N94.6</field>
+            <field name="name">Painful periods</field>
+            <field name="name_ur">ماہواری میں درد</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_n91_2" model="camp.diagnosis.code">
+            <field name="code">N91.2</field>
+            <field name="name">Missed periods (amenorrhoea)</field>
+            <field name="name_ur">ماہواری نہ آنا</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n95_1" model="camp.diagnosis.code">
+            <field name="code">N95.1</field>
+            <field name="name">Menopause symptoms</field>
+            <field name="name_ur">سن یاس کی علامات</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_n73_9" model="camp.diagnosis.code">
+            <field name="code">N73.9</field>
+            <field name="name">Pelvic inflammatory disease</field>
+            <field name="name_ur">پیڑو کی سوزش</field>
+            <field name="chapter">Women's health</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_z34_9" model="camp.diagnosis.code">
+            <field name="code">Z34.9</field>
+            <field name="name">Normal pregnancy check-up</field>
+            <field name="name_ur">حمل کا معائنہ</field>
+            <field name="chapter">Pregnancy</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_o99_0" model="camp.diagnosis.code">
+            <field name="code">O99.0</field>
+            <field name="name">Anaemia in pregnancy</field>
+            <field name="name_ur">حمل میں خون کی کمی</field>
+            <field name="chapter">Pregnancy</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_o13" model="camp.diagnosis.code">
+            <field name="code">O13</field>
+            <field name="name">High blood pressure in pregnancy</field>
+            <field name="name_ur">حمل میں ہائی بلڈ پریشر</field>
+            <field name="chapter">Pregnancy</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_o24_4" model="camp.diagnosis.code">
+            <field name="code">O24.4</field>
+            <field name="name">Diabetes in pregnancy</field>
+            <field name="name_ur">حمل میں شوگر</field>
+            <field name="chapter">Pregnancy</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_o21_0" model="camp.diagnosis.code">
+            <field name="code">O21.0</field>
+            <field name="name">Vomiting in pregnancy</field>
+            <field name="name_ur">حمل میں الٹیاں</field>
+            <field name="chapter">Pregnancy</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_p59_9" model="camp.diagnosis.code">
+            <field name="code">P59.9</field>
+            <field name="name">Newborn jaundice</field>
+            <field name="name_ur">نومولود کا یرقان</field>
+            <field name="chapter">Children</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_r62_5" model="camp.diagnosis.code">
+            <field name="code">R62.5</field>
+            <field name="name">Poor growth in a child</field>
+            <field name="name_ur">بچے کی کم نشوونما</field>
+            <field name="chapter">Children</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_z00_1" model="camp.diagnosis.code">
+            <field name="code">Z00.1</field>
+            <field name="name">Routine child health check</field>
+            <field name="name_ur">بچے کا معمول کا معائنہ</field>
+            <field name="chapter">Children</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_z23" model="camp.diagnosis.code">
+            <field name="code">Z23</field>
+            <field name="name">Vaccination needed</field>
+            <field name="name_ur">حفاظتی ٹیکے درکار</field>
+            <field name="chapter">Children</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_r50_9" model="camp.diagnosis.code">
+            <field name="code">R50.9</field>
+            <field name="name">Fever, cause not known</field>
+            <field name="name_ur">بخار</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r51" model="camp.diagnosis.code">
+            <field name="code">R51</field>
+            <field name="name">Headache</field>
+            <field name="name_ur">سر درد</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r10_4" model="camp.diagnosis.code">
+            <field name="code">R10.4</field>
+            <field name="name">Abdominal pain</field>
+            <field name="name_ur">پیٹ درد</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r11" model="camp.diagnosis.code">
+            <field name="code">R11</field>
+            <field name="name">Nausea and vomiting</field>
+            <field name="name_ur">متلی اور الٹی</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r42" model="camp.diagnosis.code">
+            <field name="code">R42</field>
+            <field name="name">Dizziness</field>
+            <field name="name_ur">چکر آنا</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r53" model="camp.diagnosis.code">
+            <field name="code">R53</field>
+            <field name="name">Weakness and fatigue</field>
+            <field name="name_ur">کمزوری اور تھکاوٹ</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r07_4" model="camp.diagnosis.code">
+            <field name="code">R07.4</field>
+            <field name="name">Chest pain</field>
+            <field name="name_ur">سینے میں درد</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_r06_0" model="camp.diagnosis.code">
+            <field name="code">R06.0</field>
+            <field name="name">Shortness of breath</field>
+            <field name="name_ur">سانس پھولنا</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_r21" model="camp.diagnosis.code">
+            <field name="code">R21</field>
+            <field name="name">Skin rash</field>
+            <field name="name_ur">جلد پر دانے</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_r63_4" model="camp.diagnosis.code">
+            <field name="code">R63.4</field>
+            <field name="name">Weight loss</field>
+            <field name="name_ur">وزن کم ہونا</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_r60_0" model="camp.diagnosis.code">
+            <field name="code">R60.0</field>
+            <field name="name">Swelling of legs / feet</field>
+            <field name="name_ur">پاؤں کی سوجن</field>
+            <field name="chapter">Symptoms</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_t14_1" model="camp.diagnosis.code">
+            <field name="code">T14.1</field>
+            <field name="name">Open wound</field>
+            <field name="name_ur">زخم</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_t14_0" model="camp.diagnosis.code">
+            <field name="code">T14.0</field>
+            <field name="name">Bruise / minor injury</field>
+            <field name="name_ur">چوٹ</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_t30_0" model="camp.diagnosis.code">
+            <field name="code">T30.0</field>
+            <field name="name">Burn</field>
+            <field name="name_ur">جلنا</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_t63_0" model="camp.diagnosis.code">
+            <field name="code">T63.0</field>
+            <field name="name">Snake bite</field>
+            <field name="name_ur">سانپ کا کاٹنا</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_w54" model="camp.diagnosis.code">
+            <field name="code">W54</field>
+            <field name="name">Dog bite</field>
+            <field name="name_ur">کتے کا کاٹنا</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_s93_4" model="camp.diagnosis.code">
+            <field name="code">S93.4</field>
+            <field name="name">Ankle sprain</field>
+            <field name="name_ur">ٹخنے میں موچ</field>
+            <field name="chapter">Injuries</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_z00_0" model="camp.diagnosis.code">
+            <field name="code">Z00.0</field>
+            <field name="name">General health check, no problem found</field>
+            <field name="name_ur">عمومی معائنہ، کوئی مسئلہ نہیں</field>
+            <field name="chapter">Other</field>
+            <field name="favourite" eval="True"/>
+        </record>
+        <record id="icd_z71_3" model="camp.diagnosis.code">
+            <field name="code">Z71.3</field>
+            <field name="name">Diet advice</field>
+            <field name="name_ur">غذا کے بارے میں مشورہ</field>
+            <field name="chapter">Other</field>
+            <field name="favourite" eval="False"/>
+        </record>
+        <record id="icd_z72_0" model="camp.diagnosis.code">
+            <field name="code">Z72.0</field>
+            <field name="name">Tobacco use</field>
+            <field name="name_ur">تمباکو نوشی</field>
+            <field name="chapter">Other</field>
+            <field name="favourite" eval="False"/>
+        </record>
+    </data>
+</odoo>

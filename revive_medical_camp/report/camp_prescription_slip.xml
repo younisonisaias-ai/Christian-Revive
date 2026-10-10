@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Shared style: Urdu text right-to-left in a Nastaliq / Arabic-script font. -->
+    <template id="camp_report_style">
+        <style>
+            .camp-ur { direction: rtl; text-align: right; unicode-bidi: embed;
+                       font-family: 'Camp Urdu', 'Noto Naskh Arabic', 'DejaVu Sans', sans-serif; line-height: 1.6; }
+            .camp-small { font-size: 11px; }
+            .camp-table td, .camp-table th { padding: 3px 6px; border-bottom: 1px solid #ddd; }
+            .camp-table th { background: #f4efe7; }
+            .camp-disclaimer { font-size: 10px; color: #555; border-top: 1px solid #999; margin-top: 12px; padding-top: 6px; }
+        </style>
+    </template>
+
+    <!-- Patient card with QR: every station scans it instead of searching. -->
+    <template id="report_patient_card">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="font-family: sans-serif;">
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="vertical-align: top;">
+                                <div style="font-size: 9px; color: #666;" t-esc="o.camp_id.name"/>
+                                <div style="font-size: 30px; font-weight: bold;">#<span t-esc="o.token_no"/></div>
+                                <div style="font-size: 13px; font-weight: bold;" t-esc="o.patient_id.name"/>
+                                <div style="font-size: 10px;">
+                                    <span t-esc="o.patient_id.patient_code"/> ·
+                                    <span t-esc="o.patient_id.age_years"/>y ·
+                                    <span t-field="o.patient_id.sex"/>
+                                </div>
+                            </td>
+                            <td style="width: 40%; text-align: right;">
+                                <div t-field="o.qr_code"
+                                     t-options="{'widget': 'barcode', 'symbology': 'QR', 'width': 120, 'height': 120, 'img_style': 'width:30mm;height:30mm;'}"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Bilingual prescription slip (English and Urdu). -->
+    <template id="report_prescription_slip">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-call="revive_medical_camp.camp_report_style"/>
+                    <div class="page">
+                        <h4 class="mb-0">Prescription <span class="camp-ur">نسخہ</span></h4>
+                        <div class="camp-small text-muted mb-2">
+                            <span t-esc="o.camp_id.name"/> · <span t-field="o.camp_id.date_start"/>
+                        </div>
+                        <table class="table table-sm table-borderless camp-small mb-2">
+                            <tr>
+                                <td><strong>Patient:</strong> <span t-esc="o.patient_id.name"/> (<span t-esc="o.patient_id.patient_code"/>)</td>
+                                <td><strong>Age / Sex:</strong> <span t-esc="o.patient_id.age_years"/> / <span t-field="o.patient_id.sex"/></td>
+                                <td><strong>Token:</strong> #<span t-esc="o.visit_id.token_no"/></td>
+                            </tr>
+                        </table>
+                        <div t-if="o.diagnosis_ids" class="camp-small mb-2">
+                            <strong>Diagnosis:</strong>
+                            <span t-esc="', '.join(o.diagnosis_ids.mapped('display_name'))"/>
+                        </div>
+                        <table class="camp-table camp-small" style="width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Medicine</th>
+                                    <th>Dose</th>
+                                    <th>Days</th>
+                                    <th>Qty</th>
+                                    <th class="camp-ur">ہدایات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="o.prescription_line_ids.filtered(lambda l: l.state != 'not_given')" t-as="line">
+                                    <td>
+                                        <strong t-esc="(line.substitute_formulary_id or line.formulary_id).display_name"/>
+                                    </td>
+                                    <td t-esc="line.dose_template_id.name"/>
+                                    <td t-esc="line.days"/>
+                                    <td t-esc="'%g' % (line.dispensed_qty or line.quantity)"/>
+                                    <td class="camp-ur">
+                                        <span t-esc="line.dose_template_id.name_ur"/>
+                                        <t t-if="line.instructions_ur"> — <span t-esc="line.instructions_ur"/></t>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div t-if="o.advice or o.advice_ur" class="mt-2 camp-small">
+                            <div t-if="o.advice"><strong>Advice:</strong> <span t-esc="o.advice"/></div>
+                            <div t-if="o.advice_ur" class="camp-ur" t-esc="o.advice_ur"/>
+                        </div>
+                        <div t-if="o.referral_ids" class="mt-2 camp-small">
+                            <strong>Referred to:</strong>
+                            <span t-esc="', '.join(o.referral_ids.mapped('hospital_id.name'))"/>
+                        </div>
+                        <div class="mt-3 camp-small">
+                            <strong>Doctor:</strong> <span t-esc="o.doctor_id.name"/>
+                            <t t-if="o.doctor_id.camp_pmdc_number"> · PMDC <span t-esc="o.doctor_id.camp_pmdc_number"/></t>
+                        </div>
+                        <div class="camp-disclaimer">
+                            This free camp consultation is not a substitute for ongoing care. Please see your doctor
+                            or the hospital named above if you do not get better.
+                            <div class="camp-ur">یہ مفت کیمپ کا معائنہ مستقل علاج کا متبادل نہیں ہے۔ طبیعت بہتر نہ ہو تو اپنے ڈاکٹر یا اوپر لکھے ہسپتال سے رجوع کریں۔</div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

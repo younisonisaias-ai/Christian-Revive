@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Anonymised: totals only, no names or numbers that identify anyone.
+         Any group smaller than 5 patients is shown as "<5". -->
+    <template id="report_camp_sponsor">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-call="revive_medical_camp.camp_report_style"/>
+                    <t t-set="s" t-value="o._report_stats(min_group=5)"/>
+                    <div class="page">
+                        <h3>Medical camp report — <span t-esc="o.name"/></h3>
+                        <p class="text-muted">
+                            <span t-field="o.date_start"/>
+                            <t t-if="o.area"> · <span t-esc="o.area"/></t>
+                            <t t-if="o.sponsor_ids"> · With thanks to <span t-esc="', '.join(o.sponsor_ids.mapped('name'))"/></t>
+                        </p>
+                        <div class="row mb-3">
+                            <div class="col-4 text-center">
+                                <div style="font-size: 30px; font-weight: bold;" t-esc="s['patients']"/>
+                                <div class="text-muted">patients seen</div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="font-size: 30px; font-weight: bold;" t-esc="s['talk_attendees']"/>
+                                <div class="text-muted">attended health talks</div>
+                            </div>
+                            <div class="col-4 text-center">
+                                <div style="font-size: 30px; font-weight: bold;"
+                                     t-esc="s['cost_per_patient']"
+                                     t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/>
+                                <div class="text-muted">cost per patient</div>
+                            </div>
+                        </div>
+                        <t t-call="revive_medical_camp.camp_report_totals"/>
+                        <p class="camp-small text-muted mt-4">
+                            This report contains totals only. No patient names or identifying details are included,
+                            and any group smaller than 5 patients is shown as "&lt;5" so no one can be identified.
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

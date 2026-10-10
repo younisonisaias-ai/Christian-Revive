@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Station staff see only the camps whose team they are on.
+         Coordinators and the medical lead see every camp. Rules for
+         different groups add up (OR), so the wider rule wins for them. -->
+    <record id="rule_camp_team_only" model="ir.rule">
+        <field name="name">Camp: own team camps</field>
+        <field name="model_id" ref="model_camp_camp"/>
+        <field name="domain_force">[('team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_registration')), (4, ref('group_camp_followup')), (4, ref('group_camp_pharmacist'))]"/>
+    </record>
+    <record id="rule_camp_all" model="ir.rule">
+        <field name="name">Camp: all camps (coordinator)</field>
+        <field name="model_id" ref="model_camp_camp"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_coordinator'))]"/>
+    </record>
+
+    <record id="rule_visit_team_only" model="ir.rule">
+        <field name="name">Visit: own team camps</field>
+        <field name="model_id" ref="model_camp_visit"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_registration')), (4, ref('group_camp_followup')), (4, ref('group_camp_pharmacist'))]"/>
+    </record>
+    <record id="rule_visit_all" model="ir.rule">
+        <field name="name">Visit: all camps (coordinator)</field>
+        <field name="model_id" ref="model_camp_visit"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_coordinator'))]"/>
+    </record>
+
+    <record id="rule_vitals_team_only" model="ir.rule">
+        <field name="name">Vitals: own team camps</field>
+        <field name="model_id" ref="model_camp_vitals"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_nurse'))]"/>
+    </record>
+    <record id="rule_vitals_all" model="ir.rule">
+        <field name="name">Vitals: all camps (medical lead)</field>
+        <field name="model_id" ref="model_camp_vitals"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_lead'))]"/>
+    </record>
+
+    <record id="rule_consult_team_only" model="ir.rule">
+        <field name="name">Consultation: own team camps</field>
+        <field name="model_id" ref="model_camp_consultation"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_doctor')), (4, ref('group_camp_pharmacist'))]"/>
+    </record>
+    <record id="rule_consult_all" model="ir.rule">
+        <field name="name">Consultation: all camps (medical lead)</field>
+        <field name="model_id" ref="model_camp_consultation"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_lead'))]"/>
+    </record>
+
+    <record id="rule_rx_team_only" model="ir.rule">
+        <field name="name">Prescription: own team camps</field>
+        <field name="model_id" ref="model_camp_prescription_line"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_doctor')), (4, ref('group_camp_pharmacist'))]"/>
+    </record>
+    <record id="rule_rx_all" model="ir.rule">
+        <field name="name">Prescription: all camps (medical lead)</field>
+        <field name="model_id" ref="model_camp_prescription_line"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_lead'))]"/>
+    </record>
+
+    <record id="rule_referral_team_only" model="ir.rule">
+        <field name="name">Referral: own team camps</field>
+        <field name="model_id" ref="model_camp_referral"/>
+        <field name="domain_force">[('camp_id.team_member_ids.user_id', 'in', [user.id])]</field>
+        <field name="groups" eval="[(4, ref('group_camp_doctor')), (4, ref('group_camp_followup'))]"/>
+    </record>
+    <record id="rule_referral_all" model="ir.rule">
+        <field name="name">Referral: all camps (coordinator)</field>
+        <field name="model_id" ref="model_camp_referral"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_camp_coordinator'))]"/>
+    </record>
+</odoo>

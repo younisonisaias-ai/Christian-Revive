@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_referral_letter">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.external_layout">
+                    <t t-call="revive_medical_camp.camp_report_style"/>
+                    <div class="page">
+                        <h3>Referral letter</h3>
+                        <p class="text-muted">
+                            <span t-esc="o.camp_id.name"/> · <span t-field="o.camp_id.date_start"/>
+                            <t t-if="o.camp_id.site"> · <span t-esc="o.camp_id.site"/></t>
+                        </p>
+                        <p>
+                            To: <strong t-esc="o.hospital_id.name"/>
+                            <t t-if="o.department"> — <span t-esc="o.department"/></t>
+                        </p>
+                        <p>
+                            Urgency: <strong t-field="o.urgency"/>
+                        </p>
+                        <table class="camp-table" style="width: 100%;">
+                            <tr><th style="width: 30%;">Patient</th><td><span t-esc="o.patient_id.name"/> (<span t-esc="o.patient_id.patient_code"/>)</td></tr>
+                            <tr><th>Age / Sex</th><td><span t-esc="o.patient_id.age_years"/> / <span t-field="o.patient_id.sex"/></td></tr>
+                            <tr><th>Phone</th><td t-esc="o.patient_id.phone or ''"/></tr>
+                            <tr><th>Area</th><td t-esc="o.patient_id.area or ''"/></tr>
+                        </table>
+                        <h5 class="mt-3">Reason for referral</h5>
+                        <p t-esc="o.reason" style="white-space: pre-line;"/>
+
+                        <t t-set="c" t-value="o.sudo().consultation_id or o.sudo().visit_id.consultation_ids[:1]"/>
+                        <t t-if="c">
+                            <h5 class="mt-3">Findings at the camp</h5>
+                            <table class="camp-table" style="width: 100%;">
+                                <tr t-if="c.complaint"><th style="width: 30%;">Complaint</th><td t-esc="c.complaint"/></tr>
+                                <tr t-if="c.examination"><th>Examination</th><td t-esc="c.examination"/></tr>
+                                <tr t-if="c.diagnosis_ids"><th>Diagnosis</th><td t-esc="', '.join(c.diagnosis_ids.mapped('display_name'))"/></tr>
+                                <tr t-if="c.prescription_line_ids"><th>Medicines given</th>
+                                    <td t-esc="', '.join(c.prescription_line_ids.filtered(lambda l: l.state != 'not_given').mapped('formulary_id.display_name'))"/></tr>
+                            </table>
+                        </t>
+                        <t t-set="v" t-value="o.sudo().visit_id.vitals_ids[:1]"/>
+                        <t t-if="v">
+                            <h5 class="mt-3">Vitals</h5>
+                            <p class="camp-small">
+                                <t t-if="v.bp_systolic">BP <span t-esc="v.bp_systolic"/>/<span t-esc="v.bp_diastolic"/> · </t>
+                                <t t-if="v.pulse">Pulse <span t-esc="v.pulse"/> · </t>
+                                <t t-if="v.temperature">Temp <span t-esc="v.temperature"/>°C · </t>
+                                <t t-if="v.spo2">SpO2 <span t-esc="v.spo2"/>% · </t>
+                                <t t-if="v.blood_sugar">Sugar <span t-esc="v.blood_sugar"/> mg/dL · </t>
+                                <t t-if="v.bmi">BMI <span t-esc="'%.1f' % v.bmi"/></t>
+                            </p>
+                        </t>
+                        <p class="mt-4">
+                            Referred by: <strong t-esc="(c.doctor_id if c else o.referred_by_id).name"/>
+                            <t t-if="c and c.doctor_id.camp_pmdc_number"> · PMDC <span t-esc="c.doctor_id.camp_pmdc_number"/></t>
+                        </p>
+                        <p class="camp-small text-muted">Please help this patient and, if possible, tell the camp team the outcome.</p>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

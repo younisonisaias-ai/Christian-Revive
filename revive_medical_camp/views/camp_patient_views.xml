@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_patient_search" model="ir.ui.view">
+        <field name="name">camp.patient.search</field>
+        <field name="model">camp.patient</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" filter_domain="['|', '|', ('name', 'ilike', self), ('patient_code', 'ilike', self), ('phone', 'ilike', self)]"/>
+                <field name="area"/>
+                <filter name="no_consent" string="Care consent missing" domain="[('consent_care', '=', False)]"/>
+                <filter name="media_ok" string="Photo consent given" domain="[('consent_media', '=', True)]"/>
+                <separator/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter name="group_area" string="Area" context="{'group_by': 'area'}"/>
+                <filter name="group_sex" string="Sex" context="{'group_by': 'sex'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_patient_list" model="ir.ui.view">
+        <field name="name">camp.patient.list</field>
+        <field name="model">camp.patient</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="patient_code"/>
+                <field name="name"/>
+                <field name="age_years"/>
+                <field name="sex"/>
+                <field name="phone"/>
+                <field name="area"/>
+                <field name="visit_count" optional="show"/>
+                <field name="consent_care" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_patient_form" model="ir.ui.view">
+        <field name="name">camp.patient.form</field>
+        <field name="model">camp.patient</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_visits" type="object" class="oe_stat_button" icon="fa-calendar-check-o">
+                            <field name="visit_count" widget="statinfo" string="Camp visits"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name"/></h1>
+                        <h3 class="text-muted"><field name="patient_code"/></h3>
+                    </div>
+                    <group>
+                        <group string="Details">
+                            <field name="sex" widget="radio" options="{'horizontal': true}"/>
+                            <field name="date_of_birth"/>
+                            <field name="age_years"/>
+                            <field name="guardian_name" invisible="age_years &gt;= 18 and age_years != 0"/>
+                            <field name="phone" widget="phone"/>
+                            <field name="area"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Consent">
+                            <field name="consent_care"/>
+                            <field name="consent_media"/>
+                            <field name="consent_messages"/>
+                            <div class="text-muted" colspan="2">
+                                Care never depends on photo, story or message consent.
+                            </div>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_patient" model="ir.actions.act_window">
+        <field name="name">Patients</field>
+        <field name="res_model">camp.patient</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No patients yet</p>
+            <p>Patients are usually registered at the camp on a phone (Camp Mode). A returning patient keeps the same record.</p>
+        </field>
+    </record>
+</odoo>

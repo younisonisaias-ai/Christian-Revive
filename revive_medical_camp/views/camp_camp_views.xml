@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_camp_search" model="ir.ui.view">
+        <field name="name">camp.camp.search</field>
+        <field name="model">camp.camp</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="area"/>
+                <field name="sponsor_ids"/>
+                <filter name="upcoming" string="Upcoming" domain="[('state', 'in', ('draft', 'ready'))]"/>
+                <filter name="running" string="Running" domain="[('state', '=', 'running')]"/>
+                <filter name="closed" string="Closed" domain="[('state', '=', 'closed')]"/>
+                <separator/>
+                <filter name="group_state" string="Status" context="{'group_by': 'state'}"/>
+                <filter name="group_area" string="Area" context="{'group_by': 'area'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_camp_kanban" model="ir.ui.view">
+        <field name="name">camp.camp.kanban</field>
+        <field name="model">camp.camp</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" quick_create="false" group_create="false" records_draggable="false">
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold fs-5"/>
+                        <div class="text-muted">
+                            <field name="date_start"/> · <field name="area"/>
+                        </div>
+                        <div><field name="site"/></div>
+                        <footer class="pt-2">
+                            <span><i class="fa fa-users me-1" title="Patients"/><field name="patients_seen"/> / <field name="expected_patients"/></span>
+                            <span class="ms-3"><i class="fa fa-hospital-o me-1" title="Referrals"/><field name="referral_count"/></span>
+                            <field name="speciality_ids" widget="many2many_tags" class="ms-auto"/>
+                        </footer>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_camp_camp_list" model="ir.ui.view">
+        <field name="name">camp.camp.list</field>
+        <field name="model">camp.camp</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="date_start"/>
+                <field name="name"/>
+                <field name="area"/>
+                <field name="site" optional="hide"/>
+                <field name="sponsor_ids" widget="many2many_tags" optional="show"/>
+                <field name="expected_patients" optional="hide"/>
+                <field name="patients_seen"/>
+                <field name="referral_count" optional="show"/>
+                <field name="budget_actual" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state == 'ready'"
+                       decoration-success="state == 'running'" decoration-muted="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_camp_form" model="ir.ui.view">
+        <field name="name">camp.camp.form</field>
+        <field name="model">camp.camp</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_ready" type="object" string="Mark ready" class="btn-primary"
+                            invisible="state != 'draft'" groups="revive_medical_camp.group_camp_coordinator"/>
+                    <button name="action_start" type="object" string="Start camp" class="btn-primary"
+                            invisible="state not in ('draft', 'ready')" groups="revive_medical_camp.group_camp_coordinator"/>
+                    <button name="action_close" type="object" string="Close camp"
+                            invisible="state != 'running'" groups="revive_medical_camp.group_camp_coordinator"
+                            confirm="Close this camp? New patients can no longer be registered."/>
+                    <button name="action_reopen" type="object" string="Reopen"
+                            invisible="state != 'closed'" groups="revive_medical_camp.group_camp_lead"/>
+                    <button name="%(action_report_camp_summary)d" type="action" string="Camp summary"
+                            groups="revive_medical_camp.group_camp_coordinator"/>
+                    <button name="%(action_report_camp_sponsor)d" type="action" string="Sponsor report"
+                            groups="revive_medical_camp.group_camp_coordinator"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,ready,running,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_camp_visit)d" type="action" class="oe_stat_button" icon="fa-users"
+                                context="{'search_default_camp_id': id, 'default_camp_id': id}">
+                            <field name="patients_seen" widget="statinfo" string="Patients"/>
+                        </button>
+                        <button name="%(action_camp_referral)d" type="action" class="oe_stat_button" icon="fa-hospital-o"
+                                context="{'search_default_camp_id': id}">
+                            <field name="referral_count" widget="statinfo" string="Referrals"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-flag" disabled="1">
+                            <field name="flagged_count" widget="statinfo" string="Red flags"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Youhanabad Free Medical Camp"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="site"/>
+                            <field name="area"/>
+                            <field name="expected_patients"/>
+                        </group>
+                        <group>
+                            <field name="coordinator_id"/>
+                            <field name="local_partner_id"/>
+                            <field name="sponsor_ids" widget="many2many_tags"/>
+                            <field name="speciality_ids" widget="many2many_tags"/>
+                            <field name="stock_location_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Team" name="team">
+                            <field name="team_member_ids">
+                                <list editable="bottom">
+                                    <field name="role"/>
+                                    <field name="user_id"/>
+                                    <field name="name"/>
+                                    <field name="phone"/>
+                                    <field name="checked_in_at"/>
+                                    <field name="checked_out_at"/>
+                                    <field name="hours" widget="float_time" sum="Total"/>
+                                    <button name="action_check_in" type="object" icon="fa-sign-in" title="Check in"/>
+                                    <button name="action_check_out" type="object" icon="fa-sign-out" title="Check out"/>
+                                </list>
+                            </field>
+                            <div class="text-muted">Give each person their own login (App login) so they see this camp in Camp Mode.</div>
+                        </page>
+                        <page string="Budget" name="budget" groups="revive_medical_camp.group_camp_coordinator">
+                            <field name="budget_line_ids">
+                                <list editable="bottom">
+                                    <field name="category"/>
+                                    <field name="description"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="planned" widget="monetary" sum="Planned"/>
+                                    <field name="actual" widget="monetary" sum="Actual"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Health talks" name="talks">
+                            <field name="education_session_ids">
+                                <list editable="bottom">
+                                    <field name="start_time"/>
+                                    <field name="topic"/>
+                                    <field name="educator"/>
+                                    <field name="attendees_count" sum="Total"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Totals" name="totals">
+                            <group>
+                                <group>
+                                    <field name="patients_seen"/>
+                                    <field name="flagged_count"/>
+                                    <field name="referral_count"/>
+                                    <field name="medicines_dispensed"/>
+                                    <field name="team_count"/>
+                                </group>
+                                <group groups="revive_medical_camp.group_camp_coordinator">
+                                    <field name="budget_planned"/>
+                                    <field name="budget_actual"/>
+                                    <field name="cost_per_patient"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Settings" name="settings" groups="revive_medical_camp.group_camp_lead">
+                            <group>
+                                <field name="device_purge_days"/>
+                            </group>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_camp" model="ir.actions.act_window">
+        <field name="name">Camps</field>
+        <field name="res_model">camp.camp</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Plan your first medical camp</p>
+            <p>Add the date, site, sponsors and team. A medicine stock location is created for the camp automatically.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Formulary -->
+    <record id="view_camp_formulary_list" model="ir.ui.view">
+        <field name="name">camp.formulary.list</field>
+        <field name="model">camp.formulary</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="product_id" context="{'default_is_storable': True}"/>
+                <field name="strength"/>
+                <field name="form"/>
+                <field name="default_dose_template_id"/>
+                <field name="default_days"/>
+                <field name="instructions_ur"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_formulary" model="ir.actions.act_window">
+        <field name="name">Formulary</field>
+        <field name="res_model">camp.formulary</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add the medicines doctors may prescribe</p>
+            <p>Doctors can only prescribe medicines on this list. Track them by lot with an expiry date in Inventory so expired batches are blocked.</p>
+        </field>
+    </record>
+
+    <!-- Red-flag rules -->
+    <record id="view_camp_flag_rule_list" model="ir.ui.view">
+        <field name="name">camp.flag.rule.list</field>
+        <field name="model">camp.flag.rule</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="measure"/>
+                <field name="operator"/>
+                <field name="value"/>
+                <field name="priority"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_flag_rule" model="ir.actions.act_window">
+        <field name="name">Red-flag rules</field>
+        <field name="res_model">camp.flag.rule</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <!-- Dose templates -->
+    <record id="view_camp_dose_template_list" model="ir.ui.view">
+        <field name="name">camp.dose.template.list</field>
+        <field name="model">camp.dose.template</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <field name="doses_per_day"/>
+                <field name="as_needed"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_dose_template" model="ir.actions.act_window">
+        <field name="name">Dose templates</field>
+        <field name="res_model">camp.dose.template</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <!-- Diagnosis codes -->
+    <record id="view_camp_diagnosis_code_search" model="ir.ui.view">
+        <field name="name">camp.diagnosis.code.search</field>
+        <field name="model">camp.diagnosis.code</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <filter name="favourite" string="Favourites" domain="[('favourite', '=', True)]"/>
+                <separator/>
+                <filter name="group_chapter" string="Chapter" context="{'group_by': 'chapter'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="view_camp_diagnosis_code_list" model="ir.ui.view">
+        <field name="name">camp.diagnosis.code.list</field>
+        <field name="model">camp.diagnosis.code</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <field name="chapter"/>
+                <field name="favourite" widget="boolean_favorite"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_diagnosis_code" model="ir.actions.act_window">
+        <field name="name">Diagnosis codes</field>
+        <field name="res_model">camp.diagnosis.code</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Specialities -->
+    <record id="view_camp_speciality_list" model="ir.ui.view">
+        <field name="name">camp.speciality.list</field>
+        <field name="model">camp.speciality</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_speciality" model="ir.actions.act_window">
+        <field name="name">Specialities</field>
+        <field name="res_model">camp.speciality</field>
+        <field name="view_mode">list</field>
+    </record>
+</odoo>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_camp" model="ir.ui.view">
+        <field name="name">res.users.form.medical.camp</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Medical camp" name="medical_camp" groups="revive_medical_camp.group_camp_coordinator">
+                    <group>
+                        <field name="camp_pmdc_number"/>
+                    </group>
+                    <div class="text-muted">
+                        Doctors need a PMDC number before they can save a diagnosis or prescription.
+                        Choose the person's camp role under Access Rights → Medical Camps.
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

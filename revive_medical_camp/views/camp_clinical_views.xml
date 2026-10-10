@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ── Consultation ───────────────────────────────────── -->
+    <record id="view_camp_consultation_list" model="ir.ui.view">
+        <field name="name">camp.consultation.list</field>
+        <field name="model">camp.consultation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="create_date" string="Date"/>
+                <field name="visit_id"/>
+                <field name="camp_id" optional="show"/>
+                <field name="doctor_id"/>
+                <field name="diagnosis_ids" widget="many2many_tags"/>
+                <field name="follow_up_needed" optional="hide"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_consultation_form" model="ir.ui.view">
+        <field name="name">camp.consultation.form</field>
+        <field name="model">camp.consultation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_finish" type="object" string="Finish and send to pharmacy" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_print_slip" type="object" string="Prescription slip"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="visit_id" readonly="id"/>
+                            <field name="patient_id"/>
+                            <field name="camp_id"/>
+                        </group>
+                        <group>
+                            <field name="doctor_id"/>
+                            <field name="follow_up_needed"/>
+                            <field name="follow_up_reason" invisible="not follow_up_needed"/>
+                        </group>
+                    </group>
+                    <group string="Notes">
+                        <field name="complaint"/>
+                        <field name="history"/>
+                        <field name="examination"/>
+                        <field name="diagnosis_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        <field name="advice"/>
+                        <field name="advice_ur"/>
+                    </group>
+                    <notebook>
+                        <page string="Medicines" name="medicines">
+                            <field name="prescription_line_ids" context="{'default_consultation_id': id}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="formulary_id" options="{'no_create': True}"/>
+                                    <field name="available_qty" decoration-danger="available_qty &lt; quantity"/>
+                                    <field name="dose_template_id" options="{'no_create': True}"/>
+                                    <field name="days"/>
+                                    <field name="quantity"/>
+                                    <field name="instructions_ur"/>
+                                    <field name="state" widget="badge" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Referrals" name="referrals">
+                            <field name="referral_ids" context="{'default_consultation_id': id, 'default_visit_id': visit_id}">
+                                <list editable="bottom">
+                                    <field name="visit_id" column_invisible="1"/>
+                                    <field name="hospital_id"/>
+                                    <field name="department"/>
+                                    <field name="reason"/>
+                                    <field name="urgency"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_consultation" model="ir.actions.act_window">
+        <field name="name">Consultations</field>
+        <field name="res_model">camp.consultation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ── Pharmacy queue ─────────────────────────────────── -->
+    <record id="view_camp_prescription_line_search" model="ir.ui.view">
+        <field name="name">camp.prescription.line.search</field>
+        <field name="model">camp.prescription.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="visit_id"/>
+                <field name="formulary_id"/>
+                <field name="camp_id"/>
+                <filter name="to_dispense" string="To dispense" domain="[('state', '=', 'prescribed')]"/>
+                <filter name="shortage" string="Stock shortage" domain="[('shortage_qty', '&gt;', 0)]"/>
+                <separator/>
+                <filter name="group_visit" string="Patient" context="{'group_by': 'visit_id'}"/>
+                <filter name="group_medicine" string="Medicine" context="{'group_by': 'formulary_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_prescription_line_list" model="ir.ui.view">
+        <field name="name">camp.prescription.line.list</field>
+        <field name="model">camp.prescription.line</field>
+        <field name="arch" type="xml">
+            <list create="false" decoration-muted="state != 'prescribed'" decoration-danger="shortage_qty &gt; 0">
+                <field name="visit_id"/>
+                <field name="formulary_id"/>
+                <field name="dose_template_id"/>
+                <field name="days"/>
+                <field name="quantity"/>
+                <field name="available_qty"/>
+                <field name="dispensed_qty"/>
+                <field name="lot_ids" widget="many2many_tags" optional="show"/>
+                <field name="shortage_qty" optional="hide"/>
+                <field name="substitution_reason" optional="hide"/>
+                <field name="state" widget="badge"/>
+                <button name="action_dispense_button" type="object" string="Dispense" class="btn-primary"
+                        invisible="state != 'prescribed'" groups="revive_medical_camp.group_camp_pharmacist"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_camp_pharmacy" model="ir.actions.act_window">
+        <field name="name">Pharmacy queue</field>
+        <field name="res_model">camp.prescription.line</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_to_dispense': 1, 'search_default_group_visit': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing to dispense</p>
+            <p>Medicines prescribed by camp doctors appear here. The batch with the nearest expiry is used first; expired batches are never given.</p>
+        </field>
+    </record>
+
+    <!-- ── Referrals ──────────────────────────────────────── -->
+    <record id="view_camp_referral_search" model="ir.ui.view">
+        <field name="name">camp.referral.search</field>
+        <field name="model">camp.referral</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="hospital_id"/>
+                <field name="camp_id"/>
+                <filter name="open" string="Not attended yet" domain="[('status', '=', 'issued')]"/>
+                <filter name="urgent" string="Urgent" domain="[('urgency', '=', 'urgent')]"/>
+                <separator/>
+                <filter name="group_hospital" string="Hospital" context="{'group_by': 'hospital_id'}"/>
+                <filter name="group_status" string="Status" context="{'group_by': 'status'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_referral_list" model="ir.ui.view">
+        <field name="name">camp.referral.list</field>
+        <field name="model">camp.referral</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="urgency == 'urgent' and status == 'issued'">
+                <field name="create_date" string="Date"/>
+                <field name="patient_id"/>
+                <field name="patient_phone"/>
+                <field name="hospital_id"/>
+                <field name="department"/>
+                <field name="urgency"/>
+                <field name="camp_id" optional="hide"/>
+                <field name="status" widget="badge" decoration-success="status == 'attended'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_referral_form" model="ir.ui.view">
+        <field name="name">camp.referral.form</field>
+        <field name="model">camp.referral</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_print_letter" type="object" string="Referral letter" class="btn-primary"/>
+                    <button name="action_attended" type="object" string="Attended" invisible="status != 'issued'"/>
+                    <button name="action_close" type="object" string="Close" invisible="status == 'closed'"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="visit_id"/>
+                            <field name="patient_id"/>
+                            <field name="patient_phone" widget="phone"/>
+                            <field name="camp_id"/>
+                        </group>
+                        <group>
+                            <field name="hospital_id"/>
+                            <field name="department"/>
+                            <field name="urgency"/>
+                            <field name="referred_by_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="reason"/>
+                        <field name="outcome"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_referral" model="ir.actions.act_window">
+        <field name="name">Referrals</field>
+        <field name="res_model">camp.referral</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+</odoo>

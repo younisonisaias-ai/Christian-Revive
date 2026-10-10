@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_medical_camp" model="ir.module.category">
+        <field name="name">Medical Camps</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="privilege_medical_camp" model="res.groups.privilege">
+        <field name="name">Medical Camps</field>
+        <field name="sequence">30</field>
+        <field name="category_id" ref="module_category_medical_camp"/>
+    </record>
+
+    <!-- Station roles. Patient records are visible ONLY to these groups. -->
+    <record id="group_camp_registration" model="res.groups">
+        <field name="name">Registration</field>
+        <field name="sequence">10</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Registers patients, records consent, prints cards.</field>
+    </record>
+
+    <record id="group_camp_followup" model="res.groups">
+        <field name="name">Follow-up</field>
+        <field name="sequence">15</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Calls referred patients and updates referral status.</field>
+    </record>
+
+    <record id="group_camp_nurse" model="res.groups">
+        <field name="name">Nurse</field>
+        <field name="sequence">20</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('group_camp_registration'))]"/>
+        <field name="comment">Records vitals and quick tests.</field>
+    </record>
+
+    <record id="group_camp_pharmacist" model="res.groups">
+        <field name="name">Pharmacist</field>
+        <field name="sequence">25</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('stock.group_stock_user'))]"/>
+        <field name="comment">Dispenses prescriptions from camp stock; moves medicines to the camp in Inventory.</field>
+    </record>
+
+    <record id="group_camp_doctor" model="res.groups">
+        <field name="name">Doctor</field>
+        <field name="sequence">30</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('group_camp_nurse'))]"/>
+        <field name="comment">Diagnoses, prescribes and refers. Needs a PMDC number on the user.</field>
+    </record>
+
+    <record id="group_camp_coordinator" model="res.groups">
+        <field name="name">Coordinator</field>
+        <field name="sequence">40</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('group_camp_registration')), (4, ref('group_camp_followup'))]"/>
+        <field name="comment">Sets up camps, team and budget; sees totals and referrals for all camps.</field>
+    </record>
+
+    <record id="group_camp_lead" model="res.groups">
+        <field name="name">Medical Lead</field>
+        <field name="sequence">50</field>
+        <field name="privilege_id" ref="privilege_medical_camp"/>
+        <field name="implied_ids" eval="[(4, ref('group_camp_doctor')), (4, ref('group_camp_pharmacist')), (4, ref('group_camp_coordinator'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="comment">Everything, plus red-flag thresholds, formulary, dose templates and diagnosis codes.</field>
+    </record>
+</odoo>

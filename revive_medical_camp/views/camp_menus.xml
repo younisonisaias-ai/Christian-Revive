@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_camp_root" name="Medical Camps" sequence="45"
+              web_icon="revive_medical_camp,static/description/icon.png"
+              groups="group_camp_registration,group_camp_followup,group_camp_pharmacist"/>
+
+    <menuitem id="menu_camp_camps" name="Camps" parent="menu_camp_root" sequence="10" action="action_camp_camp"/>
+
+    <menuitem id="menu_camp_stations" name="Stations" parent="menu_camp_root" sequence="20"/>
+    <menuitem id="menu_camp_visits" name="Patient flow" parent="menu_camp_stations" sequence="10"
+              action="action_camp_visit" groups="group_camp_registration,group_camp_pharmacist"/>
+    <menuitem id="menu_camp_consultations" name="Consultations" parent="menu_camp_stations" sequence="20"
+              action="action_camp_consultation" groups="group_camp_doctor"/>
+    <menuitem id="menu_camp_pharmacy" name="Pharmacy queue" parent="menu_camp_stations" sequence="30"
+              action="action_camp_pharmacy" groups="group_camp_pharmacist"/>
+
+    <menuitem id="menu_camp_patients" name="Patients" parent="menu_camp_root" sequence="30"
+              action="action_camp_patient" groups="group_camp_registration,group_camp_pharmacist,group_camp_followup"/>
+    <menuitem id="menu_camp_referrals" name="Referrals" parent="menu_camp_root" sequence="40"
+              action="action_camp_referral" groups="group_camp_doctor,group_camp_followup"/>
+
+    <menuitem id="menu_camp_config" name="Configuration" parent="menu_camp_root" sequence="90"
+              groups="group_camp_lead"/>
+    <menuitem id="menu_camp_formulary" name="Formulary" parent="menu_camp_config" sequence="10" action="action_camp_formulary"/>
+    <menuitem id="menu_camp_flag_rules" name="Red-flag rules" parent="menu_camp_config" sequence="20" action="action_camp_flag_rule"/>
+    <menuitem id="menu_camp_dose_templates" name="Dose templates" parent="menu_camp_config" sequence="30" action="action_camp_dose_template"/>
+    <menuitem id="menu_camp_diagnosis_codes" name="Diagnosis codes" parent="menu_camp_config" sequence="40" action="action_camp_diagnosis_code"/>
+    <menuitem id="menu_camp_specialities" name="Specialities" parent="menu_camp_config" sequence="50" action="action_camp_speciality"/>
+</odoo>

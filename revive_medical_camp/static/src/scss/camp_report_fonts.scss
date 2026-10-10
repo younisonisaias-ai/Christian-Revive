@@ -1,0 +1,6 @@
+/* Urdu text in camp PDFs (prescription slip, referral letter).
+   Noto Naskh Arabic covers all Urdu letters; SIL Open Font License (static/fonts/OFL.txt). */
+@font-face {
+    font-family: 'Camp Urdu';
+    src: url('/revive_medical_camp/static/fonts/NotoNaskhArabic.ttf') format('truetype');
+}

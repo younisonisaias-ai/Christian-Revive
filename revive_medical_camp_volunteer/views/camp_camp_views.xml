@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_camp_form_volunteer" model="ir.ui.view">
+        <field name="name">camp.camp.form.volunteer</field>
+        <field name="model">camp.camp</field>
+        <field name="inherit_id" ref="revive_medical_camp.view_camp_camp_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='team_member_ids']/list/field[@name='user_id']" position="before">
+                <field name="volunteer_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_visit_search" model="ir.ui.view">
+        <field name="name">camp.visit.search</field>
+        <field name="model">camp.visit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="token_no"/>
+                <field name="camp_id"/>
+                <field name="qr_code"/>
+                <filter name="waiting_doctor" string="Waiting for doctor" domain="[('state', 'in', ('registered', 'triaged'))]"/>
+                <filter name="at_pharmacy" string="At pharmacy" domain="[('state', '=', 'at_pharmacy')]"/>
+                <filter name="flagged" string="Red flags" domain="[('flag_rule_ids', '!=', False)]"/>
+                <filter name="urgent" string="Urgent" domain="[('priority', '=', 'urgent')]"/>
+                <separator/>
+                <filter name="group_state" string="Station" context="{'group_by': 'state'}"/>
+                <filter name="group_camp" string="Camp" context="{'group_by': 'camp_id'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_camp_visit_list" model="ir.ui.view">
+        <field name="name">camp.visit.list</field>
+        <field name="model">camp.visit</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="priority == 'urgent'" decoration-warning="priority == 'high'">
+                <field name="token_no"/>
+                <field name="patient_id"/>
+                <field name="patient_age"/>
+                <field name="patient_sex"/>
+                <field name="patient_area" optional="hide"/>
+                <field name="camp_id" optional="show"/>
+                <field name="flag_rule_ids" widget="many2many_tags" optional="show"/>
+                <field name="priority" widget="badge" decoration-danger="priority == 'urgent'" decoration-warning="priority == 'high'"/>
+                <field name="state" widget="badge"/>
+                <field name="arrived_at" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_camp_visit_kanban" model="ir.ui.view">
+        <field name="name">camp.visit.kanban</field>
+        <field name="model">camp.visit</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" quick_create="false" group_create="false">
+                <field name="priority"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="d-flex">
+                            <span class="fw-bold fs-4 me-2">#<field name="token_no"/></span>
+                            <field name="patient_id" class="fw-bold"/>
+                            <field name="priority" widget="badge" class="ms-auto"
+                                   decoration-danger="priority == 'urgent'" decoration-warning="priority == 'high'"
+                                   invisible="priority == 'normal'"/>
+                        </div>
+                        <div class="text-muted"><field name="patient_age"/> y · <field name="patient_sex"/> · <field name="patient_area"/></div>
+                        <field name="flag_rule_ids" widget="many2many_tags"/>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_camp_visit_form" model="ir.ui.view">
+        <field name="name">camp.visit.form</field>
+        <field name="model">camp.visit</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_print_card" type="object" string="Patient card"/>
+                    <button name="action_send_to_doctor" type="object" string="Send to doctor" class="btn-primary"
+                            invisible="state not in ('registered',)"/>
+                    <button name="action_done" type="object" string="Mark done"
+                            invisible="state in ('done', 'referred', 'cancelled')"/>
+                    <button name="action_cancel" type="object" string="Cancel visit"
+                            invisible="state in ('done', 'referred', 'cancelled')"
+                            confirm="Cancel this visit? The patient left without being seen."/>
+                    <field name="state" widget="statusbar" statusbar_visible="registered,triaged,with_doctor,at_pharmacy,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>#<field name="token_no" class="oe_inline"/> <field name="patient_id" class="oe_inline"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="camp_id"/>
+                            <field name="patient_age"/>
+                            <field name="patient_sex"/>
+                            <field name="patient_area"/>
+                            <field name="is_first_visit"/>
+                        </group>
+                        <group>
+                            <field name="priority"/>
+                            <field name="flag_rule_ids" widget="many2many_tags"/>
+                            <field name="arrived_at"/>
+                            <field name="consent_confirmed"/>
+                            <field name="consent_signature" widget="signature"/>
+                            <field name="qr_code" groups="revive_medical_camp.group_camp_lead"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Vitals" name="vitals" groups="revive_medical_camp.group_camp_nurse">
+                            <field name="vitals_ids" context="{'default_visit_id': id}">
+                                <list editable="bottom">
+                                    <field name="bp_systolic"/>
+                                    <field name="bp_diastolic"/>
+                                    <field name="pulse"/>
+                                    <field name="temperature"/>
+                                    <field name="spo2"/>
+                                    <field name="weight"/>
+                                    <field name="height"/>
+                                    <field name="bmi"/>
+                                    <field name="blood_sugar"/>
+                                    <field name="hemoglobin" optional="hide"/>
+                                    <field name="urine_dipstick" optional="hide"/>
+                                    <field name="vision_left" optional="hide"/>
+                                    <field name="vision_right" optional="hide"/>
+                                    <field name="flag_rule_ids" widget="many2many_tags"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Doctor" name="doctor" groups="revive_medical_camp.group_camp_doctor,revive_medical_camp.group_camp_pharmacist">
+                            <field name="consultation_ids" context="{'default_visit_id': id}">
+                                <list>
+                                    <field name="doctor_id"/>
+                                    <field name="complaint"/>
+                                    <field name="diagnosis_ids" widget="many2many_tags"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Medicines" name="medicines" groups="revive_medical_camp.group_camp_doctor,revive_medical_camp.group_camp_pharmacist">
+                            <field name="prescription_line_ids" readonly="1">
+                                <list>
+                                    <field name="formulary_id"/>
+                                    <field name="dose_template_id"/>
+                                    <field name="days"/>
+                                    <field name="quantity"/>
+                                    <field name="dispensed_qty"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Referrals" name="referrals" groups="revive_medical_camp.group_camp_doctor,revive_medical_camp.group_camp_followup">
+                            <field name="referral_ids" context="{'default_visit_id': id}">
+                                <list>
+                                    <field name="hospital_id"/>
+                                    <field name="department"/>
+                                    <field name="urgency"/>
+                                    <field name="status" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_camp_visit" model="ir.actions.act_window">
+        <field name="name">Visits</field>
+        <field name="res_model">camp.visit</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No visits yet</p>
+            <p>Each patient registered at a camp gets a visit with a token number. It moves from registration to triage, doctor and pharmacy.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Demo only (test databases): three medicines, a formulary and one camp. -->
+    <record id="demo_product_paracetamol" model="product.product">
+        <field name="name">Paracetamol tablet</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="use_expiration_date" eval="True"/>
+    </record>
+    <record id="demo_product_amoxicillin" model="product.product">
+        <field name="name">Amoxicillin capsule</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True"/>
+        <field name="tracking">lot</field>
+        <field name="use_expiration_date" eval="True"/>
+    </record>
+    <record id="demo_product_ors" model="product.product">
+        <field name="name">ORS sachet</field>
+        <field name="type">consu</field>
+        <field name="is_storable" eval="True"/>
+    </record>
+
+    <record id="demo_formulary_paracetamol" model="camp.formulary">
+        <field name="product_id" ref="demo_product_paracetamol"/>
+        <field name="strength">500 mg</field>
+        <field name="form">tablet</field>
+        <field name="default_dose_template_id" ref="dose_1_1_1"/>
+        <field name="default_days">3</field>
+        <field name="instructions_ur">کھانے کے بعد</field>
+    </record>
+    <record id="demo_formulary_amoxicillin" model="camp.formulary">
+        <field name="product_id" ref="demo_product_amoxicillin"/>
+        <field name="strength">500 mg</field>
+        <field name="form">capsule</field>
+        <field name="default_dose_template_id" ref="dose_1_1_1"/>
+        <field name="default_days">5</field>
+        <field name="instructions_ur">کورس پورا کریں</field>
+    </record>
+    <record id="demo_formulary_ors" model="camp.formulary">
+        <field name="product_id" ref="demo_product_ors"/>
+        <field name="form">sachet</field>
+        <field name="default_dose_template_id" ref="dose_1_1_1"/>
+        <field name="default_days">2</field>
+        <field name="instructions_ur">ایک لیٹر صاف پانی میں ملائیں</field>
+    </record>
+
+    <record id="demo_hospital" model="res.partner">
+        <field name="name">United Christian Hospital (demo)</field>
+        <field name="is_company" eval="True"/>
+        <field name="city">Lahore</field>
+    </record>
+
+    <record id="demo_camp" model="camp.camp">
+        <field name="name">Youhanabad Free Medical Camp (demo)</field>
+        <field name="site">Community hall</field>
+        <field name="area">Youhanabad, Lahore</field>
+        <field name="expected_patients">200</field>
+        <field name="speciality_ids" eval="[(4, ref('speciality_general')), (4, ref('speciality_eye')), (4, ref('speciality_women'))]"/>
+        <field name="state">running</field>
+    </record>
+    <record id="demo_team_admin" model="camp.team.member">
+        <field name="camp_id" ref="demo_camp"/>
+        <field name="user_id" ref="base.user_admin"/>
+        <field name="role">doctor</field>
+    </record>
+    <record id="demo_budget_medicines" model="camp.budget.line">
+        <field name="camp_id" ref="demo_camp"/>
+        <field name="category">medicines</field>
+        <field name="planned">40000</field>
+        <field name="actual">36500</field>
+    </record>
+    <record id="demo_budget_transport" model="camp.budget.line">
+        <field name="camp_id" ref="demo_camp"/>
+        <field name="category">transport</field>
+        <field name="planned">8000</field>
+        <field name="actual">9000</field>
+    </record>
+    <record id="demo_talk" model="camp.education.session">
+        <field name="camp_id" ref="demo_camp"/>
+        <field name="topic">Hand washing and clean water</field>
+        <field name="educator">Health team</field>
+        <field name="attendees_count">45</field>
+    </record>
+</odoo>
