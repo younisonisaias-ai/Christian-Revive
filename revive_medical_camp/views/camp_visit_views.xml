@@ -93,6 +93,9 @@
                         <group>
                             <field name="priority"/>
                             <field name="pregnant"/>
+                            <field name="called_at" invisible="not called_at"/>
+                            <field name="called_station" invisible="not called_at"/>
+                            <field name="called_room" invisible="not called_room"/>
                             <field name="flag_rule_ids" widget="many2many_tags"/>
                             <field name="arrived_at"/>
                             <field name="consent_confirmed"/>

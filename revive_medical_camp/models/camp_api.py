@@ -367,6 +367,7 @@ class CampApi(models.AbstractModel):
             ('checkins', lambda item: self._sync_checkin(camp, item)),
             ('dispenses', lambda item: self._sync_dispense(item, batch)),
             ('visit_actions', lambda item: self._sync_visit_action(item)),
+            ('calls', lambda item: self._sync_call(item)),
             ('followup_calls', lambda item: self._sync_followup_call(item)),
             ('stock_counts', lambda item: self._sync_stock_count(camp, item)),
         ]
@@ -637,6 +638,21 @@ class CampApi(models.AbstractModel):
             'notes': item.get('notes') or False, 'line_ids': lines})
         return count, 'created'
 
+    def _sync_call(self, item):
+        """A station called a patient ("#23 → Doctor room 2"), for the call screen."""
+        station = item.get('station')
+        need = {'triage': 'nurse', 'doctor': 'doctor', 'pharmacy': 'pharmacist'}.get(station)
+        if not need:
+            raise UserError(_('Unknown station: %s', station))
+        self._need(need)
+        visit = self._ref('camp.visit', item.get('visit'))
+        when = fields.Datetime.to_datetime(item['called_at']) if item.get('called_at') else fields.Datetime.now()
+        if visit.called_at and visit.called_at > when:
+            return visit, 'exists'   # a later call already arrived
+        visit.sudo().write({'called_at': when, 'called_station': station,
+                            'called_room': (item.get('room') or '').strip()[:20] or False})
+        return visit, 'updated'
+
     def _sync_visit_action(self, item):
         self._need('registration')
         visit = self._ref('camp.visit', item.get('visit'))
@@ -823,6 +839,8 @@ class CampApi(models.AbstractModel):
                 'patient_client_uuid': v.patient_id.client_uuid, 'token_no': v.token_no, 'qr_code': v.qr_code,
                 'state': v.state, 'priority': v.priority, 'consent_confirmed': v.consent_confirmed,
                 'pregnant': v.pregnant,
+                'called_at': self._dt(v.called_at), 'called_station': v.called_station or '',
+                'called_room': v.called_room or '',
                 'arrived_at': self._dt(v.arrived_at), 'flag_rule_ids': v.flag_rule_ids.ids,
                 'is_first_visit': v.is_first_visit, 'write_date': self._dt(v.write_date)}
 

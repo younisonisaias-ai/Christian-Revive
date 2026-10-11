@@ -111,6 +111,27 @@ class TestCampSync(TestCampFlow):
         changed = self.api(self.doctor).changes(self.camp.id, since=since)['rx_templates_changed']
         self.assertIn((t_uuid, False), [(t['client_uuid'], t['active']) for t in changed])
 
+    def test_call_screen(self):
+        _p, visit = self._register('Called Kiran')
+        v_uuid = visit.client_uuid
+        res = self.api(self.doctor).sync(self.camp.id, {'calls': [
+            {'client_uuid': _uuid(), 'visit': v_uuid, 'station': 'doctor', 'room': '2',
+             'called_at': '2026-10-12 06:00:00'}]})
+        self.assertEqual(res['results']['calls'][0]['status'], 'updated')
+        self.assertEqual((visit.called_station, visit.called_room), ('doctor', '2'))
+        # An older call arriving late does not undo the newer one.
+        self.api(self.nurse).sync(self.camp.id, {'calls': [
+            {'client_uuid': _uuid(), 'visit': v_uuid, 'station': 'triage', 'called_at': '2026-10-12 05:00:00'}]})
+        self.assertEqual(visit.called_station, 'doctor')
+        # Other phones (the call screen) see it.
+        feed = self.api(self.registration).changes(self.camp.id, since=None)
+        row = next(v for v in feed['visits'] if v['client_uuid'] == v_uuid)
+        self.assertEqual((row['called_station'], row['called_room']), ('doctor', '2'))
+        # Only the station's own staff can call to it.
+        bad = self.api(self.registration).sync(self.camp.id, {'calls': [
+            {'client_uuid': _uuid(), 'visit': v_uuid, 'station': 'doctor'}]})
+        self.assertEqual(bad['results']['calls'][0]['status'], 'error')
+
     def test_allergies_and_pregnancy(self):
         self.formulary.write({'allergy_group': 'penicillin', 'pregnancy_risk': 'avoid',
                               'mg_per_unit': 500, 'child_mg_per_kg': 15, 'child_max_mg_per_kg_day': 60})

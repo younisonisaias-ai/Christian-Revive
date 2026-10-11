@@ -30,6 +30,11 @@ class CampVisit(models.Model):
     qr_code = fields.Char(string='QR code', compute='_compute_qr_code', store=True, index=True,
                           help='Printed on the patient card; stations scan it instead of searching.')
     arrived_at = fields.Datetime(default=fields.Datetime.now)
+    # Last call to a station, shown on the call screen ("#23 → Doctor room 2").
+    called_at = fields.Datetime(readonly=True)
+    called_station = fields.Selection(
+        [('triage', 'Triage'), ('doctor', 'Doctor'), ('pharmacy', 'Pharmacy')], readonly=True)
+    called_room = fields.Char(readonly=True)
     pregnant = fields.Boolean(tracking=True, help='Pregnant at this visit: Camp Mode warns about risky medicines.')
     state = fields.Selection(VISIT_STATES, default='registered', required=True, tracking=True, index=True)
     priority = fields.Selection(PRIORITIES, default='normal', required=True, tracking=True)
