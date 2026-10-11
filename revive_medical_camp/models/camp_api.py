@@ -53,6 +53,7 @@ READ_RIGHTS = {
     'camp.prescription.line': {'doctor', 'pharmacist'},
     'camp.referral': {'doctor', 'followup', 'coordinator'},
     'camp.followup': {'followup', 'doctor', 'coordinator'},
+    'camp.rx.template': {'doctor'},
 }
 MAX_ITEMS = 500           # per kind, per upload
 RETURNING_PATIENTS = 3000  # patients from the camp's area sent to phones
@@ -231,6 +232,7 @@ class CampApi(models.AbstractModel):
                                for d in Env['camp.dose.template'].search([])] if can('camp.dose.template') else [],
             'diagnosis_codes': self._diagnosis_list(None) if can('camp.diagnosis.code') else [],
             'formulary': self._formulary(camp) if can('camp.formulary') else [],
+            'rx_templates': self._rx_templates(None) if can('camp.rx.template') else [],
             'hospitals': [{'id': p.id, 'name': p.name, 'city': p.city or ''}
                           for p in Env['res.partner'].sudo().search([('camp_is_hospital', '=', True)])],
             'patients': [],
@@ -240,7 +242,7 @@ class CampApi(models.AbstractModel):
             area_patients = Env['camp.patient'].search(
                 self._returning_domain(camp), limit=RETURNING_PATIENTS, order='id desc')                 if camp.area else Env['camp.patient']
             camp_patients = Env['camp.visit'].search([('camp_id', '=', camp.id)]).patient_id
-            data['patients'] = [self._patient(p) for p in (camp_patients | area_patients)]
+            data['patients'] = self._patients(camp_patients | area_patients, camp)
         if reserve_tokens and 'registration' in self._roles():
             data['token_block'] = camp.sudo()._reserve_tokens(reserve_tokens)
         data.update(self.changes(camp.id, since=None))   # also sets server_time
@@ -263,7 +265,7 @@ class CampApi(models.AbstractModel):
         out = {
             'server_time': fields.Datetime.to_string(now),
             'visits': [self._visit(v) for v in visits],
-            'changed_patients': [self._patient(p) for p in visits.patient_id] if since else [],
+            'changed_patients': self._patients(visits.patient_id, camp) if since else [],
             'vitals': [self._vitals(r) for r in Env['camp.vitals'].search(dom)] if can('camp.vitals') else [],
             'consultations': [self._consultation(c) for c in Env['camp.consultation'].search(dom)]
             if can('camp.consultation') else [],
@@ -280,6 +282,7 @@ class CampApi(models.AbstractModel):
             if can('camp.followup') else [],
             # Diagnoses added by doctors on other phones / in Odoo since the last sync.
             'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
+            'rx_templates_changed': self._rx_templates(since) if since and can('camp.rx.template') else [],
             'me_roles': sorted(self._roles()),
         }
         return out
@@ -355,6 +358,7 @@ class CampApi(models.AbstractModel):
             ('patients', lambda item: self._sync_patient(item)),
             ('visits', lambda item: self._sync_visit(camp, item, batch)),
             ('diagnosis_codes', lambda item: self._sync_diagnosis_code(item)),
+            ('rx_templates', lambda item: self._sync_rx_template(item)),
             ('vitals', lambda item: self._sync_vitals(item)),
             ('consultations', lambda item: self._sync_consultation(item, batch)),
             ('prescription_lines', lambda item: self._sync_line(item)),
@@ -489,6 +493,40 @@ class CampApi(models.AbstractModel):
             return existing, 'exists'
         return Code.create({'code': code, 'name': name, 'name_ur': item.get('name_ur') or False,
                             'chapter': 'Added by doctors', 'source': 'custom'}), 'created'
+
+    def _sync_rx_template(self, item):
+        """A prescription template a doctor saved (or changed / deleted) in Camp Mode."""
+        self._need('doctor')
+        Template = self.env['camp.rx.template'].with_context(active_test=False)
+        existing = Template.search([('client_uuid', '=', item['client_uuid'])], limit=1)
+        if existing and existing.user_id != self.env.user:
+            raise UserError(_('Shared templates are changed in Odoo by the medical lead.'))
+        if item.get('active') is False:
+            if not existing:
+                raise MissingError(_('This template is not on the server.'))
+            existing.active = False
+            return existing, 'updated'
+        name = (item.get('name') or '').strip()
+        if not name:
+            raise UserError(_('A template needs a name.'))
+        lines = [(5, 0, 0)]
+        for line in item.get('lines') or []:
+            vals = {'outside_medicine': (line.get('outside_medicine') or '').strip() or False,
+                    'days': int(line.get('days') or 1), 'quantity': float(line.get('quantity') or 0),
+                    'instructions_ur': line.get('instructions_ur') or False}
+            if line.get('formulary_id'):
+                vals['formulary_id'] = self._ref('camp.formulary', line['formulary_id']).id
+            if line.get('dose_template_id'):
+                vals['dose_template_id'] = self._ref('camp.dose.template', line['dose_template_id']).id
+            lines.append((0, 0, vals))
+        vals = {'name': name, 'name_ur': item.get('name_ur') or False,
+                'advice': item.get('advice') or False, 'advice_ur': item.get('advice_ur') or False,
+                'diagnosis_ids': [(6, 0, self._diagnosis_ids(item.get('diagnosis_codes')))],
+                'line_ids': lines, 'active': True}
+        if existing:
+            existing.write(vals)
+            return existing, 'updated'
+        return Template.create({**vals, 'user_id': self.env.user.id, 'client_uuid': item['client_uuid']}), 'created'
 
     def _sync_line(self, item):
         self._need('doctor')
@@ -714,6 +752,62 @@ class CampApi(models.AbstractModel):
                 'age_years': p.age_years, 'sex': p.sex, 'phone': p.phone or '', 'area': p.area or '',
                 'guardian_name': p.guardian_name or '', 'consent_care': p.consent_care,
                 'consent_media': p.consent_media, 'consent_messages': p.consent_messages}
+
+    def _patients(self, patients, camp=None):
+        """Patients for a phone. Doctors also get each patient's last
+        prescription from an earlier camp, to repeat it in one tap."""
+        rows = [self._patient(p) for p in patients]
+        if not rows or not ({'doctor', 'lead'} & set(self._roles())) or not self._may_read('camp.consultation'):
+            return rows
+        domain = [('visit_id.patient_id', 'in', patients.ids), ('state', '=', 'done')]
+        if camp:
+            domain.append(('camp_id', '!=', camp.id))
+        last = {}
+        for c in self.env['camp.consultation'].search(domain, order='id desc'):
+            last.setdefault(c.visit_id.patient_id.id, c)
+        for row in rows:
+            c = last.get(row['id'])
+            if c:
+                row['last_rx'] = self._last_rx(c)
+        return rows
+
+    def _last_rx(self, c):
+        when = c.visit_id.arrived_at or c.create_date
+        return {
+            'date': fields.Date.to_string(when.date()) if when else None,
+            'camp_name': c.camp_id.name or '',
+            'doctor_name': c.doctor_id.name or '',
+            'diagnosis_codes': c.diagnosis_ids.mapped('code'),
+            'diagnosis_names': c.diagnosis_ids.mapped('display_name'),
+            'advice': c.advice or '',
+            'advice_ur': c.advice_ur or '',
+            'lines': [{'name': line.display_name, 'formulary_id': line.formulary_id.id or None,
+                       'outside_medicine': line.outside_medicine or '',
+                       'dose_template_id': line.dose_template_id.id or None,
+                       'dose_name': line.dose_template_id.name or '', 'days': line.days,
+                       'quantity': line.quantity, 'instructions_ur': line.instructions_ur or ''}
+                      for line in c.prescription_line_ids],
+        }
+
+    def _rx_templates(self, since):
+        """Shared templates and this doctor's own. With `since`, only the
+        changed ones, archived included (the phone then removes them)."""
+        Template = self.env['camp.rx.template']
+        domain = Domain('user_id', 'in', [False, self.env.user.id])
+        if since:
+            when = fields.Datetime.to_datetime(since)
+            Template = Template.with_context(active_test=False)
+            domain &= Domain('write_date', '>=', when) | Domain('lines_changed_at', '>=', when)
+        return [{'id': t.id, 'client_uuid': t.client_uuid, 'name': t.name, 'name_ur': t.name_ur or '',
+                 'mine': bool(t.user_id), 'active': t.active, 'sequence': t.sequence,
+                 'diagnosis_codes': t.diagnosis_ids.mapped('code'),
+                 'advice': t.advice or '', 'advice_ur': t.advice_ur or '',
+                 'lines': [{'formulary_id': line.formulary_id.id or None,
+                            'outside_medicine': line.outside_medicine or '',
+                            'dose_template_id': line.dose_template_id.id or None, 'days': line.days,
+                            'quantity': line.quantity, 'instructions_ur': line.instructions_ur or ''}
+                           for line in t.line_ids]}
+                for t in Template.search(domain)]
 
     def _visit(self, v):
         return {'id': v.id, 'client_uuid': v.client_uuid, 'patient_id': v.patient_id.id,

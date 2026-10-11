@@ -59,3 +59,7 @@ access_camp_stock_count_lead,camp.stock.count lead,model_camp_stock_count,group_
 access_camp_stock_count_line_ph,camp.stock.count.line pharmacist,model_camp_stock_count_line,group_camp_pharmacist,1,1,1,0
 access_camp_stock_count_line_coord,camp.stock.count.line coordinator,model_camp_stock_count_line,group_camp_coordinator,1,0,0,0
 access_camp_stock_count_line_lead,camp.stock.count.line lead,model_camp_stock_count_line,group_camp_lead,1,1,1,1
+access_camp_rxtpl_doctor,camp.rx.template doctor,model_camp_rx_template,group_camp_doctor,1,1,1,1
+access_camp_rxtpl_lead,camp.rx.template lead,model_camp_rx_template,group_camp_lead,1,1,1,1
+access_camp_rxtpl_line_doctor,camp.rx.template.line doctor,model_camp_rx_template_line,group_camp_doctor,1,1,1,1
+access_camp_rxtpl_line_lead,camp.rx.template.line lead,model_camp_rx_template_line,group_camp_lead,1,1,1,1

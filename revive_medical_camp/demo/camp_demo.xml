@@ -83,4 +83,24 @@
         <field name="educator">Health team</field>
         <field name="attendees_count">45</field>
     </record>
+
+    <!-- Shared prescription templates (one tap in Camp Mode). -->
+    <record id="demo_rx_fever_adult" model="camp.rx.template">
+        <field name="name">Fever (adult)</field>
+        <field name="name_ur">بخار (بالغ)</field>
+        <field name="user_id" eval="False"/>
+        <field name="diagnosis_ids" eval="[(6, 0, [ref('icd_r50_9')])]"/>
+        <field name="advice">Drink plenty of water. Come back if the fever lasts more than 3 days.</field>
+        <field name="advice_ur">پانی زیادہ پئیں۔ اگر بخار 3 دن سے زیادہ رہے تو دوبارہ آئیں۔</field>
+        <field name="line_ids" eval="[(0, 0, {'formulary_id': ref('demo_formulary_paracetamol'), 'dose_template_id': ref('dose_1_1_1'), 'days': 3})]"/>
+    </record>
+    <record id="demo_rx_diarrhoea_child" model="camp.rx.template">
+        <field name="name">Diarrhoea (child)</field>
+        <field name="name_ur">اسہال (بچہ)</field>
+        <field name="user_id" eval="False"/>
+        <field name="diagnosis_ids" eval="[(6, 0, [ref('icd_a09')])]"/>
+        <field name="advice">ORS after every loose stool. Keep breastfeeding / feeding.</field>
+        <field name="advice_ur">ہر پتلے پاخانے کے بعد او آر ایس دیں۔ دودھ / کھانا جاری رکھیں۔</field>
+        <field name="line_ids" eval="[(0, 0, {'formulary_id': ref('demo_formulary_ors'), 'dose_template_id': ref('dose_sos'), 'days': 3, 'quantity': 6})]"/>
+    </record>
 </odoo>

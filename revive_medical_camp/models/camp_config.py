@@ -3,6 +3,7 @@ dose templates, diagnosis codes and the camp formulary (approved medicines)."""
 import operator as py_operator
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 VITAL_MEASURES = [
     ('bp_systolic', 'BP systolic (mmHg)'),
@@ -122,3 +123,71 @@ class CampFormulary(models.Model):
     def _compute_display_name(self):
         for rec in self:
             rec.display_name = ' '.join(filter(None, [rec.product_id.name, rec.strength]))
+
+
+class CampRxTemplate(models.Model):
+    """A ready-made prescription for a common case ("Fever (adult)"): one tap
+    in Camp Mode adds its diagnoses, medicines and advice. Templates without a
+    doctor are shared; the ones a doctor saves in Camp Mode are theirs."""
+    _name = 'camp.rx.template'
+    _inherit = ['camp.sync.mixin']
+    _description = 'Prescription template'
+    _order = 'sequence, name'
+
+    name = fields.Char(required=True, help='e.g. Fever (adult), Worms (child)')
+    name_ur = fields.Char(string='Name (Urdu)')
+    sequence = fields.Integer(default=10)
+    active = fields.Boolean(default=True)
+    user_id = fields.Many2one(
+        'res.users', string='Doctor', index=True, ondelete='cascade',
+        default=lambda self: False if self.env.user.has_group('revive_medical_camp.group_camp_lead')
+        else self.env.user,
+        help='Empty: every doctor can use it. Templates a doctor saves in Camp Mode belong to that doctor.')
+    diagnosis_ids = fields.Many2many('camp.diagnosis.code', string='Diagnoses')
+    line_ids = fields.One2many('camp.rx.template.line', 'template_id', string='Medicines', copy=True)
+    advice = fields.Text()
+    advice_ur = fields.Text(string='Advice (Urdu)')
+    # Moves when a medicine line changes, so phones fetch the new version.
+    lines_changed_at = fields.Datetime(readonly=True)
+
+    def _touch_lines(self):
+        if self:
+            self.sudo().write({'lines_changed_at': fields.Datetime.now()})
+
+
+class CampRxTemplateLine(models.Model):
+    _name = 'camp.rx.template.line'
+    _description = 'Prescription template medicine'
+    _order = 'sequence, id'
+
+    template_id = fields.Many2one('camp.rx.template', required=True, ondelete='cascade', index=True)
+    sequence = fields.Integer(default=10)
+    formulary_id = fields.Many2one('camp.formulary', string='Camp medicine')
+    outside_medicine = fields.Char(string='Or: buy outside', help='A medicine the camp does not stock.')
+    dose_template_id = fields.Many2one('camp.dose.template', string='Dose')
+    days = fields.Integer(default=5)
+    quantity = fields.Float(help='Leave 0 to work it out from the dose and the days.')
+    instructions_ur = fields.Char(string='Instructions (Urdu)')
+
+    @api.constrains('formulary_id', 'outside_medicine')
+    def _check_medicine(self):
+        for line in self:
+            if not line.formulary_id and not (line.outside_medicine or '').strip():
+                raise ValidationError(self.env._('Choose a camp medicine or write a medicine to buy outside.'))
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines.template_id._touch_lines()
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        self.template_id._touch_lines()
+        return res
+
+    def unlink(self):
+        templates = self.template_id
+        res = super().unlink()
+        templates.exists()._touch_lines()
+        return res

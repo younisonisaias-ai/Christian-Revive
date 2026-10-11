@@ -74,6 +74,68 @@ class TestCampSync(TestCampFlow):
         feed = self.api(self.registration).changes(self.camp.id, since=None)
         self.assertIn(v_uuid, [v['client_uuid'] for v in feed['visits']])
 
+    def test_prescription_templates(self):
+        icd = self.env.ref('revive_medical_camp.icd_i10')
+        shared = self.env['camp.rx.template'].create({
+            'name': 'High BP', 'user_id': False, 'diagnosis_ids': [(6, 0, icd.ids)],
+            'line_ids': [(0, 0, {'formulary_id': self.formulary.id, 'days': 30})]})
+        boot = self.api(self.doctor).bootstrap(self.camp.id)
+        by_name = {t['name']: t for t in boot['rx_templates']}
+        self.assertEqual(by_name['High BP']['diagnosis_codes'], ['I10'])
+        # Registration phones do not get templates.
+        self.assertEqual(self.api(self.registration).bootstrap(self.camp.id)['rx_templates'], [])
+
+        # A doctor saves their own from the phone (with a medicine to buy outside).
+        t_uuid = _uuid()
+        res = self.api(self.doctor).sync(self.camp.id, {'rx_templates': [{
+            'client_uuid': t_uuid, 'name': 'My cough', 'diagnosis_codes': ['I10'], 'advice': 'Rest',
+            'lines': [{'formulary_id': self.formulary.id, 'days': 5},
+                      {'outside_medicine': 'Cough syrup', 'days': 3}]}]})
+        self.assertEqual(res['results']['rx_templates'][0]['status'], 'created')
+        mine = self.env['camp.rx.template'].search([('client_uuid', '=', t_uuid)])
+        self.assertEqual(mine.user_id, self.doctor)
+        self.assertEqual(len(mine.line_ids), 2)
+
+        # Another doctor does not see it; nobody changes the shared one from a phone.
+        other = [t['name'] for t in self.api(self.doctor_no_pmdc).bootstrap(self.camp.id)['rx_templates']]
+        self.assertNotIn('My cough', other)
+        hack = self.api(self.doctor).sync(self.camp.id, {'rx_templates': [
+            {'client_uuid': shared.client_uuid, 'name': 'Changed'}]})
+        self.assertEqual(hack['results']['rx_templates'][0]['status'], 'error')
+        self.assertEqual(shared.name, 'High BP')
+
+        # Deleting on the phone archives it; the change feed tells the phones.
+        since = fields.Datetime.to_string(fields.Datetime.now() - timedelta(minutes=5))
+        self.api(self.doctor).sync(self.camp.id, {'rx_templates': [{'client_uuid': t_uuid, 'active': False}]})
+        self.assertFalse(mine.active)
+        changed = self.api(self.doctor).changes(self.camp.id, since=since)['rx_templates_changed']
+        self.assertIn((t_uuid, False), [(t['client_uuid'], t['active']) for t in changed])
+
+    def test_last_prescription_for_returning_patient(self):
+        old_camp = self.env['camp.camp'].create({'name': 'Last Year Camp', 'state': 'running'})
+        self.env['camp.team.member'].create({'camp_id': old_camp.id, 'user_id': self.doctor.id, 'role': 'doctor'})
+        patient = self.env['camp.patient'].create({'name': 'Returning Ravi', 'sex': 'male', 'age_years': 50,
+                                                   'consent_care': True})
+        old_visit = self.env['camp.visit'].create({'camp_id': old_camp.id, 'patient_id': patient.id})
+        consult = self.env['camp.consultation'].with_user(self.doctor).create({
+            'visit_id': old_visit.id, 'advice': 'Less salt',
+            'diagnosis_ids': [(6, 0, [self.env.ref('revive_medical_camp.icd_i10').id])],
+            'prescription_line_ids': [(0, 0, {'formulary_id': self.formulary.id, 'days': 30}),
+                                      (0, 0, {'outside_medicine': 'Amlodipine 5 mg', 'days': 30})]})
+        consult.state = 'done'
+        # Today he comes to this camp.
+        self.env['camp.visit'].create({'camp_id': self.camp.id, 'patient_id': patient.id})
+
+        rows = {p['name']: p for p in self.api(self.doctor).bootstrap(self.camp.id)['patients']}
+        last = rows['Returning Ravi']['last_rx']
+        self.assertEqual(last['camp_name'], 'Last Year Camp')
+        self.assertEqual(last['diagnosis_codes'], ['I10'])
+        self.assertEqual(last['advice'], 'Less salt')
+        self.assertEqual(sorted(line['outside_medicine'] for line in last['lines']), ['', 'Amlodipine 5 mg'])
+        # Registration does not see medicines.
+        reg = {p['name']: p for p in self.api(self.registration).bootstrap(self.camp.id)['patients']}
+        self.assertNotIn('last_rx', reg['Returning Ravi'])
+
     def test_token_clash_between_two_phones(self):
         a = self.api(self.registration).sync(self.camp.id, {
             'patients': [{'client_uuid': 'pa', 'name': 'A', 'sex': 'male', 'consent_care': True},

@@ -51,6 +51,82 @@
         <field name="context">{'active_test': False}</field>
     </record>
 
+    <!-- Prescription templates -->
+    <record id="view_camp_rx_template_list" model="ir.ui.view">
+        <field name="name">camp.rx.template.list</field>
+        <field name="model">camp.rx.template</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="name_ur"/>
+                <field name="user_id" string="Doctor (empty = shared)"/>
+                <field name="diagnosis_ids" widget="many2many_tags"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_camp_rx_template_form" model="ir.ui.view">
+        <field name="name">camp.rx.template.form</field>
+        <field name="model">camp.rx.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="e.g. Fever (adult)"/>
+                            <field name="name_ur"/>
+                        </group>
+                        <group>
+                            <field name="user_id" placeholder="Shared with every doctor"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <field name="diagnosis_ids" widget="many2many_tags" placeholder="Diagnoses"/>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="formulary_id"/>
+                            <field name="outside_medicine"/>
+                            <field name="dose_template_id"/>
+                            <field name="days"/>
+                            <field name="quantity"/>
+                            <field name="instructions_ur"/>
+                        </list>
+                    </field>
+                    <group>
+                        <field name="advice"/>
+                        <field name="advice_ur"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_camp_rx_template_search" model="ir.ui.view">
+        <field name="name">camp.rx.template.search</field>
+        <field name="model">camp.rx.template</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="user_id"/>
+                <filter name="shared" string="Shared" domain="[('user_id', '=', False)]"/>
+                <filter name="doctors" string="Saved by doctors" domain="[('user_id', '!=', False)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_camp_rx_template" model="ir.actions.act_window">
+        <field name="name">Prescription templates</field>
+        <field name="res_model">camp.rx.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Make a ready-made prescription for a common case</p>
+            <p>For example "Fever (adult)": diagnosis, medicines, doses and advice. In Camp Mode the
+               doctor adds all of it with one tap. Doctors can also save their own from the app.</p>
+        </field>
+    </record>
+
     <!-- Dose templates -->
     <record id="view_camp_dose_template_list" model="ir.ui.view">
         <field name="name">camp.dose.template.list</field>
