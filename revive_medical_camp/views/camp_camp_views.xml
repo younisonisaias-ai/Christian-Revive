@@ -183,9 +183,17 @@
                             </group>
                         </page>
                         <page string="Settings" name="settings" groups="revive_medical_camp.group_camp_lead">
-                            <group>
+                            <group string="Staff devices (Camp Mode)">
                                 <field name="device_purge_days"/>
                             </group>
+                            <div class="text-muted">
+                                Camp Mode keeps a copy of the patient data on the staff phones and tablets so they
+                                can work without internet. For privacy, that copy is deleted from the devices after
+                                the number of days above, in case a phone is lost or shared.
+                                <br/>
+                                <b>Patient records in Odoo, including their phone numbers, are never deleted by
+                                this setting.</b> They stay for follow-up calls, returning patients and reports.
+                            </div>
                         </page>
                         <page string="Notes" name="notes">
                             <field name="notes"/>

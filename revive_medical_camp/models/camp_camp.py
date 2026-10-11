@@ -47,8 +47,13 @@ class CampCamp(models.Model):
         'stock.location', string='Medicine stock location', domain=[('usage', '=', 'internal')],
         help='Medicines for this camp are moved here before the camp and dispensed from here.')
     device_purge_days = fields.Integer(
-        string='Clear phones after (days)', default=7,
-        help='Patient data saved on camp phones is deleted this many days after the camp closes.')
+        string='Remove patient data from staff devices after (days)', default=7,
+        help='During the camp, Camp Mode keeps a copy of the patient data on the phones and tablets '
+             'used by the camp staff, so they can work without internet. This many days after the camp '
+             'date, that copy is deleted from those devices automatically (only once everything has '
+             'been sent to the server).\n\n'
+             'Nothing is deleted on the server: patient records, including their phone numbers, '
+             'stay in Odoo for follow-up calls, returning patients and reports.')
     notes = fields.Html()
     token_reserved_upto = fields.Integer(
         readonly=True, copy=False,
