@@ -13,6 +13,8 @@
               action="action_camp_consultation" groups="group_camp_doctor"/>
     <menuitem id="menu_camp_pharmacy" name="Pharmacy queue" parent="menu_camp_stations" sequence="30"
               action="action_camp_pharmacy" groups="group_camp_pharmacist"/>
+    <menuitem id="menu_camp_doctor_diagnoses" name="Diagnosis codes" parent="menu_camp_stations" sequence="50"
+              action="action_camp_diagnosis_code" groups="group_camp_doctor"/>
 
     <menuitem id="menu_camp_patients" name="Patients" parent="menu_camp_root" sequence="30"
               action="action_camp_patient" groups="group_camp_registration,group_camp_pharmacist,group_camp_followup"/>

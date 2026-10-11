@@ -1,6 +1,6 @@
 {
     'name': 'Medical Camp Management',
-    'version': '19.0.1.2.3',
+    'version': '19.0.1.3.0',
     'category': 'Healthcare',
     'summary': 'Run free medical camps end to end: registration, triage, doctor, pharmacy, referrals, sponsor reports',
     'description': """
@@ -55,6 +55,7 @@ membership, donations or any other module.
             'revive_medical_camp/static/src/scss/camp_report_fonts.scss',
         ],
     },
+    'post_init_hook': 'post_init_hook',
     'application': True,
     'installable': True,
 }

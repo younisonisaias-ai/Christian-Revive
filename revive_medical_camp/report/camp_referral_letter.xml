@@ -35,7 +35,7 @@
                                 <tr t-if="c.examination"><th>Examination</th><td t-esc="c.examination"/></tr>
                                 <tr t-if="c.diagnosis_ids"><th>Diagnosis</th><td t-esc="', '.join(c.diagnosis_ids.mapped('display_name'))"/></tr>
                                 <tr t-if="c.prescription_line_ids"><th>Medicines given</th>
-                                    <td t-esc="', '.join(c.prescription_line_ids.filtered(lambda l: l.state != 'not_given').mapped('formulary_id.display_name'))"/></tr>
+                                    <td t-esc="', '.join(c.prescription_line_ids.filtered(lambda l: l.state != 'not_given').mapped('display_name'))"/></tr>
                             </table>
                         </t>
                         <t t-set="v" t-value="o.sudo().visit_id.vitals_ids[:1]"/>

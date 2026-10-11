@@ -65,7 +65,8 @@ VITAL_FIELDS = ['bp_systolic', 'bp_diastolic', 'pulse', 'temperature', 'spo2', '
                 'blood_sugar', 'hemoglobin', 'urine_dipstick', 'vision_left', 'vision_right', 'notes']
 CONSULT_FIELDS = ['complaint', 'history', 'examination', 'advice', 'advice_ur',
                   'follow_up_needed', 'follow_up_reason']
-LINE_FIELDS = ['days', 'quantity', 'instructions_ur']
+LINE_FIELDS = ['days', 'quantity', 'instructions_ur', 'outside_medicine']
+FULL_DIAGNOSIS_ROLES = {'doctor', 'pharmacist', 'lead'}   # others only get the common list
 REFERRAL_FIELDS = ['department', 'reason', 'urgency', 'status', 'outcome']
 SESSION_FIELDS = ['topic', 'educator', 'start_time', 'attendees_count']
 
@@ -215,9 +216,7 @@ class CampApi(models.AbstractModel):
             'dose_templates': [{'id': d.id, 'name': d.name, 'name_ur': d.name_ur or '',
                                 'doses_per_day': d.doses_per_day, 'as_needed': d.as_needed}
                                for d in Env['camp.dose.template'].search([])] if can('camp.dose.template') else [],
-            'diagnosis_codes': [{'id': d.id, 'code': d.code, 'name': d.name, 'name_ur': d.name_ur or '',
-                                 'favourite': d.favourite, 'chapter': d.chapter or ''}
-                                for d in Env['camp.diagnosis.code'].search([])] if can('camp.diagnosis.code') else [],
+            'diagnosis_codes': self._diagnosis_list(None) if can('camp.diagnosis.code') else [],
             'formulary': self._formulary(camp) if can('camp.formulary') else [],
             'hospitals': [{'id': p.id, 'name': p.name, 'city': p.city or ''}
                           for p in Env['res.partner'].sudo().search([('camp_is_hospital', '=', True)])],
@@ -266,6 +265,8 @@ class CampApi(models.AbstractModel):
             'stock': {f['id']: f['stock_qty'] for f in self._formulary(camp)} if can('camp.formulary') else {},
             'followups': [self._followup(f) for f in Env['camp.followup'].search(dom)]
             if can('camp.followup') else [],
+            # Diagnoses added by doctors on other phones / in Odoo since the last sync.
+            'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
         }
         return out
 
@@ -339,6 +340,7 @@ class CampApi(models.AbstractModel):
         steps = [
             ('patients', lambda item: self._sync_patient(item)),
             ('visits', lambda item: self._sync_visit(camp, item, batch)),
+            ('diagnosis_codes', lambda item: self._sync_diagnosis_code(item)),
             ('vitals', lambda item: self._sync_vitals(item)),
             ('consultations', lambda item: self._sync_consultation(item, batch)),
             ('prescription_lines', lambda item: self._sync_line(item)),
@@ -460,12 +462,30 @@ class CampApi(models.AbstractModel):
             batch.to_finish |= record
         return record, status
 
+    def _sync_diagnosis_code(self, item):
+        """A diagnosis a doctor added on the phone (not in the list)."""
+        self._need('doctor')
+        code = (item.get('code') or '').strip().upper()
+        name = (item.get('name') or '').strip()
+        if not code or not name:
+            raise UserError(_('A new diagnosis needs a code and a name.'))
+        Code = self.env['camp.diagnosis.code'].with_context(active_test=False)
+        existing = Code.search([('code', '=', code)], limit=1)
+        if existing:
+            return existing, 'exists'
+        return Code.create({'code': code, 'name': name, 'name_ur': item.get('name_ur') or False,
+                            'chapter': 'Added by doctors', 'source': 'custom'}), 'created'
+
     def _sync_line(self, item):
         self._need('doctor')
         self._check_doctor_registration()
         consult = self._ref('camp.consultation', item.get('consultation'))
-        formulary = self._ref('camp.formulary', item.get('formulary_id'))
-        vals = {'consultation_id': consult.id, 'formulary_id': formulary.id, **self._pick(item, LINE_FIELDS)}
+        formulary = self._ref('camp.formulary', item.get('formulary_id')) if item.get('formulary_id') \
+            else self.env['camp.formulary']
+        if not formulary and not (item.get('outside_medicine') or '').strip():
+            raise UserError(_('Choose a camp medicine, or write the name of a medicine to buy outside.'))
+        vals = {'consultation_id': consult.id, 'formulary_id': formulary.id or False,
+                **self._pick(item, LINE_FIELDS)}
         if item.get('dose_template_id'):
             vals['dose_template_id'] = self._ref('camp.dose.template', item['dose_template_id']).id
         existing = self.env['camp.prescription.line'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
@@ -697,9 +717,23 @@ class CampApi(models.AbstractModel):
                 'diagnosis_codes': c.diagnosis_ids.mapped('code'),
                 **{f: c[f] or ('' if f not in ('follow_up_needed',) else False) for f in CONSULT_FIELDS}}
 
+    def _diagnosis_list(self, since):
+        """Doctors and pharmacists get the full list (pharmacists print slips);
+        other roles only the common camp list, to keep their download small."""
+        domain = []
+        if not (FULL_DIAGNOSIS_ROLES & set(self._roles())):
+            domain.append(('source', '!=', 'icd10'))
+        if since:
+            domain.append(('write_date', '>=', fields.Datetime.to_datetime(since)))
+        rows = self.env['camp.diagnosis.code'].search_read(
+            domain, ['code', 'name', 'name_ur', 'favourite', 'chapter'], order='favourite desc, code')
+        return [{'id': r['id'], 'code': r['code'], 'name': r['name'], 'name_ur': r['name_ur'] or '',
+                 'favourite': r['favourite'], 'chapter': r['chapter'] or ''} for r in rows]
+
     def _line(self, line):
         return {'id': line.id, 'client_uuid': line.client_uuid, 'consultation_id': line.consultation_id.id,
-                'visit_id': line.visit_id.id, 'formulary_id': line.formulary_id.id,
+                'visit_id': line.visit_id.id, 'formulary_id': line.formulary_id.id or None,
+                'outside_medicine': line.outside_medicine or '',
                 'dose_template_id': line.dose_template_id.id or None, 'days': line.days,
                 'quantity': line.quantity, 'instructions_ur': line.instructions_ur or '', 'state': line.state,
                 'dispensed_qty': line.dispensed_qty, 'shortage_qty': line.shortage_qty,

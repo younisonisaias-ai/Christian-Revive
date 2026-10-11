@@ -75,8 +75,12 @@ class CampPrescriptionLine(models.Model):
     consultation_id = fields.Many2one('camp.consultation', required=True, ondelete='cascade', index=True)
     visit_id = fields.Many2one(related='consultation_id.visit_id', store=True, index=True)
     camp_id = fields.Many2one(related='consultation_id.camp_id', store=True, index=True)
-    formulary_id = fields.Many2one('camp.formulary', string='Medicine', required=True, ondelete='restrict',
-                                   help='Only medicines in the camp formulary can be prescribed.')
+    formulary_id = fields.Many2one('camp.formulary', string='Medicine', ondelete='restrict',
+                                   help='A medicine from the camp formulary (given from camp stock).')
+    outside_medicine = fields.Char(
+        string='Buy outside',
+        help='A medicine the camp does not have: printed on the slip for the patient to buy from a '
+             'pharmacy. It is never given from camp stock.')
     product_id = fields.Many2one(related='formulary_id.product_id', store=True, string='Product')
     dose_template_id = fields.Many2one('camp.dose.template', string='Dose',
                                        compute='_compute_defaults', store=True, readonly=False)
@@ -92,6 +96,7 @@ class CampPrescriptionLine(models.Model):
         ('dispensed', 'Dispensed'),
         ('partial', 'Partly dispensed'),
         ('not_given', 'Not given'),
+        ('outside', 'Buy outside'),
     ], default='prescribed', required=True, index=True)
     dispensed_qty = fields.Float(readonly=True)
     substitute_formulary_id = fields.Many2one('camp.formulary', string='Substitute given')
@@ -130,6 +135,24 @@ class CampPrescriptionLine(models.Model):
             line.available_qty = line.product_id.with_context(location=loc.id).qty_available \
                 if loc and line.product_id else 0.0
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('outside_medicine') and not vals.get('formulary_id'):
+                vals['state'] = 'outside'
+        return super().create(vals_list)
+
+    @api.constrains('formulary_id', 'outside_medicine')
+    def _check_medicine(self):
+        for line in self:
+            if not line.formulary_id and not (line.outside_medicine or '').strip():
+                raise ValidationError(_('Choose a camp medicine, or write the name of a medicine to buy outside.'))
+
+    @api.depends('formulary_id', 'outside_medicine')
+    def _compute_display_name(self):
+        for line in self:
+            line.display_name = line.formulary_id.display_name or line.outside_medicine or ''
+
     @api.constrains('quantity')
     def _check_quantity(self):
         for line in self:
@@ -147,7 +170,7 @@ class CampPrescriptionLine(models.Model):
         reconciliation instead of failing the upload."""
         for line in self:
             if line.state != 'prescribed':
-                raise UserError(_('%s was already handled at the pharmacy.', line.formulary_id.display_name))
+                raise UserError(_('%s was already handled at the pharmacy.', line.display_name))
             location = line.camp_id.stock_location_id
             if not location:
                 raise UserError(_('Set a medicine stock location on camp %s first.', line.camp_id.name))

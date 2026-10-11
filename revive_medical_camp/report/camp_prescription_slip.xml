@@ -75,7 +75,10 @@
                             <tbody>
                                 <tr t-foreach="o.prescription_line_ids.filtered(lambda l: l.state != 'not_given')" t-as="line">
                                     <td>
-                                        <strong t-esc="(line.substitute_formulary_id or line.formulary_id).display_name"/>
+                                        <strong t-esc="line.outside_medicine or (line.substitute_formulary_id or line.formulary_id).display_name"/>
+                                        <div t-if="line.state == 'outside'" class="camp-small">
+                                            Buy from a pharmacy <span class="camp-ur">بازار سے خریدیں</span>
+                                        </div>
                                     </td>
                                     <td t-esc="line.dose_template_id.name"/>
                                     <td t-esc="line.days"/>

@@ -134,6 +134,7 @@
                             <field name="prescription_line_ids" readonly="1">
                                 <list>
                                     <field name="formulary_id"/>
+                                    <field name="outside_medicine"/>
                                     <field name="dose_template_id"/>
                                     <field name="days"/>
                                     <field name="quantity"/>

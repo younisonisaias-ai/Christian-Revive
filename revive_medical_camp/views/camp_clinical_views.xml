@@ -45,7 +45,8 @@
                         <field name="complaint"/>
                         <field name="history"/>
                         <field name="examination"/>
-                        <field name="diagnosis_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                        <field name="diagnosis_ids" widget="many2many_tags" options="{'no_quick_create': True}"
+                               help="Search the ICD-10 list. Not there? Choose 'Create and edit' to add it."/>
                         <field name="advice"/>
                         <field name="advice_ur"/>
                     </group>
@@ -54,8 +55,11 @@
                             <field name="prescription_line_ids" context="{'default_consultation_id': id}">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
-                                    <field name="formulary_id" options="{'no_create': True}"/>
-                                    <field name="available_qty" decoration-danger="available_qty &lt; quantity"/>
+                                    <field name="formulary_id" options="{'no_create': True}"
+                                           required="not outside_medicine"/>
+                                    <field name="outside_medicine" placeholder="or: medicine to buy outside"/>
+                                    <field name="available_qty" decoration-danger="available_qty &lt; quantity"
+                                           invisible="not formulary_id"/>
                                     <field name="dose_template_id" options="{'no_create': True}"/>
                                     <field name="days"/>
                                     <field name="quantity"/>
@@ -113,6 +117,7 @@
             <list create="false" decoration-muted="state != 'prescribed'" decoration-danger="shortage_qty &gt; 0">
                 <field name="visit_id"/>
                 <field name="formulary_id"/>
+                <field name="outside_medicine" optional="show"/>
                 <field name="dose_template_id"/>
                 <field name="days"/>
                 <field name="quantity"/>

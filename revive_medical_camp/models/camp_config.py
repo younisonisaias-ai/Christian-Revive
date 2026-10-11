@@ -79,6 +79,13 @@ class CampDiagnosisCode(models.Model):
     name_ur = fields.Char(string='Name (Urdu)')
     chapter = fields.Char()
     favourite = fields.Boolean(help='Shown first in the doctor\'s search.')
+    source = fields.Selection([
+        ('camp', 'Camp list'),
+        ('icd10', 'ICD-10-CM'),
+        ('custom', 'Added by a doctor'),
+    ], default='custom', required=True, index=True,
+        help='Camp list: the common camp diagnoses (with Urdu names). ICD-10-CM: the full list '
+             '(US NCHS, public domain). Added by a doctor: typed in Odoo or in Camp Mode.')
     active = fields.Boolean(default=True)
 
     _code_unique = models.Constraint('UNIQUE(code)', 'Each ICD-10 code can be added only once.')

@@ -38,6 +38,7 @@ access_camp_dx_reg,camp.diagnosis.code registration,model_camp_diagnosis_code,gr
 access_camp_dx_fu,camp.diagnosis.code followup,model_camp_diagnosis_code,group_camp_followup,1,0,0,0
 access_camp_dx_ph,camp.diagnosis.code pharmacist,model_camp_diagnosis_code,group_camp_pharmacist,1,0,0,0
 access_camp_dx_lead,camp.diagnosis.code lead,model_camp_diagnosis_code,group_camp_lead,1,1,1,1
+access_camp_dx_doctor,camp.diagnosis.code doctor,model_camp_diagnosis_code,group_camp_doctor,1,0,1,0
 access_camp_form_reg,camp.formulary registration,model_camp_formulary,group_camp_registration,1,0,0,0
 access_camp_form_ph,camp.formulary pharmacist,model_camp_formulary,group_camp_pharmacist,1,0,0,0
 access_camp_form_lead,camp.formulary lead,model_camp_formulary,group_camp_lead,1,1,1,1

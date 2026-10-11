@@ -83,8 +83,11 @@
                 <field name="name"/>
                 <field name="name_ur"/>
                 <filter name="favourite" string="Favourites" domain="[('favourite', '=', True)]"/>
+                <filter name="camp_list" string="Camp list" domain="[('source', '=', 'camp')]"/>
+                <filter name="added" string="Added by doctors" domain="[('source', '=', 'custom')]"/>
                 <separator/>
                 <filter name="group_chapter" string="Chapter" context="{'group_by': 'chapter'}"/>
+                <filter name="group_source" string="Source" context="{'group_by': 'source'}"/>
             </search>
         </field>
     </record>
@@ -97,6 +100,7 @@
                 <field name="name"/>
                 <field name="name_ur"/>
                 <field name="chapter"/>
+                <field name="source" readonly="1"/>
                 <field name="favourite" widget="boolean_favorite"/>
                 <field name="active" widget="boolean_toggle"/>
             </list>
@@ -106,6 +110,11 @@
         <field name="name">Diagnosis codes</field>
         <field name="res_model">camp.diagnosis.code</field>
         <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add a diagnosis</p>
+            <p>The full ICD-10 list is loaded. Doctors can add a missing diagnosis here, from a
+               consultation, or in Camp Mode.</p>
+        </field>
     </record>
 
     <!-- Referral hospitals (contacts offered to doctors in Camp Mode) -->

@@ -303,3 +303,61 @@ class TestCampApiHttp(HttpCase):
             {'expiration_date': fields.Datetime.now() - timedelta(days=1)})
         status, _ = self.call('GET', '/api/camp/me', token=key)
         self.assertEqual(status, 401)
+
+
+@tagged('post_install', '-at_install')
+class TestCampDiagnosesAndOutside(TestCampFlow):
+
+    def api(self, user):
+        return self.env['camp.api'].with_user(user)
+
+    def test_full_icd10_list_is_loaded(self):
+        Code = self.env['camp.diagnosis.code']
+        self.assertGreater(Code.search_count([('source', '=', 'icd10')]), 10000)
+        self.assertEqual(Code.search_count([('code', '=', 'I10')]), 1)          # no duplicate of the camp list
+        self.assertEqual(Code.search([('code', '=', 'I10')]).source, 'camp')    # keeps its Urdu name
+        self.assertTrue(Code.search([('code', '=', 'A00.0')]))                  # from the ICD-10 file
+
+    def test_full_list_only_for_doctors_and_pharmacists(self):
+        doctor = self.api(self.doctor).bootstrap(self.camp.id)['diagnosis_codes']
+        reg = self.api(self.registration).bootstrap(self.camp.id)['diagnosis_codes']
+        self.assertGreater(len(doctor), 10000)
+        self.assertLess(len(reg), 1000)
+
+    def test_doctor_adds_a_diagnosis_from_the_phone(self):
+        _p, visit = self._register('New Dx')
+        res = self.api(self.doctor).sync(self.camp.id, {
+            'diagnosis_codes': [{'client_uuid': _uuid(), 'code': 'cust-ab12', 'name': 'Snake-bite anxiety'}],
+            'consultations': [{'client_uuid': _uuid(), 'visit': visit.id, 'diagnosis_codes': ['CUST-AB12']}],
+        })
+        self.assertEqual(res['results']['diagnosis_codes'][0]['status'], 'created')
+        code = self.env['camp.diagnosis.code'].search([('code', '=', 'CUST-AB12')])
+        self.assertEqual(code.source, 'custom')
+        self.assertEqual(visit.consultation_ids.diagnosis_ids, code)
+        # Other phones get it with their next sync.
+        changed = self.api(self.doctor).changes(self.camp.id, since='2000-01-01 00:00:00')['diagnosis_codes_changed']
+        self.assertIn('CUST-AB12', [c['code'] for c in changed])
+        # Registration staff cannot add diagnoses.
+        bad = self.api(self.registration).sync(self.camp.id, {'diagnosis_codes': [
+            {'client_uuid': _uuid(), 'code': 'X1', 'name': 'x'}]})
+        self.assertEqual(bad['results']['diagnosis_codes'][0]['status'], 'error')
+
+    def test_buy_outside_medicine(self):
+        _p, visit = self._register('Outside')
+        res = self.api(self.doctor).sync(self.camp.id, {
+            'consultations': [{'client_uuid': 'c-out', 'visit': visit.id, 'complaint': 'x', 'finished': True}],
+            'prescription_lines': [{'client_uuid': 'l-out', 'consultation': 'c-out',
+                                    'outside_medicine': 'Insulin glargine 100 IU/ml', 'days': 30, 'quantity': 1}],
+        })
+        self.assertFalse([r for k in res['results'].values() for r in k if r['status'] == 'error'], res)
+        line = visit.prescription_line_ids
+        self.assertEqual(line.state, 'outside')
+        self.assertEqual(visit.state, 'done')      # nothing to give at the pharmacy
+        html = self.env['ir.actions.report']._render_qweb_html(
+            'revive_medical_camp.action_report_prescription_slip', visit.consultation_ids.ids)[0]
+        self.assertIn(b'Insulin glargine', html)
+        self.assertIn(b'Buy from a pharmacy', html)
+        # A line needs either a camp medicine or an outside name.
+        bad = self.api(self.doctor).sync(self.camp.id, {'prescription_lines': [
+            {'client_uuid': 'l-bad', 'consultation': 'c-out', 'days': 3}]})
+        self.assertEqual(bad['results']['prescription_lines'][0]['status'], 'error')
