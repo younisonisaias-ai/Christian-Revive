@@ -145,6 +145,26 @@
                                 Doctors also need their PMDC number.
                             </div>
                         </page>
+                        <page string="Permissions" name="permissions" groups="revive_medical_camp.group_camp_coordinator">
+                            <field name="team_permission_ids">
+                                <list editable="bottom" create="0" delete="0">
+                                    <field name="name" readonly="1"/>
+                                    <field name="role" readonly="1"/>
+                                    <field name="can_registration" widget="boolean_toggle"/>
+                                    <field name="can_triage" widget="boolean_toggle"/>
+                                    <field name="can_doctor" widget="boolean_toggle"/>
+                                    <field name="can_pharmacy" widget="boolean_toggle"/>
+                                    <field name="can_followup" widget="boolean_toggle"/>
+                                    <field name="can_talks" widget="boolean_toggle"/>
+                                </list>
+                            </field>
+                            <div class="text-muted">
+                                Which Camp Mode stations each person may use at this camp. Choosing a role sets the
+                                usual ones; switch any station on or off here (for example, let a doctor also work at
+                                the pharmacy). Phones pick up changes at their next sync. Doctors also need a PMDC
+                                number. For office (internal) users, their Odoo access rights still apply as well.
+                            </div>
+                        </page>
                         <page string="Budget" name="budget" groups="revive_medical_camp.group_camp_coordinator">
                             <field name="budget_line_ids">
                                 <list editable="bottom">

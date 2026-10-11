@@ -230,3 +230,52 @@ class TestCampPortalHttp(HttpCase):
             'visits': [{'client_uuid': 'pv1', 'patient': 'pp1'}]}, token=data['token'])
         self.assertEqual(status, 200, res)
         self.assertEqual(res['results']['visits'][0]['status'], 'created')
+
+
+@tagged('post_install', '-at_install')
+class TestCampPermissionsTab(TestCampPortalWorkers):
+    """The Permissions tab switches decide which stations a person may use."""
+
+    def member(self, user):
+        return self.camp.team_member_ids.filtered(lambda m: m.user_id == user)
+
+    def test_role_sets_default_switches(self):
+        m = self.member(self.p_doc)
+        self.assertTrue(m.can_doctor and m.can_triage and m.can_registration)
+        self.assertFalse(m.can_pharmacy)
+        m.role = 'pharmacist'
+        self.assertTrue(m.can_pharmacy)
+        self.assertFalse(m.can_doctor)
+
+    def test_nurse_given_pharmacy_can_dispense(self):
+        _p, visit = self._register('Perm')
+        consult = self.env['camp.consultation'].with_user(self.doctor).create({
+            'visit_id': visit.id, 'prescription_line_ids': [(0, 0, {'formulary_id': self.formulary.id})]})
+        line = consult.prescription_line_ids
+        denied = self.api(self.p_nurse).sync(self.camp.id, {'dispenses': [{'client_uuid': _uuid(), 'line': line.id}]})
+        self.assertEqual(denied['results']['dispenses'][0]['status'], 'error')
+        self.member(self.p_nurse).can_pharmacy = True
+        ok = self.api(self.p_nurse).sync(self.camp.id, {'dispenses': [{'client_uuid': _uuid(), 'line': line.id}]})
+        self.assertEqual(ok['results']['dispenses'][0]['status'], 'updated')
+        self.assertIn('pharmacist', self.api(self.p_nurse).changes(self.camp.id, since=None)['me_roles'])
+
+    def test_switch_off_removes_a_station(self):
+        self.member(self.p_doc).can_registration = False
+        res = self.api(self.p_doc).sync(self.camp.id, {'patients': [
+            {'client_uuid': _uuid(), 'name': 'X', 'sex': 'male', 'consent_care': True}]})
+        self.assertEqual(res['results']['patients'][0]['status'], 'error')
+
+    def test_office_user_gets_extra_station(self):
+        # An internal registration user on the team, given Triage on the tab.
+        member = self.member(self.registration)
+        _p, visit = self._register('Office')
+        denied = self.api(self.registration).sync(self.camp.id, {'vitals': [
+            {'client_uuid': _uuid(), 'visit': visit.id, 'pulse': 70}]})
+        self.assertEqual(denied['results']['vitals'][0]['status'], 'error')
+        member.can_triage = True
+        ok = self.api(self.registration).sync(self.camp.id, {'vitals': [
+            {'client_uuid': _uuid(), 'visit': visit.id, 'pulse': 72}]})
+        self.assertEqual(ok['results']['vitals'][0]['status'], 'created', ok['results']['vitals'][0].get('error'))
+        boot = self.api(self.registration).bootstrap(self.camp.id)
+        self.assertIn('nurse', boot['me']['roles'])
+        self.assertTrue(boot['vitals'])   # can now read vitals too

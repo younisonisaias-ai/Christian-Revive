@@ -17,6 +17,26 @@ TEAM_ROLES = [
     ('followup', 'Follow-up'),
     ('helper', 'Helper'),
 ]
+# Station switches on the Permissions tab: field -> right used by Camp Mode.
+STATION_RIGHTS = {
+    'can_registration': 'registration',
+    'can_triage': 'nurse',
+    'can_doctor': 'doctor',
+    'can_pharmacy': 'pharmacist',
+    'can_followup': 'followup',
+    'can_talks': 'educator',
+}
+# What each role can do until the coordinator changes the switches.
+ROLE_DEFAULT_SWITCHES = {
+    'coordinator': {'can_registration', 'can_followup', 'can_talks'},
+    'registration': {'can_registration'},
+    'nurse': {'can_registration', 'can_triage'},
+    'doctor': {'can_registration', 'can_triage', 'can_doctor'},
+    'pharmacist': {'can_pharmacy'},
+    'educator': {'can_talks'},
+    'followup': {'can_followup'},
+    'helper': set(),
+}
 
 
 class CampCamp(models.Model):
@@ -61,6 +81,7 @@ class CampCamp(models.Model):
              'working offline never give two patients the same token.')
 
     team_member_ids = fields.One2many('camp.team.member', 'camp_id', string='Team')
+    team_permission_ids = fields.One2many('camp.team.member', 'camp_id', string='Permissions')
     budget_line_ids = fields.One2many('camp.budget.line', 'camp_id', string='Budget')
     visit_ids = fields.One2many('camp.visit', 'camp_id', string='Visits')
     education_session_ids = fields.One2many('camp.education.session', 'camp_id', string='Health talks')
@@ -226,6 +247,14 @@ class CampTeamMember(models.Model):
     phone = fields.Char()
     email = fields.Char()
     role = fields.Selection(TEAM_ROLES, required=True, default='helper')
+    # Permissions tab: which Camp Mode stations this person may use at this camp.
+    can_registration = fields.Boolean('Registration', compute='_compute_switches', store=True, readonly=False)
+    can_triage = fields.Boolean('Triage', compute='_compute_switches', store=True, readonly=False)
+    can_doctor = fields.Boolean('Doctor', compute='_compute_switches', store=True, readonly=False,
+                                help='Also needs a PMDC number before consultations are accepted.')
+    can_pharmacy = fields.Boolean('Pharmacy', compute='_compute_switches', store=True, readonly=False)
+    can_followup = fields.Boolean('Follow-up calls', compute='_compute_switches', store=True, readonly=False)
+    can_talks = fields.Boolean('Health talks', compute='_compute_switches', store=True, readonly=False)
     login_type = fields.Selection([('portal', 'Free (portal)'), ('internal', 'Internal (paid)')],
                                   compute='_compute_login_type', string='Login type')
     pmdc_number = fields.Char(string='PMDC number', compute='_compute_pmdc_number',
@@ -246,6 +275,19 @@ class CampTeamMember(models.Model):
     def _onchange_user_id(self):
         if self.user_id and not self.name:
             self.name = self.user_id.name
+
+    @api.depends('role')
+    def _compute_switches(self):
+        """Choosing a role sets its usual stations; the coordinator can then
+        switch any station on or off on the Permissions tab."""
+        for member in self:
+            on = ROLE_DEFAULT_SWITCHES.get(member.role, set())
+            for field in STATION_RIGHTS:
+                member[field] = field in on
+
+    def _rights(self):
+        """Camp Mode rights from the switches (see STATION_RIGHTS)."""
+        return {right for member in self for field, right in STATION_RIGHTS.items() if member[field]}
 
     @api.depends('user_id')
     def _compute_login_type(self):

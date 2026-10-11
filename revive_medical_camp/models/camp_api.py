@@ -94,24 +94,29 @@ class CampApi(models.AbstractModel):
         if user is None and self.env.context.get('camp_roles') is not None:
             return list(self.env.context['camp_roles'])
         user = user or self.env.user
+        team = self._team_rights(user, self.env['camp.camp'].sudo().search([]))
         if user.share:
-            return sorted(self._team_rights(user, self.env['camp.camp'].sudo().search([])))
-        return [role for role, xmlid in ROLE_GROUPS if user.has_group(xmlid)]
+            return sorted(team)
+        return sorted(self._group_roles(user) | team)
+
+    @api.model
+    def _group_roles(self, user):
+        """Rights an office user has from their Odoo access rights (not the tab)."""
+        return {role for role, xmlid in ROLE_GROUPS if user.has_group(xmlid)}
 
     @api.model
     def _team_rights(self, user, camps):
-        rights = set()
-        for member in camps.sudo().team_member_ids.filtered(lambda m: m.user_id == user):
-            rights |= TEAM_ROLE_RIGHTS.get(member.role, set())
-        return rights
+        """Stations switched on for this person on the camps' Permissions tab."""
+        return camps.sudo().team_member_ids.filtered(lambda m: m.user_id == user)._rights()
 
     @api.model
     def _is_camp_worker(self, user=None):
         """May this login use Camp Mode at all?"""
         user = user or self.env.user
+        on_team = bool(self.env['camp.team.member'].sudo().search_count([('user_id', '=', user.id)]))
         if user.share:
-            return bool(self.env['camp.team.member'].sudo().search_count([('user_id', '=', user.id)]))
-        return bool(self._roles(user))
+            return on_team
+        return bool(self._roles(user)) or on_team
 
     @api.model
     def _login_candidates(self, typed, limit=5):
@@ -136,17 +141,25 @@ class CampApi(models.AbstractModel):
         if self.env.context.get('camp_ready'):
             return self, self._get_camp(camp_id)
         user = self.env.user
+        camp = self.env['camp.camp'].sudo().browse(int(camp_id)).exists()
+        if not camp:
+            raise MissingError(_('Camp not found.'))
+        team = self._team_rights(user, camp) if user in camp.team_member_ids.user_id else None
         if user.share:
-            camp = self.env['camp.camp'].sudo().browse(int(camp_id)).exists()
-            if not camp:
-                raise MissingError(_('Camp not found.'))
-            if user not in camp.team_member_ids.user_id:
+            if team is None:
                 raise AccessError(_('You are not on the team of this camp.'))
-            rights = self._team_rights(user, camp)
-            api_env = self.sudo()
+            rights, api_env = team, self.sudo()
         else:
-            rights = set(self._roles(user))
-            api_env = self
+            groups = self._group_roles(user)
+            rights = groups | (team or set())
+            if 'lead' not in groups and (team or set()) - groups:
+                # The Permissions tab gives this office user a station their
+                # Odoo role does not cover: run with server rights, checked here.
+                api_env = self.sudo()
+            elif not groups:
+                raise AccessError(_('You are not on the team of this camp.'))
+            else:
+                api_env = self
         api_env = api_env.with_context(camp_roles=tuple(sorted(rights)), camp_ready=True, camp_scope=int(camp_id))
         return api_env, api_env._get_camp(camp_id)
 
@@ -177,7 +190,7 @@ class CampApi(models.AbstractModel):
             # Follow-up calls happen after the camp: keep recent closed camps.
             recent = fields.Date.context_today(self) - timedelta(days=FOLLOWUP_DAYS)
             domain = ['|', ('state', '!=', 'closed'), ('date_start', '>=', recent)]
-        if user.share:
+        if user.share or not any(user.has_group(x) for _r, x in ROLE_GROUPS):
             domain = Domain.AND([domain, [('team_member_ids.user_id', '=', user.id)]])
             camps = self.env['camp.camp'].sudo().search(domain, order='date_start')
         else:
@@ -267,6 +280,7 @@ class CampApi(models.AbstractModel):
             if can('camp.followup') else [],
             # Diagnoses added by doctors on other phones / in Odoo since the last sync.
             'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
+            'me_roles': sorted(self._roles()),
         }
         return out
 
@@ -610,8 +624,9 @@ class CampApi(models.AbstractModel):
         camp = self.env['camp.camp'].browse(int(camp_id)).exists()
         if not camp:
             raise MissingError(_('Camp not found.'))
-        if self.env.user.share:
-            if self.env.user not in camp.sudo().team_member_ids.user_id:
+        if self.env.user.share or self.env.su:
+            if self.env.user not in camp.sudo().team_member_ids.user_id and not self.env.user._is_superuser() \
+                    and 'lead' not in self._roles():
                 raise AccessError(_('You are not on the team of this camp.'))
         else:
             camp.check_access('read')
