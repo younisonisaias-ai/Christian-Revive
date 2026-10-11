@@ -285,7 +285,7 @@ class CampTeamMember(models.Model):
                 'title': _('Existing login linked'),
                 'message': _('%(name)s already had the login %(login)s; it is now linked to this camp.',
                              name=self.name, login=login),
-                'type': 'info'}}
+                'type': 'info', 'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}}}
         alphabet = 'abcdefghjkmnpqrstuvwxyz23456789'
         password = ''.join(secrets.choice(alphabet) for _i in range(10))
         user = Users.create({
@@ -300,7 +300,9 @@ class CampTeamMember(models.Model):
                          'Give these to %(name)s privately. They sign in under Medical Camp Mode in the app. '
                          'This password is shown only once.',
                          login=login, password=password, name=self.name),
-            'sticky': True, 'type': 'success'}}
+            'sticky': True, 'type': 'success',
+            # Refresh the camp so the Team line shows the new login straight away.
+            'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}}}
 
     @api.depends('checked_in_at', 'checked_out_at')
     def _compute_hours(self):
