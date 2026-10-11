@@ -121,3 +121,48 @@ class TestCampPhaseB(TestCampFlow):
         self.assertEqual(boot['me']['pmdc_expiry'], fields.Date.to_string(self.doctor.camp_pmdc_expiry))
         me = next(m for m in boot['team'] if m['id'] == member.id)
         self.assertEqual((me['shift_start'], me['shift_end']), (8.0, 14.5))
+
+
+@tagged('post_install', '-at_install')
+class TestCampPhaseC(TestCampFlow):
+    """Cost per camp and the health office export."""
+
+    def test_costs_and_health_export(self):
+        self.medicine.standard_price = 2.5
+        for name, age, sex in [('Ali', 3, 'male'), ('Sara', 30, 'female'), ('Zain', 60, 'male')]:
+            _p, visit = self._register(name, age_years=age, sex=sex)
+            c = self.env['camp.consultation'].create({
+                'visit_id': visit.id, 'doctor_id': self.doctor.id,
+                'diagnosis_ids': [(6, 0, self.env.ref('revive_medical_camp.icd_i10').ids)],
+                'prescription_line_ids': [(0, 0, {'formulary_id': self.formulary.id, 'quantity': 4})]})
+            c.action_finish()
+            c.prescription_line_ids.action_dispense()
+        self.env['camp.budget.line'].create({'camp_id': self.camp.id, 'category': 'transport', 'planned': 100,
+                                             'actual': 120})
+        self.assertEqual(self.camp.medicines_value, 30.0)       # 12 tablets x 2.5
+        self.assertEqual(self.camp.total_cost, 150.0)
+        self.assertEqual(self.camp.cost_per_patient, 50.0)
+        # A "Medicines" budget line already counts the medicines: not added twice.
+        self.env['camp.budget.line'].create({'camp_id': self.camp.id, 'category': 'medicines', 'actual': 40})
+        self.assertEqual(self.camp.total_cost, 160.0)
+
+        month = fields.Date.today().replace(day=1)
+        wizard = self.env['camp.health.export'].create({
+            'date_from': month, 'date_to': fields.Date.today() + timedelta(days=1), 'file_format': 'csv'})
+        sheets = wizard._rows()
+        patients = sheets[0]
+        header, row = patients[1], patients[2][0]
+        self.assertEqual(row[header.index('1-4 M')], 1)
+        self.assertEqual(row[header.index('15-49 F')], 1)
+        self.assertEqual(row[header.index('50+ M')], 1)
+        self.assertEqual(row[header.index('Total')], 3)
+        dx_header, dx = sheets[1][1], sheets[1][2][0]
+        self.assertEqual((dx[1], dx[dx_header.index('Total')]), ('I10', 3))
+        wizard.action_export()
+        text = base64.b64decode(wizard.file_data).decode('utf-8-sig')
+        self.assertIn('I10', text)
+        self.assertNotIn('Sara', text, 'no names in the export')
+        wizard.file_format = 'xlsx'
+        wizard.action_export()
+        self.assertTrue(wizard.file_name.endswith('.xlsx'))
+        self.assertEqual(base64.b64decode(wizard.file_data)[:2], b'PK')

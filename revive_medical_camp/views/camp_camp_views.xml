@@ -206,9 +206,12 @@
                                     <field name="team_count"/>
                                 </group>
                                 <group groups="revive_medical_camp.group_camp_coordinator">
-                                    <field name="budget_planned"/>
-                                    <field name="budget_actual"/>
-                                    <field name="cost_per_patient"/>
+                                    <field name="currency_id" invisible="1"/>
+                                    <field name="budget_planned" widget="monetary"/>
+                                    <field name="budget_actual" widget="monetary"/>
+                                    <field name="medicines_value" widget="monetary"/>
+                                    <field name="total_cost" widget="monetary"/>
+                                    <field name="cost_per_patient" widget="monetary"/>
                                 </group>
                             </group>
                         </page>

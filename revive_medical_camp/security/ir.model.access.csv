@@ -80,3 +80,4 @@ access_camp_vaccine_nurse,camp.vaccine.record nurse,model_camp_vaccine_record,gr
 access_camp_vaccine_lead,camp.vaccine.record lead,model_camp_vaccine_record,group_camp_lead,1,1,1,1
 access_camp_stock_plan,camp.stock.plan coordinator,model_camp_stock_plan,group_camp_coordinator,1,1,1,1
 access_camp_stock_plan_line,camp.stock.plan.line coordinator,model_camp_stock_plan_line,group_camp_coordinator,1,1,1,1
+access_camp_health_export,camp.health.export coordinator,model_camp_health_export,group_camp_coordinator,1,1,1,1

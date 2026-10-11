@@ -93,21 +93,34 @@ class CampCamp(models.Model):
     flagged_count = fields.Integer(compute='_compute_totals')
     medicines_dispensed = fields.Float(compute='_compute_totals', string='Medicine units dispensed')
     budget_planned = fields.Float(compute='_compute_totals')
-    budget_actual = fields.Float(compute='_compute_totals', string='Total cost')
+    budget_actual = fields.Float(compute='_compute_totals', string='Budget spent')
+    medicines_value = fields.Float(
+        compute='_compute_totals', string='Medicines given (value)',
+        help='Medicines handed out, at their cost price in Inventory. Added to the total cost unless the budget '
+             'already has a "Medicines" line with an amount spent.')
+    total_cost = fields.Float(compute='_compute_totals', string='Total cost')
     cost_per_patient = fields.Float(compute='_compute_totals')
+    currency_id = fields.Many2one(related='company_id.currency_id')
     team_count = fields.Integer(compute='_compute_totals')
 
-    @api.depends('visit_ids.state', 'budget_line_ids.planned', 'budget_line_ids.actual', 'team_member_ids')
+    @api.depends('visit_ids.state', 'budget_line_ids.planned', 'budget_line_ids.actual', 'team_member_ids',
+                 'visit_ids.prescription_line_ids.dispensed_qty')
     def _compute_totals(self):
         for camp in self:
-            visits = camp.visit_ids.filtered(lambda v: v.state != 'cancelled')
+            visits = camp.visit_ids.filtered(lambda v: v.state not in ('cancelled', 'booked'))
             camp.patients_seen = len(visits)
             camp.referral_count = len(visits.referral_ids)
             camp.flagged_count = len(visits.filtered('flag_rule_ids'))
             camp.medicines_dispensed = sum(visits.prescription_line_ids.mapped('dispensed_qty'))
             camp.budget_planned = sum(camp.budget_line_ids.mapped('planned'))
             camp.budget_actual = sum(camp.budget_line_ids.mapped('actual'))
-            camp.cost_per_patient = camp.budget_actual / len(visits) if visits else 0.0
+            given = visits.sudo().prescription_line_ids.filtered(lambda l: l.dispensed_qty > 0)
+            camp.medicines_value = sum(
+                l.dispensed_qty * ((l.substitute_formulary_id or l.formulary_id).product_id.standard_price or 0)
+                for l in given)
+            in_budget = any(l.category == 'medicines' and l.actual for l in camp.budget_line_ids)
+            camp.total_cost = camp.budget_actual + (0 if in_budget else camp.medicines_value)
+            camp.cost_per_patient = camp.total_cost / len(visits) if visits else 0.0
             camp.team_count = len(camp.team_member_ids)
 
     # ── Stock location ───────────────────────────────────────────
@@ -256,7 +269,8 @@ class CampCamp(models.Model):
             'talk_attendees': sum(self.education_session_ids.mapped('attendees_count')),
             'team': len(self.team_member_ids),
             'team_hours': round(sum(self.team_member_ids.mapped('hours')), 1),
-            'cost': self.budget_actual,
+            'cost': self.total_cost,
+            'medicines_value': self.medicines_value,
             'cost_per_patient': self.cost_per_patient,
             'min_group': min_group,
             'shortages': [(l.dispensed_product_id.display_name or l.product_id.display_name, l.shortage_qty)

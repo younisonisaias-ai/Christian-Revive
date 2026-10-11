@@ -426,6 +426,9 @@ class CampApi(models.AbstractModel):
             'buy_outside': len(lines.filtered(lambda l: l.state == 'outside')),
             'health_talks': len(sessions),
             'talk_attendees': sum(sessions.mapped('attendees_count')),
+            'total_cost': camp.sudo().total_cost,
+            'cost_per_patient': camp.sudo().cost_per_patient,
+            'currency': camp.sudo().company_id.currency_id.symbol or '',
             'team': len(team),
             'team_checked_in': len(team.filtered(
                 lambda m: m.checked_in_at and (not m.checked_out_at or m.checked_out_at < m.checked_in_at))),

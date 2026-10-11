@@ -86,6 +86,7 @@
                         <h5 class="mt-3">Team and cost</h5>
                         <table class="camp-table" style="width: 100%;">
                             <tr><th style="width: 50%;">Volunteer hours</th><td t-esc="s['team_hours']"/></tr>
+                            <tr><th>Medicines given (value)</th><td t-esc="s['medicines_value']" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/></tr>
                             <tr><th>Total cost</th><td t-esc="s['cost']" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/></tr>
                             <tr><th>Cost per patient</th><td t-esc="s['cost_per_patient']" t-options="{'widget': 'monetary', 'display_currency': o.company_id.currency_id}"/></tr>
                         </table>

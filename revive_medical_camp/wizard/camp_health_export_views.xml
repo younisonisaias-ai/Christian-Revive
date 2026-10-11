@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_health_export_form" model="ir.ui.view">
+        <field name="name">camp.health.export.form</field>
+        <field name="model">camp.health.export</field>
+        <field name="arch" type="xml">
+            <form>
+                <p class="text-muted">
+                    Patients and diagnoses per month, by age group (&lt;1, 1-4, 5-14, 15-49, 50+) and sex,
+                    for the district health office. Counts only — no names or phone numbers.
+                </p>
+                <group>
+                    <group>
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group>
+                        <field name="file_format" widget="radio"/>
+                        <field name="camp_ids" widget="many2many_tags" placeholder="All camps"/>
+                    </group>
+                </group>
+                <group invisible="not file_data">
+                    <field name="file_name" invisible="1"/>
+                    <field name="file_data" filename="file_name" string="Download"/>
+                </group>
+                <footer>
+                    <button name="action_export" type="object" string="Make the file" class="btn-primary"/>
+                    <button string="Close" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_camp_health_export" model="ir.actions.act_window">
+        <field name="name">Health office export</field>
+        <field name="res_model">camp.health.export</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Costs across camps -->
+    <record id="view_camp_camp_costs" model="ir.ui.view">
+        <field name="name">camp.camp.costs</field>
+        <field name="model">camp.camp</field>
+        <field name="priority">40</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="area"/>
+                <field name="patients_seen"/>
+                <field name="budget_planned" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="budget_actual" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="medicines_value" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="total_cost" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="cost_per_patient" widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_camp_costs" model="ir.actions.act_window">
+        <field name="name">Camp costs</field>
+        <field name="res_model">camp.camp</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_camp_camp_costs"/>
+    </record>
+
+    <menuitem id="menu_camp_reporting" name="Reporting" parent="menu_camp_root" sequence="80"
+              groups="group_camp_coordinator"/>
+    <menuitem id="menu_camp_costs" name="Camp costs" parent="menu_camp_reporting" sequence="10"
+              action="action_camp_costs"/>
+    <menuitem id="menu_camp_health_export" name="Health office export" parent="menu_camp_reporting" sequence="20"
+              action="action_camp_health_export"/>
+</odoo>
