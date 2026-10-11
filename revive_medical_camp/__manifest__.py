@@ -1,6 +1,6 @@
 {
     'name': 'Medical Camp Management',
-    'version': '19.0.1.2.2',
+    'version': '19.0.1.2.3',
     'category': 'Healthcare',
     'summary': 'Run free medical camps end to end: registration, triage, doctor, pharmacy, referrals, sponsor reports',
     'description': """

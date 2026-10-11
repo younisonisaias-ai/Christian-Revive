@@ -176,6 +176,45 @@ class TestCampPortalHttp(HttpCase):
             self.url_open(path, data=json.dumps(body or {}), headers=headers)
         return resp.status_code, resp.json()
 
+    def test_sign_in_with_email_or_phone(self):
+        """Shazia's case: an old office user already has her email (other password).
+        The camp login is made with her phone, the email is saved, and she can
+        sign in with either."""
+        Users = self.env['res.users'].with_context(no_reset_password=True)
+        Users.create({'name': 'Shazia (office)', 'login': 'shazia@example.com', 'password': 'office_pw_123',
+                      'group_ids': [(6, 0, [self.env.ref('base.group_user').id])]})
+        coordinator = Users.create({'name': 'Coord', 'login': 'coord_x', 'group_ids': [
+            (6, 0, [self.env.ref('revive_medical_camp.group_camp_coordinator').id])]})
+        member = self.env['camp.team.member'].create({
+            'camp_id': self.camp.id, 'name': 'Shazia', 'role': 'nurse',
+            'email': 'Shazia@example.com', 'phone': '0334-2095509'})
+        result = member.with_user(coordinator).action_create_login()
+        self.assertEqual(member.user_id.login, '03342095509')     # email taken by office user
+        self.assertEqual(member.user_id.email, 'shazia@example.com')
+        self.assertTrue(member.user_id.share)
+        self.assertIn('shazia@example.com', result['params']['message'])
+        password = result['params']['message'].split('Password: ')[1].split()[0]
+
+        for typed in ('shazia@example.com', '0334 2095509', '03342095509'):
+            status, data = self.call('/api/camp/login', {'login': typed, 'password': password})
+            self.assertEqual(status, 200, (typed, data))
+            self.assertEqual(data['user']['id'], member.user_id.id)
+        status, _ = self.call('/api/camp/login', {'login': 'shazia@example.com', 'password': 'wrong'})
+        self.assertEqual(status, 401)
+        # The office password matches the office user, who is not a camp worker.
+        status, _ = self.call('/api/camp/login', {'login': 'shazia@example.com', 'password': 'office_pw_123'})
+        self.assertEqual(status, 403)
+
+    def test_email_becomes_login_when_free(self):
+        coordinator = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Coord 2', 'login': 'coord_y', 'group_ids': [
+                (6, 0, [self.env.ref('revive_medical_camp.group_camp_coordinator').id])]})
+        member = self.env['camp.team.member'].create({
+            'camp_id': self.camp.id, 'name': 'Asma', 'role': 'registration',
+            'email': 'asma@example.com', 'phone': '03007654321'})
+        member.with_user(coordinator).action_create_login()
+        self.assertEqual(member.user_id.login, 'asma@example.com')
+
     def test_portal_worker_signs_in(self):
         status, _ = self.call('/api/camp/login', {'login': 'portal_web', 'password': 'portal_web_pw_1'})
         self.assertEqual(status, 403)          # an ordinary website customer is not a camp worker

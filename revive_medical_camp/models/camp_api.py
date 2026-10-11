@@ -112,6 +112,23 @@ class CampApi(models.AbstractModel):
             return bool(self.env['camp.team.member'].sudo().search_count([('user_id', '=', user.id)]))
         return bool(self._roles(user))
 
+    @api.model
+    def _login_candidates(self, typed, limit=5):
+        """Logins a worker may mean when typing a login, an email or a phone
+        number ("0300-1234567" = "03001234567"). Camp workers come first."""
+        typed = (typed or '').strip()
+        digits = re.sub(r'[^0-9+]', '', typed)
+        Users = self.env['res.users'].sudo().with_context(active_test=True)
+        domain = Domain('login', '=ilike', typed)
+        if '@' in typed:
+            domain |= Domain('email', '=ilike', typed)
+        elif len(digits) >= 7:
+            domain |= Domain('login', '=', digits) | Domain('phone', '=', digits)
+        users = Users.search(domain, limit=limit)
+        workers = self.env['camp.team.member'].sudo().search([('user_id', 'in', users.ids)]).user_id
+        ordered = sorted(users, key=lambda u: (u.login.lower() != typed.lower(), u not in workers, u.id))
+        return [u.login for u in ordered] or [typed]
+
     def _worker(self, camp_id):
         """(api, camp) to run one camp call with. Portal workers get server
         rights limited to this camp and their team role."""

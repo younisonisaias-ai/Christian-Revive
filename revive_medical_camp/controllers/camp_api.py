@@ -94,19 +94,30 @@ class CampApiController(http.Controller):
             login, password = (body.get('login') or '').strip(), body.get('password') or ''
             if not login or not password:
                 raise UserError('Enter your login and password.')
-            credential = {'type': 'password', 'login': login, 'password': password}
-            try:
-                auth = request.env['res.users'].sudo().authenticate(
-                    credential, {'interactive': False, 'base_location': request.httprequest.url_root})
-            except AccessDenied:
+            # Workers may type their login, email or phone number. Several
+            # users can match (e.g. an old office user with the same email):
+            # the password decides which one it is, camp workers first.
+            user, not_worker = None, None
+            for candidate in request.env['camp.api'].sudo()._login_candidates(login):
+                credential = {'type': 'password', 'login': candidate, 'password': password}
+                try:
+                    auth = request.env['res.users'].sudo().authenticate(
+                        credential, {'interactive': False, 'base_location': request.httprequest.url_root})
+                except AccessDenied:
+                    continue
+                found = request.env['res.users'].sudo().browse(auth['uid'])
+                if request.env['camp.api'].with_user(found)._is_camp_worker():
+                    user = found
+                    break
+                not_worker = not_worker or found
+            if not user and not_worker:
+                return _error('forbidden', 'This login has no medical camp role. Ask your camp coordinator.', 403)
+            if not user:
                 return _error('unauthorized', 'Wrong login or password.', 401)
-            user = request.env['res.users'].sudo().browse(auth['uid'])
             if user._mfa_url():
                 return _error('mfa_not_supported',
                               'This login uses two-step verification, which Camp Mode does not support yet. '
                               'Use a separate camp login.', 403)
-            if not request.env['camp.api'].with_user(user)._is_camp_worker():
-                return _error('forbidden', 'This login has no medical camp role. Ask your camp coordinator.', 403)
             device = (body.get('device_name') or 'phone')[:60]
             key = request.env['res.users.apikeys'].with_user(user).sudo()._generate(
                 API_SCOPE, f'Camp Mode: {device}', datetime.now() + timedelta(days=KEY_DAYS))

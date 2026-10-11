@@ -274,11 +274,22 @@ class CampTeamMember(models.Model):
             raise AccessError(_('Only the camp coordinator can create camp logins.'))
         if self.user_id:
             raise UserError(_('%s already has a login.', self.name))
-        login = (self.email or '').strip().lower() or re.sub(r'[^0-9+]', '', self.phone or '')
-        if not login:
+        email = (self.email or '').strip().lower()
+        phone = re.sub(r'[^0-9+]', '', self.phone or '')
+        if not (email or phone):
             raise UserError(_('Add an email or phone number first; it becomes the login.'))
         Users = self.env['res.users'].sudo().with_context(active_test=False, no_reset_password=True)
+        login = email or phone
         existing = Users.search([('login', '=', login)], limit=1)
+        if existing and not existing.share and phone:
+            # The email already belongs to an office (paid) user: do not reuse
+            # it; make a free login with the phone number. The email is still
+            # saved, so the worker can also sign in with it.
+            login = phone
+            existing = Users.search([('login', '=', login)], limit=1)
+        if existing and not existing.share:
+            raise UserError(_('%(login)s is already used by an internal (paid) user. Add a phone number to '
+                              'create a free login, or give that user a Medical Camps role instead.', login=login))
         if existing:
             self.user_id = existing
             return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
@@ -289,7 +300,7 @@ class CampTeamMember(models.Model):
         alphabet = 'abcdefghjkmnpqrstuvwxyz23456789'
         password = ''.join(secrets.choice(alphabet) for _i in range(10))
         user = Users.create({
-            'name': self.name, 'login': login, 'email': self.email or False,
+            'name': self.name, 'login': login, 'email': email or False, 'phone': phone or False,
             'password': password,
             'group_ids': [(6, 0, [self.env.ref('base.group_portal').id])],
         })
@@ -297,9 +308,10 @@ class CampTeamMember(models.Model):
         return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
             'title': _('Camp login created'),
             'message': _('Login: %(login)s   Password: %(password)s\n'
-                         'Give these to %(name)s privately. They sign in under Medical Camp Mode in the app. '
-                         'This password is shown only once.',
-                         login=login, password=password, name=self.name),
+                         'Give these to %(name)s privately. They sign in under Medical Camp Mode in the app '
+                         'with this login%(also)s. This password is shown only once.',
+                         login=login, password=password, name=self.name,
+                         also=(_(' (or their email %s)', email) if email and email != login else '')),
             'sticky': True, 'type': 'success',
             # Refresh the camp so the Team line shows the new login straight away.
             'next': {'type': 'ir.actions.client', 'tag': 'soft_reload'}}}
