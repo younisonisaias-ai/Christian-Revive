@@ -122,9 +122,15 @@
                             <field name="team_member_ids">
                                 <list editable="bottom">
                                     <field name="role"/>
-                                    <field name="user_id"/>
                                     <field name="name"/>
                                     <field name="phone"/>
+                                    <field name="email" optional="show"/>
+                                    <field name="user_id"/>
+                                    <field name="login_type" optional="show"/>
+                                    <button name="action_create_login" type="object" icon="fa-key"
+                                            string="Create portal login" invisible="user_id"
+                                            groups="revive_medical_camp.group_camp_coordinator"/>
+                                    <field name="pmdc_number" invisible="role != 'doctor'" optional="show"/>
                                     <field name="checked_in_at"/>
                                     <field name="checked_out_at"/>
                                     <field name="hours" widget="float_time" sum="Total"/>
@@ -132,7 +138,12 @@
                                     <button name="action_check_out" type="object" icon="fa-sign-out" title="Check out"/>
                                 </list>
                             </field>
-                            <div class="text-muted">Give each person their own login (App login) so they see this camp in Camp Mode.</div>
+                            <div class="text-muted">
+                                Every worker needs their own login to see this camp in Camp Mode. For station
+                                workers who only use the phone app, click the key to create a free portal login.
+                                Coordinators and the medical lead need an internal user with a Medical Camps role.
+                                Doctors also need their PMDC number.
+                            </div>
                         </page>
                         <page string="Budget" name="budget" groups="revive_medical_camp.group_camp_coordinator">
                             <field name="budget_line_ids">

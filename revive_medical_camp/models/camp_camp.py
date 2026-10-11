@@ -1,8 +1,10 @@
 """One medical camp, its team, budget and health-talk sessions."""
+import re
+import secrets
 from collections import Counter
 
 from odoo import _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 AGE_BANDS = [(0, 4, '0-4'), (5, 14, '5-14'), (15, 49, '15-49'), (50, 200, '50+')]
 TEAM_ROLES = [
@@ -217,7 +219,13 @@ class CampTeamMember(models.Model):
                               help='The person\'s own login; gives them this camp in Camp Mode.')
     name = fields.Char(required=True)
     phone = fields.Char()
+    email = fields.Char()
     role = fields.Selection(TEAM_ROLES, required=True, default='helper')
+    login_type = fields.Selection([('portal', 'Free (portal)'), ('internal', 'Internal (paid)')],
+                                  compute='_compute_login_type', string='Login type')
+    pmdc_number = fields.Char(string='PMDC number', compute='_compute_pmdc_number',
+                              inverse='_inverse_pmdc_number',
+                              help='Doctors only. Saved on their login; needed before they can save a consultation.')
     checked_in_at = fields.Datetime(string='Checked in')
     checked_out_at = fields.Datetime(string='Checked out')
     hours = fields.Float(compute='_compute_hours', store=True)
@@ -233,6 +241,61 @@ class CampTeamMember(models.Model):
     def _onchange_user_id(self):
         if self.user_id and not self.name:
             self.name = self.user_id.name
+
+    @api.depends('user_id')
+    def _compute_login_type(self):
+        for member in self:
+            member.login_type = (('portal' if member.user_id.share else 'internal')
+                                 if member.user_id else False)
+
+    @api.depends('user_id')
+    def _compute_pmdc_number(self):
+        for member in self:
+            member.pmdc_number = member.user_id.sudo().camp_pmdc_number
+
+    def _inverse_pmdc_number(self):
+        if not self.env.su and not self.env.user.has_group('revive_medical_camp.group_camp_coordinator'):
+            raise AccessError(_('Only the camp coordinator can set PMDC numbers.'))
+        for member in self.filtered('user_id'):
+            member.user_id.sudo().camp_pmdc_number = member.pmdc_number
+
+    def action_create_login(self):
+        """Create a free portal login for a station worker (phone app only).
+
+        The login is the email, or the phone number when there is no email.
+        A password is generated and shown once to the coordinator."""
+        self.ensure_one()
+        if not self.env.user.has_group('revive_medical_camp.group_camp_coordinator'):
+            raise AccessError(_('Only the camp coordinator can create camp logins.'))
+        if self.user_id:
+            raise UserError(_('%s already has a login.', self.name))
+        login = (self.email or '').strip().lower() or re.sub(r'[^0-9+]', '', self.phone or '')
+        if not login:
+            raise UserError(_('Add an email or phone number first; it becomes the login.'))
+        Users = self.env['res.users'].sudo().with_context(active_test=False, no_reset_password=True)
+        existing = Users.search([('login', '=', login)], limit=1)
+        if existing:
+            self.user_id = existing
+            return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+                'title': _('Existing login linked'),
+                'message': _('%(name)s already had the login %(login)s; it is now linked to this camp.',
+                             name=self.name, login=login),
+                'type': 'info'}}
+        alphabet = 'abcdefghjkmnpqrstuvwxyz23456789'
+        password = ''.join(secrets.choice(alphabet) for _i in range(10))
+        user = Users.create({
+            'name': self.name, 'login': login, 'email': self.email or False,
+            'password': password,
+            'group_ids': [(6, 0, [self.env.ref('base.group_portal').id])],
+        })
+        self.user_id = user
+        return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {
+            'title': _('Camp login created'),
+            'message': _('Login: %(login)s   Password: %(password)s\n'
+                         'Give these to %(name)s privately. They sign in under Medical Camp Mode in the app. '
+                         'This password is shown only once.',
+                         login=login, password=password, name=self.name),
+            'sticky': True, 'type': 'success'}}
 
     @api.depends('checked_in_at', 'checked_out_at')
     def _compute_hours(self):

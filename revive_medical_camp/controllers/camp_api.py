@@ -1,6 +1,7 @@
 """Camp Mode API for the mobile app: /api/camp/...
 
-Each camp worker signs in with their OWN Odoo login. The phone receives an
+Each camp worker signs in with their OWN Odoo login: an internal user with a
+camp role, or a portal user (free) who is on a camp team. The phone receives an
 API key that only works for this camp API (scope "revive_camp"), expires
 after 30 days and is deleted on logout. All other calls send it as
 ``Authorization: Bearer <key>`` and run as that worker, so their camp role
@@ -24,11 +25,6 @@ _logger = logging.getLogger(__name__)
 
 API_SCOPE = 'revive_camp'
 KEY_DAYS = 30
-CAMP_GROUPS = [
-    'revive_medical_camp.group_camp_registration',
-    'revive_medical_camp.group_camp_followup',
-    'revive_medical_camp.group_camp_pharmacist',
-]
 
 
 def _json(data, status=200):
@@ -65,7 +61,7 @@ def camp_route(route, methods):
             if not uid:
                 return _error('unauthorized', 'Sign in again (missing or expired key).', 401)
             request.update_env(user=uid)
-            if not any(request.env.user.has_group(g) for g in CAMP_GROUPS):
+            if not request.env['camp.api']._is_camp_worker():
                 return _error('forbidden', 'This login has no medical camp role.', 403)
             return _call(func, self, *args, **kwargs)
         return wrapper
@@ -109,7 +105,7 @@ class CampApiController(http.Controller):
                 return _error('mfa_not_supported',
                               'This login uses two-step verification, which Camp Mode does not support yet. '
                               'Use a separate camp login.', 403)
-            if not any(user.has_group(g) for g in CAMP_GROUPS):
+            if not request.env['camp.api'].with_user(user)._is_camp_worker():
                 return _error('forbidden', 'This login has no medical camp role. Ask your camp coordinator.', 403)
             device = (body.get('device_name') or 'phone')[:60]
             key = request.env['res.users.apikeys'].with_user(user).sudo()._generate(

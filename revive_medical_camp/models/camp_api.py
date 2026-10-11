@@ -1,8 +1,16 @@
 """Server side of Camp Mode: what a camp phone downloads before the camp, and
 how the records it saved offline are uploaded.
 
-Everything here runs as the signed-in camp worker, so the normal access
-rights and record rules decide what they can read and write. Uploads are
+Two kinds of camp workers:
+
+* internal users (coordinator, medical lead, ...) - calls run as them, so the
+  normal access rights and record rules apply, plus the role checks below;
+* portal users (station volunteers and staff who only use the phone app) -
+  they have no rights on camp records at all. Calls run with server rights,
+  but only for camps whose team they are on, and every read and write is
+  checked here against their team role (doctor > nurse > registration).
+
+Uploads are
 idempotent: each record carries the phone's own id (client_uuid); sending
 the same batch again updates or skips, it never duplicates.
 """
@@ -27,6 +35,25 @@ ROLE_GROUPS = [
     ('registration', 'revive_medical_camp.group_camp_registration'),
     ('followup', 'revive_medical_camp.group_camp_followup'),
 ]
+# Team role of a portal worker -> what they may do (same as the internal groups).
+TEAM_ROLE_RIGHTS = {
+    'registration': {'registration'},
+    'nurse': {'nurse', 'registration'},
+    'doctor': {'doctor', 'nurse', 'registration'},
+    'pharmacist': {'pharmacist'},
+    'followup': {'followup'},
+    'educator': {'educator'},
+    'coordinator': {'registration', 'followup'},   # closing / reports need an internal login
+    'helper': set(),
+}
+# Which roles may read each kind of record.
+READ_RIGHTS = {
+    'camp.vitals': {'nurse', 'doctor'},
+    'camp.consultation': {'doctor', 'pharmacist'},
+    'camp.prescription.line': {'doctor', 'pharmacist'},
+    'camp.referral': {'doctor', 'followup', 'coordinator'},
+    'camp.followup': {'followup', 'doctor', 'coordinator'},
+}
 MAX_ITEMS = 500           # per kind, per upload
 RETURNING_PATIENTS = 3000  # patients from the camp's area sent to phones
 RETURNING_YEARS = 2        # only patients seen (or registered) in the last 2 years
@@ -61,8 +88,68 @@ class CampApi(models.AbstractModel):
     # ── Who is this? ────────────────────────────────────────────
     @api.model
     def _roles(self, user=None):
+        """Roles of the worker. Inside a camp call this is fixed in the context
+        (portal: their team role in that camp)."""
+        if user is None and self.env.context.get('camp_roles') is not None:
+            return list(self.env.context['camp_roles'])
         user = user or self.env.user
+        if user.share:
+            return sorted(self._team_rights(user, self.env['camp.camp'].sudo().search([])))
         return [role for role, xmlid in ROLE_GROUPS if user.has_group(xmlid)]
+
+    @api.model
+    def _team_rights(self, user, camps):
+        rights = set()
+        for member in camps.sudo().team_member_ids.filtered(lambda m: m.user_id == user):
+            rights |= TEAM_ROLE_RIGHTS.get(member.role, set())
+        return rights
+
+    @api.model
+    def _is_camp_worker(self, user=None):
+        """May this login use Camp Mode at all?"""
+        user = user or self.env.user
+        if user.share:
+            return bool(self.env['camp.team.member'].sudo().search_count([('user_id', '=', user.id)]))
+        return bool(self._roles(user))
+
+    def _worker(self, camp_id):
+        """(api, camp) to run one camp call with. Portal workers get server
+        rights limited to this camp and their team role."""
+        if self.env.context.get('camp_ready'):
+            return self, self._get_camp(camp_id)
+        user = self.env.user
+        if user.share:
+            camp = self.env['camp.camp'].sudo().browse(int(camp_id)).exists()
+            if not camp:
+                raise MissingError(_('Camp not found.'))
+            if user not in camp.team_member_ids.user_id:
+                raise AccessError(_('You are not on the team of this camp.'))
+            rights = self._team_rights(user, camp)
+            api_env = self.sudo()
+        else:
+            rights = set(self._roles(user))
+            api_env = self
+        api_env = api_env.with_context(camp_roles=tuple(sorted(rights)), camp_ready=True, camp_scope=int(camp_id))
+        return api_env, api_env._get_camp(camp_id)
+
+    def _need(self, *roles):
+        have = set(self._roles())
+        if 'lead' in have or have & set(roles):
+            return
+        raise AccessError(_('Your camp role cannot do this.'))
+
+    def _may_read(self, model):
+        have = set(self._roles())
+        allowed = READ_RIGHTS.get(model)
+        if allowed is not None and not ('lead' in have or have & allowed):
+            return False
+        return bool(have) and (self.env.su or self.env[model].has_access('read'))
+
+    def _check_doctor_registration(self):
+        """Consultations need a PMDC number (the model checks internal users;
+        portal doctors are checked here)."""
+        if self.env.su and not self.env.user.camp_pmdc_number:
+            raise ValidationError(_('Add your PMDC number (ask the camp coordinator) before saving a consultation.'))
 
     @api.model
     def me(self):
@@ -72,7 +159,11 @@ class CampApi(models.AbstractModel):
             # Follow-up calls happen after the camp: keep recent closed camps.
             recent = fields.Date.context_today(self) - timedelta(days=FOLLOWUP_DAYS)
             domain = ['|', ('state', '!=', 'closed'), ('date_start', '>=', recent)]
-        camps = self.env['camp.camp'].search(domain, order='date_start')
+        if user.share:
+            domain = Domain.AND([domain, [('team_member_ids.user_id', '=', user.id)]])
+            camps = self.env['camp.camp'].sudo().search(domain, order='date_start')
+        else:
+            camps = self.env['camp.camp'].search(domain, order='date_start')
         return {
             'user': {
                 'id': user.id, 'name': user.name, 'login': user.login,
@@ -87,18 +178,20 @@ class CampApi(models.AbstractModel):
     @api.model
     def bootstrap(self, camp_id, reserve_tokens=0):
         """Everything a phone needs to run its station offline."""
-        camp = self._get_camp(camp_id)
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.bootstrap(camp_id, reserve_tokens)
         Env = self.env
-        can = lambda model: Env[model].has_access('read')  # noqa: E731
+        can = self._may_read
         data = {
             'server_time': fields.Datetime.to_string(fields.Datetime.now()),
             'camp': self._camp(camp),
             'me': {'id': Env.user.id, 'name': Env.user.name, 'roles': self._roles(),
                    'has_pmdc_number': bool(Env.user.camp_pmdc_number),
-                   'team_member_id': camp.team_member_ids.filtered(lambda m: m.user_id == Env.user)[:1].id or None},
+                   'team_member_id': camp.sudo().team_member_ids.filtered(lambda m: m.user_id == Env.user)[:1].id or None},
             'team': [{'id': m.id, 'name': m.name, 'role': m.role, 'user_id': m.user_id.id or None,
                       'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at)}
-                     for m in camp.team_member_ids],
+                     for m in camp.sudo().team_member_ids],
             'flag_rules': [{'id': r.id, 'name': r.name, 'name_ur': r.name_ur or '', 'measure': r.measure,
                             'operator': r.operator, 'value': r.value, 'priority': r.priority}
                            for r in Env['camp.flag.rule'].search([])] if can('camp.flag.rule') else [],
@@ -128,13 +221,15 @@ class CampApi(models.AbstractModel):
     def changes(self, camp_id, since=None):
         """Records of this camp changed since `since` (UTC string), so each phone
         sees what the other stations did."""
-        camp = self._get_camp(camp_id)
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.changes(camp_id, since)
         Env = self.env
         now = fields.Datetime.now()
         dom = [('camp_id', '=', camp.id)]
         if since:
             dom.append(('write_date', '>=', fields.Datetime.to_datetime(since)))
-        can = lambda model: Env[model].has_access('read')  # noqa: E731
+        can = self._may_read
         visits = Env['camp.visit'].search(dom) if can('camp.visit') else Env['camp.visit']
         out = {
             'server_time': fields.Datetime.to_string(now),
@@ -160,7 +255,9 @@ class CampApi(models.AbstractModel):
     @api.model
     def queue(self, camp_id, station):
         """Live queue for one station (when the phone is online)."""
-        camp = self._get_camp(camp_id)
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.queue(camp_id, station)
         states = {
             'triage': ['registered'],
             'doctor': ['registered', 'triaged', 'with_doctor'],
@@ -174,6 +271,10 @@ class CampApi(models.AbstractModel):
 
     @api.model
     def search_patients(self, query, limit=30):
+        if not ({'registration', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only registration staff can search patients.'))
+        if self.env.user.share and not self.env.su:
+            return self.sudo().search_patients(query, limit)
         query = (query or '').strip()
         if len(query) < 2:
             return {'patients': []}
@@ -185,7 +286,9 @@ class CampApi(models.AbstractModel):
     @api.model
     def camp_status(self, camp_id):
         """Used by the close-camp screen."""
-        camp = self._get_camp(camp_id)
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.camp_status(camp_id)
         visits = self.env['camp.visit'].search([('camp_id', '=', camp.id)])
         counts = {}
         for v in visits:
@@ -196,8 +299,10 @@ class CampApi(models.AbstractModel):
     @api.model
     def close_camp(self, camp_id):
         """Coordinator closes the camp from the phone (after everything is synced)."""
-        camp = self._get_camp(camp_id)
-        if 'coordinator' not in self._roles():
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.close_camp(camp_id)
+        if self.env.user.share or not ({'coordinator', 'lead'} & set(self._roles())):
             raise AccessError(_('Only the camp coordinator can close the camp.'))
         if camp.state != 'closed':
             camp.action_close()
@@ -209,7 +314,9 @@ class CampApi(models.AbstractModel):
         """Save a batch of records made offline. Each record is saved on its own,
         so one bad record never blocks the rest. Returns, per kind, the server id
         for every client_uuid, plus warnings (e.g. stock shortages)."""
-        camp = self._get_camp(camp_id)
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.sync(camp_id, payload)
         payload = payload or {}
         batch, results = _Batch(self.env), {}
         steps = [
@@ -275,6 +382,7 @@ class CampApi(models.AbstractModel):
         return Model.create({**vals, 'client_uuid': item['client_uuid']}), 'created'
 
     def _sync_patient(self, item):
+        self._need('registration')
         vals = self._pick(item, PATIENT_FIELDS)
         if item.get('id'):   # a returning patient edited on the phone
             patient = self.env['camp.patient'].browse(int(item['id'])).exists()
@@ -287,6 +395,7 @@ class CampApi(models.AbstractModel):
         return self._upsert('camp.patient', item, vals)
 
     def _sync_visit(self, camp, item, batch):
+        self._need('registration')
         patient = self._ref('camp.patient', item.get('patient'))
         vals = {'camp_id': camp.id, 'patient_id': patient.id,
                 **self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'arrived_at'])}
@@ -313,11 +422,14 @@ class CampApi(models.AbstractModel):
         return visit, 'created'
 
     def _sync_vitals(self, item):
+        self._need('nurse')
         visit = self._ref('camp.visit', item.get('visit'))
         vals = {'visit_id': visit.id, **self._pick(item, VITAL_FIELDS)}
         return self._upsert('camp.vitals', item, vals, update_vals=self._pick(item, VITAL_FIELDS))
 
     def _sync_consultation(self, item, batch):
+        self._need('doctor')
+        self._check_doctor_registration()
         visit = self._ref('camp.visit', item.get('visit'))
         vals = {'visit_id': visit.id, **self._pick(item, CONSULT_FIELDS)}
         if 'diagnosis_codes' in item:
@@ -332,6 +444,8 @@ class CampApi(models.AbstractModel):
         return record, status
 
     def _sync_line(self, item):
+        self._need('doctor')
+        self._check_doctor_registration()
         consult = self._ref('camp.consultation', item.get('consultation'))
         formulary = self._ref('camp.formulary', item.get('formulary_id'))
         vals = {'consultation_id': consult.id, 'formulary_id': formulary.id, **self._pick(item, LINE_FIELDS)}
@@ -355,6 +469,7 @@ class CampApi(models.AbstractModel):
         batch.to_finish = self.env['camp.consultation']
 
     def _sync_referral(self, item):
+        self._need('doctor')
         visit = self._ref('camp.visit', item.get('visit')) if item.get('visit') else None
         consult = self._ref('camp.consultation', item.get('consultation')) if item.get('consultation') else None
         if not (visit or consult):
@@ -368,6 +483,7 @@ class CampApi(models.AbstractModel):
         return self._upsert('camp.referral', item, vals, update_vals=update)
 
     def _sync_session(self, camp, item):
+        self._need('registration', 'educator')
         vals = {'camp_id': camp.id, **self._pick(item, SESSION_FIELDS)}
         return self._upsert('camp.education.session', item, vals, update_vals=self._pick(item, SESSION_FIELDS))
 
@@ -377,13 +493,15 @@ class CampApi(models.AbstractModel):
         member = camp.team_member_ids.filtered(lambda m: m.id == int(item.get('member_id') or 0))
         if not member:
             raise MissingError(_('Team member not found in this camp.'))
-        if member.user_id != self.env.user and 'coordinator' not in self._roles():
+        others_allowed = not self.env.user.share and bool({'coordinator', 'lead'} & set(self._roles()))
+        if member.user_id != self.env.user and not others_allowed:
             raise AccessError(_('You can only check yourself in.'))
         vals = self._pick(item, ['checked_in_at', 'checked_out_at'])
         member.sudo().write(vals)
         return member, 'updated'
 
     def _sync_dispense(self, item, batch):
+        self._need('pharmacist')
         line = self._ref('camp.prescription.line', item.get('line'))
         if line.state != 'prescribed':
             return line, 'exists'
@@ -402,6 +520,7 @@ class CampApi(models.AbstractModel):
         return line, 'updated'
 
     def _sync_followup_call(self, item):
+        self._need('followup')
         followup = self._ref('camp.followup', item.get('followup'))
         followup.log_call(item.get('result'), notes=item.get('notes'), outcome=item.get('outcome'),
                           referral_attended=bool(item.get('referral_attended')))
@@ -411,8 +530,7 @@ class CampApi(models.AbstractModel):
         existing = self.env['camp.stock.count'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
         if existing:
             return existing, 'exists'
-        if 'pharmacist' not in self._roles():
-            raise AccessError(_('Only pharmacists can send a stock count.'))
+        self._need('pharmacist')
         loc = camp.stock_location_id
         lines = []
         for row in item.get('lines') or []:
@@ -426,6 +544,7 @@ class CampApi(models.AbstractModel):
         return count, 'created'
 
     def _sync_visit_action(self, item):
+        self._need('registration')
         visit = self._ref('camp.visit', item.get('visit'))
         action = item.get('action')
         if action == 'send_to_doctor':
@@ -454,7 +573,11 @@ class CampApi(models.AbstractModel):
         camp = self.env['camp.camp'].browse(int(camp_id)).exists()
         if not camp:
             raise MissingError(_('Camp not found.'))
-        camp.check_access('read')
+        if self.env.user.share:
+            if self.env.user not in camp.sudo().team_member_ids.user_id:
+                raise AccessError(_('You are not on the team of this camp.'))
+        else:
+            camp.check_access('read')
         return camp
 
     def _ref(self, model, value):
@@ -471,6 +594,10 @@ class CampApi(models.AbstractModel):
         if not record:
             raise MissingError(_('%(model)s %(ref)s not found (was it uploaded?).',
                                  model=Model._description, ref=value))
+        scope = self.env.context.get('camp_scope')
+        if scope and 'camp_id' in Model._fields and record.camp_id.id != scope:
+            # Never let a phone touch another camp's records.
+            raise MissingError(_('%(model)s %(ref)s is not part of this camp.', model=Model._description, ref=value))
         return record
 
     def _diagnosis_ids(self, codes):
