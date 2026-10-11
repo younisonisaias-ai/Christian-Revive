@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- A plain page (no website module needed): opens from the QR code on a referral letter. -->
+    <template id="referral_confirm_page" name="Camp referral: confirm arrival">
+        <t t-out="'&lt;!DOCTYPE html&gt;'"/>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title>Medical camp referral</title>
+                <style>
+                    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #FAF7F2;
+                           color: #2B2622; margin: 0; padding: 16px; }
+                    .card { max-width: 520px; margin: 0 auto; background: #fff; border-radius: 16px;
+                            box-shadow: 0 2px 10px rgba(0,0,0,.08); overflow: hidden; }
+                    .head { background: #35302A; color: #DEC09C; padding: 18px; font-weight: 800; font-size: 18px; }
+                    .body { padding: 18px; line-height: 1.5; }
+                    .row { display: flex; justify-content: space-between; border-bottom: 1px solid #eee; padding: 6px 0; }
+                    .row span:first-child { color: #6D645C; }
+                    .ok { background: #E8F5E9; color: #2E7D32; padding: 14px; border-radius: 12px; font-weight: 700; }
+                    .warn { background: #FFF3E0; color: #EF6C00; padding: 14px; border-radius: 12px; font-weight: 700; }
+                    input { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #ccc;
+                            border-radius: 10px; margin: 12px 0; }
+                    button { width: 100%; padding: 14px; font-size: 17px; font-weight: 800; color: #fff;
+                             background: #2E7D32; border: 0; border-radius: 12px; }
+                    .ur { direction: rtl; text-align: right; color: #6D645C; margin-top: 4px; }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="head">Medical camp referral · میڈیکل کیمپ ریفرل</div>
+                    <div class="body">
+                        <t t-if="not r">
+                            <p class="warn">This referral link is not valid.<br/>یہ ریفرل لنک درست نہیں۔</p>
+                        </t>
+                        <t t-else="">
+                            <div class="row"><span>Patient</span><b t-esc="r.patient_id.name"/></div>
+                            <div class="row"><span>Age / sex</span><span><t t-esc="r.patient_id.age_years"/> / <t t-esc="dict(r.patient_id._fields['sex'].selection).get(r.patient_id.sex, '')"/></span></div>
+                            <div class="row"><span>Referred to</span><span><t t-esc="r.hospital_id.name"/><t t-if="r.department"> — <t t-esc="r.department"/></t></span></div>
+                            <div class="row"><span>From</span><span><t t-esc="r.camp_id.name"/> · <t t-esc="r.camp_id.date_start"/></span></div>
+                            <div class="row"><span>Urgency</span><b t-esc="dict(r._fields['urgency'].selection).get(r.urgency)"/></div>
+                            <t t-if="r.status != 'issued'">
+                                <p class="ok">
+                                    Arrival confirmed<t t-if="r.attended_at"> on <t t-esc="r.attended_at.strftime('%d %b %Y')"/></t><t t-if="r.received_by"> by <t t-esc="r.received_by"/></t>. Thank you!
+                                    <div class="ur">مریض کی آمد کی تصدیق ہو گئی۔ شکریہ!</div>
+                                </p>
+                            </t>
+                            <t t-else="">
+                                <form method="post">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="text" name="received_by" maxlength="80" placeholder="Your name / desk (optional)"/>
+                                    <button type="submit">The patient has arrived</button>
+                                    <div class="ur">مریض پہنچ گیا ہے — تصدیق کریں</div>
+                                </form>
+                                <p style="color:#6D645C;font-size:13px;margin-top:14px;">
+                                    This tells the camp team the patient reached you, so they do not need to call them.
+                                </p>
+                            </t>
+                        </t>
+                    </div>
+                </div>
+            </body>
+        </html>
+    </template>
+</odoo>

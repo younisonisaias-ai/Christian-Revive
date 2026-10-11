@@ -150,6 +150,11 @@ class CampCamp(models.Model):
                                   count=len(waiting)))
         self.write({'state': 'closed'})
 
+    def action_prepare_reminders(self):
+        self.env['camp.reminder']._generate(self)
+        return self.env['ir.actions.act_window']._for_xml_id('revive_medical_camp.action_camp_reminder') | {
+            'domain': [('camp_id', 'in', self.ids)]}
+
     def action_reopen(self):
         self.write({'state': 'running'})
 

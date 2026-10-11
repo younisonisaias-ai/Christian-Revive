@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_patient_merge_form" model="ir.ui.view">
+        <field name="name">camp.patient.merge.form</field>
+        <field name="model">camp.patient.merge</field>
+        <field name="arch" type="xml">
+            <form>
+                <p>All visits move to the record you keep. Empty details (phone, area…) are filled from the
+                   others, allergies are combined, and the other records are archived.</p>
+                <field name="patient_ids" readonly="1">
+                    <list>
+                        <field name="patient_code"/>
+                        <field name="name"/>
+                        <field name="age_years"/>
+                        <field name="sex"/>
+                        <field name="phone"/>
+                        <field name="area"/>
+                        <field name="visit_count"/>
+                    </list>
+                </field>
+                <group>
+                    <field name="keep_id" options="{'no_create': True}"/>
+                </group>
+                <footer>
+                    <button name="action_merge" type="object" string="Merge" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_camp_patient_merge" model="ir.actions.act_window">
+        <field name="name">Merge patients</field>
+        <field name="res_model">camp.patient.merge</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="binding_model_id" ref="model_camp_patient"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[(4, ref('group_camp_coordinator'))]"/>
+    </record>
+</odoo>

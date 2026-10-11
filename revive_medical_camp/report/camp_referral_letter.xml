@@ -55,6 +55,18 @@
                             <t t-if="c and c.doctor_id.camp_pmdc_number"> · PMDC <span t-esc="c.doctor_id.camp_pmdc_number"/></t>
                         </p>
                         <p class="camp-small text-muted">Please help this patient and, if possible, tell the camp team the outcome.</p>
+                        <div t-if="o.confirm_url" style="margin-top: 12px; border-top: 1px solid #ddd; padding-top: 10px;">
+                            <table style="width: 100%;"><tr>
+                                <td style="width: 150px;">
+                                    <div t-field="o.confirm_url" t-options="{'widget': 'barcode', 'symbology': 'QR', 'width': 140, 'height': 140}"/>
+                                </td>
+                                <td class="camp-small">
+                                    <strong>Hospital: please scan this code when the patient arrives.</strong><br/>
+                                    It tells the camp team the patient reached you, so they do not need to call.<br/>
+                                    <span t-esc="o.confirm_url" style="font-size: 9px; color: #777;"/>
+                                </td>
+                            </tr></table>
+                        </div>
                     </div>
                 </t>
             </t>

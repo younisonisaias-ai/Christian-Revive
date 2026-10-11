@@ -185,12 +185,12 @@ class TestCampSync(TestCampFlow):
 
     def test_last_prescription_for_returning_patient(self):
         old_camp = self.env['camp.camp'].create({'name': 'Last Year Camp', 'state': 'running'})
-        self.env['camp.team.member'].create({'camp_id': old_camp.id, 'user_id': self.doctor.id, 'role': 'doctor'})
         patient = self.env['camp.patient'].create({'name': 'Returning Ravi', 'sex': 'male', 'age_years': 50,
                                                    'consent_care': True})
         old_visit = self.env['camp.visit'].create({'camp_id': old_camp.id, 'patient_id': patient.id})
-        consult = self.env['camp.consultation'].with_user(self.doctor).create({
-            'visit_id': old_visit.id, 'advice': 'Less salt',
+        # Last year's doctor (not on this year's team, nor this doctor on last year's).
+        consult = self.env['camp.consultation'].create({
+            'visit_id': old_visit.id, 'advice': 'Less salt', 'doctor_id': self.doctor_no_pmdc.id,
             'diagnosis_ids': [(6, 0, [self.env.ref('revive_medical_camp.icd_i10').id])],
             'prescription_line_ids': [(0, 0, {'formulary_id': self.formulary.id, 'days': 30}),
                                       (0, 0, {'outside_medicine': 'Amlodipine 5 mg', 'days': 30})]})

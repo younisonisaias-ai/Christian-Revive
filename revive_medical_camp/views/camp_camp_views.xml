@@ -75,6 +75,8 @@
                     <button name="action_close" type="object" string="Close camp"
                             invisible="state != 'running'" groups="revive_medical_camp.group_camp_coordinator"
                             confirm="Close this camp? New patients can no longer be registered."/>
+                    <button name="action_prepare_reminders" type="object" string="Reminders"
+                            groups="revive_medical_camp.group_camp_coordinator"/>
                     <button name="action_reopen" type="object" string="Reopen"
                             invisible="state != 'closed'" groups="revive_medical_camp.group_camp_lead"/>
                     <button name="%(action_report_camp_summary)d" type="action" string="Camp summary"

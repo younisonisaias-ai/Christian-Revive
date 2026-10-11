@@ -7,4 +7,6 @@ from . import camp_visit
 from . import camp_clinical
 from . import camp_referral
 from . import camp_followup
+from . import camp_lab
+from . import camp_reminder
 from . import camp_api

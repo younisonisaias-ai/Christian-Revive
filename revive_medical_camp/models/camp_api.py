@@ -54,6 +54,8 @@ READ_RIGHTS = {
     'camp.referral': {'doctor', 'followup', 'coordinator'},
     'camp.followup': {'followup', 'doctor', 'coordinator'},
     'camp.rx.template': {'doctor'},
+    'camp.lab.order': {'nurse', 'doctor'},
+    'camp.reminder': {'followup', 'coordinator'},
 }
 MAX_ITEMS = 500           # per kind, per upload
 RETURNING_PATIENTS = 3000  # patients from the camp's area sent to phones
@@ -281,6 +283,9 @@ class CampApi(models.AbstractModel):
             # Diagnoses added by doctors on other phones / in Odoo since the last sync.
             'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
             'rx_templates_changed': self._rx_templates(since) if since and can('camp.rx.template') else [],
+            'lab_orders': [self._lab(o) for o in Env['camp.lab.order'].search(dom)] if can('camp.lab.order') else [],
+            'reminders': [self._reminder(r) for r in Env['camp.reminder'].search(
+                dom + ([] if since else [('state', '=', 'to_send')]))] if can('camp.reminder') else [],
             'me_roles': sorted(self._roles()),
             'team': self._team(camp),
         }
@@ -341,7 +346,7 @@ class CampApi(models.AbstractModel):
             raise AccessError(_('Only the coordinator can see the camp summary.'))
         env = self.env(su=True)
         visits = env['camp.visit'].search([('camp_id', '=', camp.id)])
-        seen = visits.filtered(lambda v: v.state != 'cancelled')
+        seen = visits.filtered(lambda v: v.state not in ('cancelled', 'booked'))
         patients = seen.patient_id
         consults = env['camp.consultation'].search([('camp_id', '=', camp.id), ('state', '=', 'done')])
         lines = env['camp.prescription.line'].search([('camp_id', '=', camp.id)])
@@ -374,7 +379,10 @@ class CampApi(models.AbstractModel):
             'seen_by_doctor': len(consults.visit_id),
             'finished': len(seen.filtered(lambda v: v.state in ('done', 'referred'))),
             'still_waiting': len(seen.filtered(lambda v: v.state in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))),
-            'left_early': len(visits) - len(seen),
+            'left_early': len(visits.filtered(lambda v: v.state == 'cancelled')),
+            'pre_registered_not_come': len(visits.filtered(lambda v: v.state == 'booked')),
+            'lab_tests': self.env['camp.lab.order'].sudo().search_count(
+                [('camp_id', '=', camp.id), ('state', '=', 'done')]),
             'new_patients': len(seen.filtered('is_first_visit')),
             'returning': len(seen.filtered(lambda v: not v.is_first_visit)),
             'women': len(patients.filtered(lambda p: p.sex == 'female')),
@@ -430,6 +438,7 @@ class CampApi(models.AbstractModel):
             ('rx_templates', lambda item: self._sync_rx_template(item)),
             ('vitals', lambda item: self._sync_vitals(item)),
             ('consultations', lambda item: self._sync_consultation(item, batch)),
+            ('lab_orders', lambda item: self._sync_lab_order(item)),
             ('prescription_lines', lambda item: self._sync_line(item)),
             ('referrals', lambda item: self._sync_referral(item)),
             ('education_sessions', lambda item: self._sync_session(camp, item)),
@@ -437,6 +446,7 @@ class CampApi(models.AbstractModel):
             ('dispenses', lambda item: self._sync_dispense(item, batch)),
             ('visit_actions', lambda item: self._sync_visit_action(item)),
             ('calls', lambda item: self._sync_call(item)),
+            ('reminder_sends', lambda item: self._sync_reminder_send(item)),
             ('followup_calls', lambda item: self._sync_followup_call(item)),
             ('stock_counts', lambda item: self._sync_stock_count(camp, item)),
         ]
@@ -506,7 +516,15 @@ class CampApi(models.AbstractModel):
         patient = self._ref('camp.patient', item.get('patient'))
         vals = {'camp_id': camp.id, 'patient_id': patient.id,
                 **self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'arrived_at', 'pregnant'])}
+        booking = item.get('state') == 'booked'
+        if booking:
+            vals['state'] = 'booked'   # pre-registered before the camp: no token yet
         existing = self.env['camp.visit'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
+        if existing and existing.state == 'booked' and not booking:
+            # The pre-registered patient arrived: token and consent now.
+            existing.write(self._pick(item, ['consent_confirmed', 'consent_signature', 'pregnant', 'priority']))
+            existing.action_arrive(item.get('token_no'))
+            return existing, 'updated'
         if existing:
             upd = self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'pregnant'])
             changed = {k: v for k, v in upd.items() if self._differs(existing, k, v)}
@@ -515,10 +533,14 @@ class CampApi(models.AbstractModel):
             return existing, 'updated' if changed else 'exists'
         # Same patient already registered at this camp from another phone: reuse it.
         twin = self.env['camp.visit'].search([('camp_id', '=', camp.id), ('patient_id', '=', patient.id)], limit=1)
+        if twin and twin.state == 'booked' and not booking:
+            twin.write(self._pick(item, ['consent_confirmed', 'consent_signature', 'pregnant', 'priority']))
+            twin.action_arrive(item.get('token_no'))
+            return twin, 'updated'
         if twin:
             batch.warn('visits', item, _('Patient was already registered at this camp as token %s; the existing visit is used.', twin.token_no))
             return twin, 'exists'
-        token = item.get('token_no')
+        token = None if booking else item.get('token_no')
         if token:
             taken = self.env['camp.visit'].search_count([('camp_id', '=', camp.id), ('token_no', '=', int(token))])
             if taken:
@@ -707,10 +729,44 @@ class CampApi(models.AbstractModel):
             'notes': item.get('notes') or False, 'line_ids': lines})
         return count, 'created'
 
+    def _sync_lab_order(self, item):
+        """The doctor orders (or cancels) a test; the lab desk records the result."""
+        Lab = self.env['camp.lab.order']
+        existing = Lab.search([('client_uuid', '=', item['client_uuid'])], limit=1)
+        if 'result' in item:
+            self._need('nurse')
+            if not existing:
+                raise MissingError(_('This test was not ordered.'))
+            existing.write({'result': (item.get('result') or '').strip() or False, 'abnormal': bool(item.get('abnormal')),
+                            'notes': item.get('notes') or existing.notes, 'state': 'done',
+                            'done_by_id': self.env.user.id, 'done_at': fields.Datetime.now()})
+            return existing, 'updated'
+        self._need('doctor')
+        if existing:
+            if item.get('state') == 'cancelled' and existing.state == 'ordered':
+                existing.state = 'cancelled'
+                return existing, 'updated'
+            return existing, 'exists'
+        visit = self._ref('camp.visit', item.get('visit'))
+        return Lab.create({'visit_id': visit.id, 'test': item.get('test'), 'test_name': item.get('test_name') or False,
+                           'notes': item.get('notes') or False, 'client_uuid': item['client_uuid'],
+                           'ordered_by_id': self.env.user.id}), 'created'
+
+    def _sync_reminder_send(self, item):
+        """A volunteer sent (or skipped) a reminder from their phone."""
+        if not ({'followup', 'coordinator', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only follow-up volunteers send reminders.'))
+        reminder = self._ref('camp.reminder', item.get('reminder'))
+        result = item.get('result')
+        if result not in ('sent', 'skipped'):
+            raise UserError(_('Unknown result: %s', result))
+        reminder.mark(result)
+        return reminder, 'updated'
+
     def _sync_call(self, item):
         """A station called a patient ("#23 → Doctor room 2"), for the call screen."""
         station = item.get('station')
-        need = {'triage': 'nurse', 'doctor': 'doctor', 'pharmacy': 'pharmacist'}.get(station)
+        need = {'triage': 'nurse', 'doctor': 'doctor', 'pharmacy': 'pharmacist', 'lab': 'nurse'}.get(station)
         if not need:
             raise UserError(_('Unknown station: %s', station))
         self._need(need)
@@ -816,6 +872,16 @@ class CampApi(models.AbstractModel):
     def _dt(value):
         return fields.Datetime.to_string(value) if value else None
 
+    def _lab(self, o):
+        return {'id': o.id, 'client_uuid': o.client_uuid, 'visit_id': o.visit_id.id, 'test': o.test,
+                'test_name': o.test_name or '', 'state': o.state, 'result': o.result or '', 'abnormal': o.abnormal,
+                'notes': o.notes or '', 'ordered_at': self._dt(o.ordered_at), 'done_at': self._dt(o.done_at)}
+
+    def _reminder(self, r):
+        return {'id': r.id, 'client_uuid': r.client_uuid, 'patient_name': r.patient_id.name,
+                'phone': r.patient_id.phone or '', 'kind': r.kind, 'message': r.message,
+                'due_date': fields.Date.to_string(r.due_date), 'state': r.state}
+
     def _team(self, camp):
         return [{'id': m.id, 'name': m.name, 'role': m.role, 'user_id': m.user_id.id or None,
                  'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at)}
@@ -861,14 +927,42 @@ class CampApi(models.AbstractModel):
         domain = [('visit_id.patient_id', 'in', patients.ids), ('state', '=', 'done')]
         if camp:
             domain.append(('camp_id', '!=', camp.id))
+        # Earlier camps' records: the doctor is usually not on those camps'
+        # teams, so read them with server rights (only for these patients).
         last = {}
-        for c in self.env['camp.consultation'].search(domain, order='id desc'):
+        for c in self.env['camp.consultation'].sudo().search(domain, order='id desc'):
             last.setdefault(c.visit_id.patient_id.id, c)
+        history = {}
+        vdom = [('patient_id', 'in', patients.ids), ('state', 'not in', ('cancelled', 'booked'))]
+        if camp:
+            vdom.append(('camp_id', '!=', camp.id))
+        for v in self.env['camp.visit'].sudo().search(vdom, order='arrived_at desc'):
+            items = history.setdefault(v.patient_id.id, [])
+            if len(items) < 6:
+                items.append(self._history_item(v))
         for row in rows:
             c = last.get(row['id'])
             if c:
                 row['last_rx'] = self._last_rx(c)
+            if history.get(row['id']):
+                row['history'] = history[row['id']]
         return rows
+
+    def _history_item(self, v):
+        """One earlier camp visit: vitals, diagnoses, medicines."""
+        vit = v.vitals_ids[:1]
+        c = v.consultation_ids.filtered(lambda c: c.state == 'done')[:1]
+        when = v.arrived_at or v.create_date
+        return {
+            'date': fields.Date.to_string(when.date()) if when else None,
+            'camp_name': v.camp_id.name or '',
+            **({f: vit[f] or None for f in ('bp_systolic', 'bp_diastolic', 'pulse', 'blood_sugar', 'weight',
+                                             'hemoglobin', 'temperature')} if vit else {}),
+            'diagnoses': c.diagnosis_ids.mapped('display_name') if c else [],
+            'medicines': [line.display_name for line in c.prescription_line_ids] if c else [],
+            'tests': [o.display_name for o in v.lab_order_ids.filtered(lambda o: o.state == 'done')],
+            'referred': bool(v.referral_ids),
+        }
 
     def _last_rx(self, c):
         when = c.visit_id.arrived_at or c.create_date
@@ -964,4 +1058,5 @@ class CampApi(models.AbstractModel):
         return {'id': r.id, 'client_uuid': r.client_uuid, 'visit_id': r.visit_id.id,
                 'consultation_id': r.consultation_id.id or None, 'hospital_id': r.hospital_id.id,
                 'hospital_name': r.hospital_id.name, 'department': r.department or '', 'reason': r.reason,
-                'urgency': r.urgency, 'status': r.status, 'outcome': r.outcome or ''}
+                'urgency': r.urgency, 'status': r.status, 'outcome': r.outcome or '',
+                'confirm_url': r.confirm_url or '', 'attended_at': self._dt(r.attended_at)}

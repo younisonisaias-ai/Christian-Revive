@@ -1,6 +1,6 @@
 {
     'name': 'Medical Camp Management',
-    'version': '19.0.1.8.0',
+    'version': '19.0.1.9.0',
     'category': 'Healthcare',
     'summary': 'Run free medical camps end to end: registration, triage, doctor, pharmacy, referrals, sponsor reports',
     'description': """
@@ -33,6 +33,7 @@ membership, donations or any other module.
         'data/camp_flag_rule_data.xml',
         'data/camp_dose_template_data.xml',
         'data/camp_diagnosis_code_data.xml',
+        'data/camp_cron.xml',
         'report/camp_report_actions.xml',
         'report/camp_prescription_slip.xml',
         'report/camp_referral_letter.xml',
@@ -46,6 +47,9 @@ membership, donations or any other module.
         'views/camp_camp_views.xml',
         'views/res_users_views.xml',
         'views/camp_menus.xml',
+        'views/camp_lab_reminder_views.xml',
+        'views/camp_referral_page.xml',
+        'wizard/camp_patient_merge_views.xml',
     ],
     'demo': [
         'demo/camp_demo.xml',

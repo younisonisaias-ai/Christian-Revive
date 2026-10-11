@@ -6,6 +6,7 @@ from odoo.exceptions import UserError, ValidationError
 from .camp_config import PRIORITIES
 
 VISIT_STATES = [
+    ('booked', 'Pre-registered'),
     ('registered', 'Registered'),
     ('triaged', 'Triaged'),
     ('with_doctor', 'With doctor'),
@@ -33,7 +34,7 @@ class CampVisit(models.Model):
     # Last call to a station, shown on the call screen ("#23 → Doctor room 2").
     called_at = fields.Datetime(readonly=True)
     called_station = fields.Selection(
-        [('triage', 'Triage'), ('doctor', 'Doctor'), ('pharmacy', 'Pharmacy')], readonly=True)
+        [('triage', 'Triage'), ('doctor', 'Doctor'), ('pharmacy', 'Pharmacy'), ('lab', 'Lab')], readonly=True)
     called_room = fields.Char(readonly=True)
     pregnant = fields.Boolean(tracking=True, help='Pregnant at this visit: Camp Mode warns about risky medicines.')
     state = fields.Selection(VISIT_STATES, default='registered', required=True, tracking=True, index=True)
@@ -55,6 +56,7 @@ class CampVisit(models.Model):
     consultation_ids = fields.One2many('camp.consultation', 'visit_id', string='Consultations')
     prescription_line_ids = fields.One2many('camp.prescription.line', 'visit_id', string='Medicines')
     referral_ids = fields.One2many('camp.referral', 'visit_id', string='Referrals')
+    lab_order_ids = fields.One2many('camp.lab.order', 'visit_id', string='Lab tests')
     flag_rule_ids = fields.Many2many('camp.flag.rule', compute='_compute_flags', store=True,
                                      string='Red flags')
 
@@ -89,7 +91,8 @@ class CampVisit(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            if not vals.get('token_no') and vals.get('camp_id'):
+            # Pre-registered patients get their token when they arrive.
+            if not vals.get('token_no') and vals.get('camp_id') and vals.get('state') != 'booked':
                 vals['token_no'] = self._next_token(vals['camp_id'])
         visits = super().create(vals_list)
         for v in visits:
@@ -127,6 +130,14 @@ class CampVisit(models.Model):
             if v.priority == 'urgent' and not v.referral_ids:
                 flags = ', '.join(v.flag_rule_ids.mapped('name')) or _('urgent at triage')
                 self.env['camp.followup']._ensure(v, 'red_flag', _('Urgent red flag: %s', flags), days=2)
+
+    def action_arrive(self, token_no=None):
+        """A pre-registered patient arrived: give a token (the phone's own, when free)."""
+        for v in self.filtered(lambda v: v.state == 'booked'):
+            token = int(token_no or 0)
+            if not token or self.search_count([('camp_id', '=', v.camp_id.id), ('token_no', '=', token)]):
+                token = self._next_token(v.camp_id.id)
+            v.write({'state': 'registered', 'token_no': token, 'arrived_at': fields.Datetime.now()})
 
     def action_cancel(self):
         self.write({'state': 'cancelled'})

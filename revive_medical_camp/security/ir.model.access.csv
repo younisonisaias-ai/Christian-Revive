@@ -63,3 +63,8 @@ access_camp_rxtpl_doctor,camp.rx.template doctor,model_camp_rx_template,group_ca
 access_camp_rxtpl_lead,camp.rx.template lead,model_camp_rx_template,group_camp_lead,1,1,1,1
 access_camp_rxtpl_line_doctor,camp.rx.template.line doctor,model_camp_rx_template_line,group_camp_doctor,1,1,1,1
 access_camp_rxtpl_line_lead,camp.rx.template.line lead,model_camp_rx_template_line,group_camp_lead,1,1,1,1
+access_camp_lab_nurse,camp.lab.order nurse,model_camp_lab_order,group_camp_nurse,1,1,1,0
+access_camp_lab_lead,camp.lab.order lead,model_camp_lab_order,group_camp_lead,1,1,1,1
+access_camp_reminder_fu,camp.reminder followup,model_camp_reminder,group_camp_followup,1,1,0,0
+access_camp_reminder_lead,camp.reminder lead,model_camp_reminder,group_camp_lead,1,1,1,1
+access_camp_patient_merge,camp.patient.merge coordinator,model_camp_patient_merge,group_camp_coordinator,1,1,1,1

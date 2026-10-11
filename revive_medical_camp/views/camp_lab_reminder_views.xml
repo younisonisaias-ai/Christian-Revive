@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lab tests ordered by doctors -->
+    <record id="view_camp_lab_order_list" model="ir.ui.view">
+        <field name="name">camp.lab.order.list</field>
+        <field name="model">camp.lab.order</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="abnormal" decoration-muted="state == 'cancelled'">
+                <field name="camp_id"/>
+                <field name="visit_id"/>
+                <field name="test"/>
+                <field name="test_name" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'ordered'"/>
+                <field name="result"/>
+                <field name="abnormal"/>
+                <field name="ordered_by_id" optional="hide"/>
+                <field name="done_at" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_camp_lab_order_search" model="ir.ui.view">
+        <field name="name">camp.lab.order.search</field>
+        <field name="model">camp.lab.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="visit_id"/>
+                <field name="camp_id"/>
+                <filter name="waiting" string="Waiting at lab" domain="[('state', '=', 'ordered')]"/>
+                <filter name="abnormal" string="Abnormal" domain="[('abnormal', '=', True)]"/>
+                <filter name="group_test" string="Test" context="{'group_by': 'test'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_camp_lab_order" model="ir.actions.act_window">
+        <field name="name">Lab tests</field>
+        <field name="res_model">camp.lab.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No lab tests yet</p>
+            <p>Doctors order tests in Camp Mode; the lab desk enters the results on a phone.</p>
+        </field>
+    </record>
+    <menuitem id="menu_camp_lab_orders" name="Lab tests" parent="menu_camp_stations" sequence="35"
+              action="action_camp_lab_order" groups="group_camp_nurse"/>
+
+    <record id="view_camp_visit_form_lab" model="ir.ui.view">
+        <field name="name">camp.visit.form.lab</field>
+        <field name="model">camp.visit</field>
+        <field name="inherit_id" ref="view_camp_visit_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='referrals']" position="before">
+                <page string="Lab tests" name="lab" groups="revive_medical_camp.group_camp_nurse">
+                    <field name="lab_order_ids" context="{'default_visit_id': id}">
+                        <list editable="bottom" decoration-danger="abnormal">
+                            <field name="test"/>
+                            <field name="test_name"/>
+                            <field name="state"/>
+                            <field name="result"/>
+                            <field name="abnormal"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Reminder messages (sent by volunteers from their phones) -->
+    <record id="view_camp_reminder_list" model="ir.ui.view">
+        <field name="name">camp.reminder.list</field>
+        <field name="model">camp.reminder</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state != 'to_send'">
+                <field name="due_date"/>
+                <field name="camp_id"/>
+                <field name="patient_id"/>
+                <field name="phone" widget="phone"/>
+                <field name="kind"/>
+                <field name="message" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'sent'"/>
+                <field name="sent_by_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_camp_reminder_search" model="ir.ui.view">
+        <field name="name">camp.reminder.search</field>
+        <field name="model">camp.reminder</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="camp_id"/>
+                <filter name="to_send" string="To send" domain="[('state', '=', 'to_send')]"/>
+                <filter name="group_kind" string="Kind" context="{'group_by': 'kind'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_camp_reminder" model="ir.actions.act_window">
+        <field name="name">Reminders</field>
+        <field name="res_model">camp.reminder</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_to_send': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No reminders to send</p>
+            <p>Reminders are prepared every day for patients who agreed to messages: referrals, medicines
+               finished, and the next camp in their area. Volunteers send them from Camp Mode on their phone.</p>
+        </field>
+    </record>
+    <menuitem id="menu_camp_reminders" name="Reminders" parent="menu_camp_root" sequence="46"
+              action="action_camp_reminder" groups="group_camp_followup"/>
+
+    <!-- Patients registered twice -->
+    <record id="view_camp_patient_search_dup" model="ir.ui.view">
+        <field name="name">camp.patient.search.duplicates</field>
+        <field name="model">camp.patient</field>
+        <field name="inherit_id" ref="view_camp_patient_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='archived']" position="before">
+                <filter name="duplicates" string="Possible duplicates" domain="[('has_duplicate', '=', True)]"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_camp_patient_form_merge" model="ir.ui.view">
+        <field name="name">camp.patient.form.merge</field>
+        <field name="model">camp.patient</field>
+        <field name="inherit_id" ref="view_camp_patient_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone']" position="after">
+                <field name="merged_into_id" invisible="not merged_into_id"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_camp_patient_duplicates" model="ir.actions.act_window">
+        <field name="name">Possible duplicates</field>
+        <field name="res_model">camp.patient</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_duplicates': 1, 'group_by': 'phone_key'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No duplicates found</p>
+            <p>Patients with the same phone, or the same name, age and sex. Select two and use
+               Actions → Merge patients.</p>
+        </field>
+    </record>
+    <menuitem id="menu_camp_patient_duplicates" name="Possible duplicates" parent="menu_camp_root" sequence="31"
+              action="action_camp_patient_duplicates" groups="group_camp_coordinator"/>
+
+    <!-- Referral: hospital confirmation -->
+    <record id="view_camp_referral_form_confirm" model="ir.ui.view">
+        <field name="name">camp.referral.form.confirm</field>
+        <field name="model">camp.referral</field>
+        <field name="inherit_id" ref="view_camp_referral_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='outcome']" position="after">
+                <field name="attended_at" invisible="not attended_at"/>
+                <field name="received_by" invisible="not received_by"/>
+                <field name="confirm_url" widget="url"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
