@@ -13,6 +13,11 @@
                 <field name="default_dose_template_id"/>
                 <field name="default_days"/>
                 <field name="instructions_ur"/>
+                <field name="allergy_group" optional="show"/>
+                <field name="pregnancy_risk" optional="show"/>
+                <field name="mg_per_unit" optional="show"/>
+                <field name="child_mg_per_kg" optional="show"/>
+                <field name="child_max_mg_per_kg_day" optional="show"/>
                 <field name="active" widget="boolean_toggle"/>
             </list>
         </field>

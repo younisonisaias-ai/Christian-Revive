@@ -28,6 +28,10 @@
         <field name="default_dose_template_id" ref="dose_1_1_1"/>
         <field name="default_days">3</field>
         <field name="instructions_ur">کھانے کے بعد</field>
+        <field name="pregnancy_risk">safe</field>
+        <field name="mg_per_unit">500</field>
+        <field name="child_mg_per_kg">15</field>
+        <field name="child_max_mg_per_kg_day">60</field>
     </record>
     <record id="demo_formulary_amoxicillin" model="camp.formulary">
         <field name="product_id" ref="demo_product_amoxicillin"/>
@@ -36,6 +40,8 @@
         <field name="default_dose_template_id" ref="dose_1_1_1"/>
         <field name="default_days">5</field>
         <field name="instructions_ur">کورس پورا کریں</field>
+        <field name="allergy_group">penicillin</field>
+        <field name="pregnancy_risk">safe</field>
     </record>
     <record id="demo_formulary_ors" model="camp.formulary">
         <field name="product_id" ref="demo_product_ors"/>

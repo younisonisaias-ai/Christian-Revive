@@ -92,6 +92,7 @@
                         </group>
                         <group>
                             <field name="priority"/>
+                            <field name="pregnant"/>
                             <field name="flag_rule_ids" widget="many2many_tags"/>
                             <field name="arrived_at"/>
                             <field name="consent_confirmed"/>

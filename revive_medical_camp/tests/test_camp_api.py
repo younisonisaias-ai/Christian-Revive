@@ -111,6 +111,32 @@ class TestCampSync(TestCampFlow):
         changed = self.api(self.doctor).changes(self.camp.id, since=since)['rx_templates_changed']
         self.assertIn((t_uuid, False), [(t['client_uuid'], t['active']) for t in changed])
 
+    def test_allergies_and_pregnancy(self):
+        self.formulary.write({'allergy_group': 'penicillin', 'pregnancy_risk': 'avoid',
+                              'mg_per_unit': 500, 'child_mg_per_kg': 15, 'child_max_mg_per_kg_day': 60})
+        p_uuid, v_uuid = _uuid(), _uuid()
+        self.api(self.registration).sync(self.camp.id, {
+            'patients': [{'client_uuid': p_uuid, 'name': 'Allergic Amna', 'sex': 'female', 'age_years': 25,
+                          'consent_care': True, 'allergies': 'Penicillin'}],
+            'visits': [{'client_uuid': v_uuid, 'patient': p_uuid, 'consent_confirmed': True, 'pregnant': True}]})
+        visit = self.env['camp.visit'].search([('client_uuid', '=', v_uuid)])
+        self.assertEqual(visit.patient_id.allergies, 'Penicillin')
+        self.assertTrue(visit.pregnant)
+
+        boot = self.api(self.doctor).bootstrap(self.camp.id)
+        med = next(f for f in boot['formulary'] if f['id'] == self.formulary.id)
+        self.assertEqual((med['allergy_group'], med['pregnancy_risk'], med['child_mg_per_kg']), ('penicillin', 'avoid', 15))
+        row = next(p for p in boot['patients'] if p['client_uuid'] == p_uuid)
+        self.assertEqual(row['allergies'], 'Penicillin')
+        self.assertTrue(next(v for v in boot['visits'] if v['client_uuid'] == v_uuid)['pregnant'])
+
+        # The doctor finds out more during the visit.
+        self.api(self.doctor).sync(self.camp.id, {'consultations': [
+            {'client_uuid': _uuid(), 'visit': v_uuid, 'complaint': 'Rash',
+             'patient_allergies': 'Penicillin, sulfa', 'pregnant': False}]})
+        self.assertEqual(visit.patient_id.allergies, 'Penicillin, sulfa')
+        self.assertFalse(visit.pregnant)
+
     def test_last_prescription_for_returning_patient(self):
         old_camp = self.env['camp.camp'].create({'name': 'Last Year Camp', 'state': 'running'})
         self.env['camp.team.member'].create({'camp_id': old_camp.id, 'user_id': self.doctor.id, 'role': 'doctor'})

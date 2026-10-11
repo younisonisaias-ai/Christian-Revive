@@ -59,6 +59,7 @@
                             <field name="age_years"/>
                             <field name="guardian_name" invisible="age_years &gt;= 18 and age_years != 0"/>
                             <field name="phone" widget="phone"/>
+                            <field name="allergies" decoration-danger="allergies"/>
                             <field name="area"/>
                             <field name="active" invisible="1"/>
                         </group>

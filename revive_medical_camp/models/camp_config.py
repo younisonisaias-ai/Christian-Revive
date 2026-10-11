@@ -116,6 +116,24 @@ class CampFormulary(models.Model):
     instructions_ur = fields.Char(string='Default instructions (Urdu)',
                                   help='e.g. کھانے کے بعد')
     active = fields.Boolean(default=True)
+    # Safety checks in Camp Mode (set by the medical lead from your own guidelines).
+    allergy_group = fields.Char(
+        help='Words that match a patient\'s allergy, e.g. "penicillin" for amoxicillin. '
+             'Separate several with commas. The medicine name is always checked too.')
+    pregnancy_risk = fields.Selection([
+        ('safe', 'Safe in pregnancy'),
+        ('caution', 'Use with care in pregnancy'),
+        ('avoid', 'Avoid in pregnancy'),
+    ], help='Camp Mode warns the doctor and pharmacist when the patient is pregnant.')
+    mg_per_unit = fields.Float(
+        string='mg per tablet / per ml',
+        help='For the child dose helper: mg in one tablet (or capsule), or in 1 ml for syrups and drops.')
+    child_mg_per_kg = fields.Float(
+        string='Child dose (mg/kg per dose)',
+        help='Camp Mode suggests weight × this for children under 12. Leave 0 for no suggestion.')
+    child_max_mg_per_kg_day = fields.Float(
+        string='Child max (mg/kg per day)',
+        help='Camp Mode warns when a child\'s daily amount is above weight × this.')
 
     _product_unique = models.Constraint('UNIQUE(product_id)', 'This medicine is already in the formulary.')
 

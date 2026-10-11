@@ -61,7 +61,7 @@ RETURNING_YEARS = 2        # only patients seen (or registered) in the last 2 ye
 FOLLOWUP_DAYS = 60         # closed camps stay in Camp Mode this long for follow-up calls
 
 PATIENT_FIELDS = ['name', 'date_of_birth', 'age_years', 'sex', 'phone', 'area', 'guardian_name',
-                  'consent_care', 'consent_media', 'consent_messages']
+                  'consent_care', 'consent_media', 'consent_messages', 'allergies']
 VITAL_FIELDS = ['bp_systolic', 'bp_diastolic', 'pulse', 'temperature', 'spo2', 'weight', 'height',
                 'blood_sugar', 'hemoglobin', 'urine_dipstick', 'vision_left', 'vision_right', 'notes']
 CONSULT_FIELDS = ['complaint', 'history', 'examination', 'advice', 'advice_ur',
@@ -435,10 +435,10 @@ class CampApi(models.AbstractModel):
         self._need('registration')
         patient = self._ref('camp.patient', item.get('patient'))
         vals = {'camp_id': camp.id, 'patient_id': patient.id,
-                **self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'arrived_at'])}
+                **self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'arrived_at', 'pregnant'])}
         existing = self.env['camp.visit'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
         if existing:
-            upd = self._pick(item, ['priority', 'consent_confirmed', 'consent_signature'])
+            upd = self._pick(item, ['priority', 'consent_confirmed', 'consent_signature', 'pregnant'])
             changed = {k: v for k, v in upd.items() if self._differs(existing, k, v)}
             if changed:
                 existing.write(changed)
@@ -471,6 +471,11 @@ class CampApi(models.AbstractModel):
         vals = {'visit_id': visit.id, **self._pick(item, CONSULT_FIELDS)}
         if 'diagnosis_codes' in item:
             vals['diagnosis_ids'] = [(6, 0, self._diagnosis_ids(item['diagnosis_codes']))]
+        # The doctor may learn of an allergy or a pregnancy during the visit.
+        if 'patient_allergies' in item and (item['patient_allergies'] or '') != (visit.patient_id.allergies or ''):
+            visit.patient_id.allergies = item['patient_allergies'] or False
+        if 'pregnant' in item and bool(item['pregnant']) != visit.pregnant:
+            visit.pregnant = bool(item['pregnant'])
         existing = self.env['camp.consultation'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
         if existing and existing.state == 'done':
             return existing, 'exists'
@@ -743,6 +748,9 @@ class CampApi(models.AbstractModel):
                         'strength': f.strength or '', 'form': f.form or '',
                         'default_dose_template_id': f.default_dose_template_id.id or None,
                         'default_days': f.default_days, 'instructions_ur': f.instructions_ur or '',
+                        'allergy_group': f.allergy_group or '', 'pregnancy_risk': f.pregnancy_risk or '',
+                        'mg_per_unit': f.mg_per_unit, 'child_mg_per_kg': f.child_mg_per_kg,
+                        'child_max_mg_per_kg_day': f.child_max_mg_per_kg_day,
                         'stock_qty': qty})
         return out
 
@@ -751,7 +759,8 @@ class CampApi(models.AbstractModel):
                 'date_of_birth': fields.Date.to_string(p.date_of_birth) if p.date_of_birth else None,
                 'age_years': p.age_years, 'sex': p.sex, 'phone': p.phone or '', 'area': p.area or '',
                 'guardian_name': p.guardian_name or '', 'consent_care': p.consent_care,
-                'consent_media': p.consent_media, 'consent_messages': p.consent_messages}
+                'consent_media': p.consent_media, 'consent_messages': p.consent_messages,
+                'allergies': p.allergies or ''}
 
     def _patients(self, patients, camp=None):
         """Patients for a phone. Doctors also get each patient's last
@@ -813,6 +822,7 @@ class CampApi(models.AbstractModel):
         return {'id': v.id, 'client_uuid': v.client_uuid, 'patient_id': v.patient_id.id,
                 'patient_client_uuid': v.patient_id.client_uuid, 'token_no': v.token_no, 'qr_code': v.qr_code,
                 'state': v.state, 'priority': v.priority, 'consent_confirmed': v.consent_confirmed,
+                'pregnant': v.pregnant,
                 'arrived_at': self._dt(v.arrived_at), 'flag_rule_ids': v.flag_rule_ids.ids,
                 'is_first_visit': v.is_first_visit, 'write_date': self._dt(v.write_date)}
 

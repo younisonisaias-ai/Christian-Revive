@@ -30,6 +30,7 @@ class CampVisit(models.Model):
     qr_code = fields.Char(string='QR code', compute='_compute_qr_code', store=True, index=True,
                           help='Printed on the patient card; stations scan it instead of searching.')
     arrived_at = fields.Datetime(default=fields.Datetime.now)
+    pregnant = fields.Boolean(tracking=True, help='Pregnant at this visit: Camp Mode warns about risky medicines.')
     state = fields.Selection(VISIT_STATES, default='registered', required=True, tracking=True, index=True)
     priority = fields.Selection(PRIORITIES, default='normal', required=True, tracking=True)
     priority_rank = fields.Integer(compute='_compute_priority_rank', store=True)

@@ -20,6 +20,8 @@ class CampPatient(models.Model):
                                help='Filled from the date of birth, or typed when the date is not known.')
     sex = fields.Selection([('male', 'Male'), ('female', 'Female'), ('other', 'Other')], required=True)
     phone = fields.Char()
+    allergies = fields.Char(tracking=True,
+                            help='Medicine allergies, e.g. "penicillin, sulfa". Leave empty when none are known.')
     area = fields.Char(index=True, help='Village / neighbourhood')
     guardian_name = fields.Char(string='Guardian', help='Parent or guardian for a child.')
     consent_care = fields.Boolean(string='Consent: care & records', tracking=True,
