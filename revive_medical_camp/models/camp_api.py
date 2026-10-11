@@ -56,6 +56,10 @@ READ_RIGHTS = {
     'camp.rx.template': {'doctor'},
     'camp.lab.order': {'nurse', 'doctor'},
     'camp.reminder': {'followup', 'coordinator'},
+    'camp.eye.exam': {'eye', 'doctor'},
+    'camp.glasses': {'eye'},
+    'camp.anc.check': {'nurse', 'doctor'},
+    'camp.vaccine.record': {'nurse', 'doctor'},
 }
 MAX_ITEMS = 500           # per kind, per upload
 RETURNING_PATIENTS = 3000  # patients from the camp's area sent to phones
@@ -222,6 +226,7 @@ class CampApi(models.AbstractModel):
             'camp': self._camp(camp),
             'me': {'id': Env.user.id, 'name': Env.user.name, 'roles': self._roles(),
                    'has_pmdc_number': bool(Env.user.camp_pmdc_number),
+                   'pmdc_expiry': fields.Date.to_string(Env.user.camp_pmdc_expiry) if Env.user.camp_pmdc_expiry else None,
                    'team_member_id': camp.sudo().team_member_ids.filtered(lambda m: m.user_id == Env.user)[:1].id or None},
             'team': self._team(camp),
             'flag_rules': [{'id': r.id, 'name': r.name, 'name_ur': r.name_ur or '', 'measure': r.measure,
@@ -284,6 +289,15 @@ class CampApi(models.AbstractModel):
             'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
             'rx_templates_changed': self._rx_templates(since) if since and can('camp.rx.template') else [],
             'lab_orders': [self._lab(o) for o in Env['camp.lab.order'].search(dom)] if can('camp.lab.order') else [],
+            'eye_exams': [self._eye(e) for e in Env['camp.eye.exam'].search(dom)] if can('camp.eye.exam') else [],
+            'glasses': [{'id': g.id, 'kind': g.kind, 'power': g.power, 'quantity': g.quantity}
+                        for g in Env['camp.glasses'].search([('camp_id', '=', camp.id)])] if can('camp.glasses') else [],
+            'anc_checks': [{'id': a.id, 'client_uuid': a.client_uuid, 'visit_id': a.visit_id.id, 'weeks': a.weeks,
+                            'danger_signs': a.danger_signs or '', 'tt_given': a.tt_given, 'notes': a.notes or ''}
+                           for a in Env['camp.anc.check'].search(dom)] if can('camp.anc.check') else [],
+            'vaccine_records': [{'id': r.id, 'client_uuid': r.client_uuid, 'visit_id': r.visit_id.id,
+                                 'vaccine': r.vaccine, 'status': r.status, 'age_months': r.age_months}
+                                for r in Env['camp.vaccine.record'].search(dom)] if can('camp.vaccine.record') else [],
             'reminders': [self._reminder(r) for r in Env['camp.reminder'].search(
                 dom + ([] if since else [('state', '=', 'to_send')]))] if can('camp.reminder') else [],
             'me_roles': sorted(self._roles()),
@@ -381,6 +395,15 @@ class CampApi(models.AbstractModel):
             'still_waiting': len(seen.filtered(lambda v: v.state in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))),
             'left_early': len(visits.filtered(lambda v: v.state == 'cancelled')),
             'pre_registered_not_come': len(visits.filtered(lambda v: v.state == 'booked')),
+            'eye_checks': env['camp.eye.exam'].search_count([('camp_id', '=', camp.id)]),
+            'glasses_given': env['camp.eye.exam'].search_count([('camp_id', '=', camp.id), ('glasses_id', '!=', False)]),
+            'pregnancy_checks': env['camp.anc.check'].search_count([('camp_id', '=', camp.id)]),
+            'high_risk_pregnancies': env['camp.anc.check'].search_count([('camp_id', '=', camp.id),
+                                                                         ('high_risk', '=', True)]),
+            'vaccines_given': env['camp.vaccine.record'].search_count([('camp_id', '=', camp.id),
+                                                                       ('status', '=', 'given')]),
+            'children_missing_vaccines': len(env['camp.vaccine.record'].search(
+                [('camp_id', '=', camp.id), ('status', '=', 'missed')]).visit_id),
             'lab_tests': self.env['camp.lab.order'].sudo().search_count(
                 [('camp_id', '=', camp.id), ('state', '=', 'done')]),
             'new_patients': len(seen.filtered('is_first_visit')),
@@ -439,6 +462,10 @@ class CampApi(models.AbstractModel):
             ('vitals', lambda item: self._sync_vitals(item)),
             ('consultations', lambda item: self._sync_consultation(item, batch)),
             ('lab_orders', lambda item: self._sync_lab_order(item)),
+            ('eye_exams', lambda item: self._sync_eye_exam(item)),
+            ('photos', lambda item: self._sync_photo(item)),
+            ('anc_checks', lambda item: self._sync_anc(item)),
+            ('vaccine_records', lambda item: self._sync_vaccine(item)),
             ('prescription_lines', lambda item: self._sync_line(item)),
             ('referrals', lambda item: self._sync_referral(item)),
             ('education_sessions', lambda item: self._sync_session(camp, item)),
@@ -752,6 +779,45 @@ class CampApi(models.AbstractModel):
                            'notes': item.get('notes') or False, 'client_uuid': item['client_uuid'],
                            'ordered_by_id': self.env.user.id}), 'created'
 
+    def _sync_eye_exam(self, item):
+        self._need('eye')
+        visit = self._ref('camp.visit', item.get('visit'))
+        vals = {'visit_id': visit.id, **self._pick(item, ['va_right', 'va_left', 'near_vision', 'reading_power',
+                                                         'findings', 'needs_specialist', 'notes'])}
+        if item.get('glasses_id'):
+            vals['glasses_id'] = self._ref('camp.glasses', item['glasses_id']).id
+        return self._upsert('camp.eye.exam', item, vals, update_vals={k: v for k, v in vals.items() if k != 'visit_id'})
+
+    def _sync_photo(self, item):
+        if not ({'doctor', 'nurse', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only nurses and doctors take clinical photos.'))
+        visit = self._ref('camp.visit', item.get('visit'))
+        if not item.get('consent'):
+            raise UserError(_('A clinical photo needs the patient\'s consent.'))
+        vals = {'visit_id': visit.id, 'image': item.get('image') or False, 'note': item.get('note') or False,
+                'consent': True}
+        return self._upsert('camp.visit.photo', item, vals, update_vals={'note': vals['note']})
+
+    def _sync_anc(self, item):
+        if not ({'doctor', 'nurse', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only nurses and doctors record pregnancy checks.'))
+        visit = self._ref('camp.visit', item.get('visit'))
+        vals = {'visit_id': visit.id, **self._pick(item, ['weeks', 'danger_signs', 'tt_given', 'notes'])}
+        return self._upsert('camp.anc.check', item, vals, update_vals={k: v for k, v in vals.items() if k != 'visit_id'})
+
+    def _sync_vaccine(self, item):
+        if not ({'doctor', 'nurse', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only nurses and doctors record vaccines.'))
+        visit = self._ref('camp.visit', item.get('visit'))
+        existing = self.env['camp.vaccine.record'].search(
+            [('visit_id', '=', visit.id), ('vaccine', '=', item.get('vaccine'))], limit=1)
+        vals = {'status': item.get('status'), 'age_months': int(item.get('age_months') or 0)}
+        if existing:
+            existing.write(vals)
+            return existing, 'updated'
+        return self.env['camp.vaccine.record'].create({'visit_id': visit.id, 'vaccine': item.get('vaccine'), **vals,
+                                                       'client_uuid': item['client_uuid']}), 'created'
+
     def _sync_reminder_send(self, item):
         """A volunteer sent (or skipped) a reminder from their phone."""
         if not ({'followup', 'coordinator', 'lead'} & set(self._roles())):
@@ -877,14 +943,21 @@ class CampApi(models.AbstractModel):
                 'test_name': o.test_name or '', 'state': o.state, 'result': o.result or '', 'abnormal': o.abnormal,
                 'notes': o.notes or '', 'ordered_at': self._dt(o.ordered_at), 'done_at': self._dt(o.done_at)}
 
+    def _eye(self, e):
+        return {'id': e.id, 'client_uuid': e.client_uuid, 'visit_id': e.visit_id.id, 'va_right': e.va_right or '',
+                'va_left': e.va_left or '', 'near_vision': e.near_vision or '', 'reading_power': e.reading_power,
+                'findings': e.findings or '', 'needs_specialist': e.needs_specialist,
+                'glasses_id': e.glasses_id.id or None, 'notes': e.notes or ''}
+
     def _reminder(self, r):
-        return {'id': r.id, 'client_uuid': r.client_uuid, 'patient_name': r.patient_id.name,
-                'phone': r.patient_id.phone or '', 'kind': r.kind, 'message': r.message,
+        return {'id': r.id, 'client_uuid': r.client_uuid, 'patient_name': r._who,
+                'phone': r.phone or '', 'kind': r.kind, 'message': r.message,
                 'due_date': fields.Date.to_string(r.due_date), 'state': r.state}
 
     def _team(self, camp):
         return [{'id': m.id, 'name': m.name, 'role': m.role, 'user_id': m.user_id.id or None,
-                 'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at)}
+                 'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at),
+                 'shift_start': m.shift_start, 'shift_end': m.shift_end}
                 for m in camp.sudo().team_member_ids]
 
     def _camp(self, c):

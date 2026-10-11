@@ -68,3 +68,15 @@ access_camp_lab_lead,camp.lab.order lead,model_camp_lab_order,group_camp_lead,1,
 access_camp_reminder_fu,camp.reminder followup,model_camp_reminder,group_camp_followup,1,1,0,0
 access_camp_reminder_lead,camp.reminder lead,model_camp_reminder,group_camp_lead,1,1,1,1
 access_camp_patient_merge,camp.patient.merge coordinator,model_camp_patient_merge,group_camp_coordinator,1,1,1,1
+access_camp_glasses_reg,camp.glasses registration,model_camp_glasses,group_camp_registration,1,0,0,0
+access_camp_glasses_coord,camp.glasses coordinator,model_camp_glasses,group_camp_coordinator,1,1,1,1
+access_camp_eye_nurse,camp.eye.exam nurse,model_camp_eye_exam,group_camp_nurse,1,1,1,0
+access_camp_eye_lead,camp.eye.exam lead,model_camp_eye_exam,group_camp_lead,1,1,1,1
+access_camp_photo_nurse,camp.visit.photo nurse,model_camp_visit_photo,group_camp_nurse,1,1,1,0
+access_camp_photo_lead,camp.visit.photo lead,model_camp_visit_photo,group_camp_lead,1,1,1,1
+access_camp_anc_nurse,camp.anc.check nurse,model_camp_anc_check,group_camp_nurse,1,1,1,0
+access_camp_anc_lead,camp.anc.check lead,model_camp_anc_check,group_camp_lead,1,1,1,1
+access_camp_vaccine_nurse,camp.vaccine.record nurse,model_camp_vaccine_record,group_camp_nurse,1,1,1,0
+access_camp_vaccine_lead,camp.vaccine.record lead,model_camp_vaccine_record,group_camp_lead,1,1,1,1
+access_camp_stock_plan,camp.stock.plan coordinator,model_camp_stock_plan,group_camp_coordinator,1,1,1,1
+access_camp_stock_plan_line,camp.stock.plan.line coordinator,model_camp_stock_plan_line,group_camp_coordinator,1,1,1,1

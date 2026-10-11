@@ -25,13 +25,14 @@ STATION_RIGHTS = {
     'can_pharmacy': 'pharmacist',
     'can_followup': 'followup',
     'can_talks': 'educator',
+    'can_eye': 'eye',
 }
 # What each role can do until the coordinator changes the switches.
 ROLE_DEFAULT_SWITCHES = {
     'coordinator': {'can_registration', 'can_followup', 'can_talks'},
     'registration': {'can_registration'},
-    'nurse': {'can_registration', 'can_triage'},
-    'doctor': {'can_registration', 'can_triage', 'can_doctor'},
+    'nurse': {'can_registration', 'can_triage', 'can_eye'},
+    'doctor': {'can_registration', 'can_triage', 'can_doctor', 'can_eye'},
     'pharmacist': {'can_pharmacy'},
     'educator': {'can_talks'},
     'followup': {'can_followup'},
@@ -155,6 +156,35 @@ class CampCamp(models.Model):
         return self.env['ir.actions.act_window']._for_xml_id('revive_medical_camp.action_camp_reminder') | {
             'domain': [('camp_id', 'in', self.ids)]}
 
+    def action_stock_plan(self):
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'name': _('Stock plan'), 'res_model': 'camp.stock.plan',
+                'view_mode': 'form', 'target': 'new', 'context': {'active_id': self.id}}
+
+    def action_return_leftovers(self):
+        """After the camp: a draft transfer of everything left back to the main store."""
+        self.ensure_one()
+        from ..wizard.camp_stock_plan import _main_stock
+        warehouse = _main_stock(self)
+        quants = self.env['stock.quant'].sudo().search([('location_id', 'child_of', self.stock_location_id.id),
+                                                       ('quantity', '>', 0)])
+        if not quants:
+            raise UserError(_('Nothing is left at the camp.'))
+        totals = {}
+        for q in quants:
+            totals[q.product_id] = totals.get(q.product_id, 0) + q.quantity
+        picking = self.env['stock.picking'].sudo().create({
+            'picking_type_id': warehouse.int_type_id.id,
+            'location_id': self.stock_location_id.id,
+            'location_dest_id': warehouse.lot_stock_id.id,
+            'origin': _('Return from %s', self.name),
+            'move_ids': [(0, 0, {'product_id': p.id, 'product_uom_qty': qty, 'product_uom': p.uom_id.id,
+                                 'location_id': self.stock_location_id.id,
+                                 'location_dest_id': warehouse.lot_stock_id.id}) for p, qty in totals.items()],
+        })
+        return {'type': 'ir.actions.act_window', 'res_model': 'stock.picking', 'res_id': picking.id,
+                'view_mode': 'form', 'target': 'current'}
+
     def action_reopen(self):
         self.write({'state': 'running'})
 
@@ -260,6 +290,12 @@ class CampTeamMember(models.Model):
     can_pharmacy = fields.Boolean('Pharmacy', compute='_compute_switches', store=True, readonly=False)
     can_followup = fields.Boolean('Follow-up calls', compute='_compute_switches', store=True, readonly=False)
     can_talks = fields.Boolean('Health talks', compute='_compute_switches', store=True, readonly=False)
+    can_eye = fields.Boolean('Eye check', compute='_compute_switches', store=True, readonly=False)
+    # Shift at the camp, e.g. 8:00 to 14:00 (shown on the phone, sent in the day-before reminder).
+    shift_start = fields.Float(help='Hour the shift starts, e.g. 8.0 for 8:00.')
+    shift_end = fields.Float()
+    pmdc_expiry = fields.Date(related='user_id.camp_pmdc_expiry', string='PMDC valid until')
+    pmdc_warning = fields.Char(compute='_compute_pmdc_warning')
     login_type = fields.Selection([('portal', 'Free (portal)'), ('internal', 'Internal (paid)')],
                                   compute='_compute_login_type', string='Login type')
     pmdc_number = fields.Char(string='PMDC number', compute='_compute_pmdc_number',
@@ -289,6 +325,18 @@ class CampTeamMember(models.Model):
             on = ROLE_DEFAULT_SWITCHES.get(member.role, set())
             for field in STATION_RIGHTS:
                 member[field] = field in on
+
+    @api.depends('role', 'pmdc_expiry', 'camp_id.date_start')
+    def _compute_pmdc_warning(self):
+        for m in self:
+            m.pmdc_warning = False
+            if m.role != 'doctor' or not m.pmdc_expiry:
+                continue
+            day = m.camp_id.date_start or fields.Date.today()
+            if m.pmdc_expiry < day:
+                m.pmdc_warning = _('PMDC expired on %s', m.pmdc_expiry)
+            elif (m.pmdc_expiry - day).days <= 30:
+                m.pmdc_warning = _('PMDC expires on %s', m.pmdc_expiry)
 
     def _rights(self):
         """Camp Mode rights from the switches (see STATION_RIGHTS)."""

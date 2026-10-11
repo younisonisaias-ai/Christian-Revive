@@ -9,6 +9,7 @@
                 <page string="Medical camp" name="medical_camp" groups="revive_medical_camp.group_camp_coordinator">
                     <group>
                         <field name="camp_pmdc_number"/>
+                        <field name="camp_pmdc_expiry"/>
                     </group>
                     <div class="text-muted">
                         Doctors need a PMDC number before they can save a diagnosis or prescription.

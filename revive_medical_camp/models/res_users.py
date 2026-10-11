@@ -16,3 +16,6 @@ class ResUsers(models.Model):
         string='PMDC number',
         help='Medical council registration. Required before this user can save a '
              'diagnosis or prescription in a medical camp.')
+    camp_pmdc_expiry = fields.Date(
+        string='PMDC valid until',
+        help='The camp warns the coordinator and the doctor when it has expired or expires soon.')

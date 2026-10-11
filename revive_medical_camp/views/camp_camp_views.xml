@@ -77,6 +77,10 @@
                             confirm="Close this camp? New patients can no longer be registered."/>
                     <button name="action_prepare_reminders" type="object" string="Reminders"
                             groups="revive_medical_camp.group_camp_coordinator"/>
+                    <button name="action_stock_plan" type="object" string="Stock plan"
+                            invisible="state == 'closed'" groups="revive_medical_camp.group_camp_coordinator"/>
+                    <button name="action_return_leftovers" type="object" string="Return leftovers"
+                            invisible="state != 'closed'" groups="revive_medical_camp.group_camp_coordinator"/>
                     <button name="action_reopen" type="object" string="Reopen"
                             invisible="state != 'closed'" groups="revive_medical_camp.group_camp_lead"/>
                     <button name="%(action_report_camp_summary)d" type="action" string="Camp summary"
@@ -133,6 +137,9 @@
                                             string="Create portal login" invisible="user_id"
                                             groups="revive_medical_camp.group_camp_coordinator"/>
                                     <field name="pmdc_number" invisible="role != 'doctor'" optional="show"/>
+                                    <field name="pmdc_warning" invisible="not pmdc_warning" decoration-danger="1"/>
+                                    <field name="shift_start" widget="float_time" optional="show"/>
+                                    <field name="shift_end" widget="float_time" optional="show"/>
                                     <field name="checked_in_at"/>
                                     <field name="checked_out_at"/>
                                     <field name="hours" widget="float_time" sum="Total"/>
@@ -158,6 +165,7 @@
                                     <field name="can_pharmacy" widget="boolean_toggle"/>
                                     <field name="can_followup" widget="boolean_toggle"/>
                                     <field name="can_talks" widget="boolean_toggle"/>
+                                    <field name="can_eye" widget="boolean_toggle"/>
                                 </list>
                             </field>
                             <div class="text-muted">

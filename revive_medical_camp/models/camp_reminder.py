@@ -8,6 +8,7 @@ REMINDER_KINDS = [
     ('referral', 'Go to the hospital (referral)'),
     ('medicine_end', 'Medicines finished'),
     ('next_camp', 'Next camp in your area'),
+    ('team_shift', 'Team shift tomorrow'),
 ]
 NEXT_CAMP_DAYS = 7      # remind patients about a camp starting within this many days
 NEXT_CAMP_YEARS = 2     # patients seen in the area in the last 2 years
@@ -21,8 +22,9 @@ class CampReminder(models.Model):
 
     camp_id = fields.Many2one('camp.camp', required=True, ondelete='cascade', index=True,
                               help='The camp whose team sends it (for "next camp": the coming camp).')
-    patient_id = fields.Many2one('camp.patient', required=True, ondelete='cascade', index=True)
-    phone = fields.Char(related='patient_id.phone')
+    patient_id = fields.Many2one('camp.patient', ondelete='cascade', index=True)
+    team_member_id = fields.Many2one('camp.team.member', ondelete='cascade', index=True)
+    phone = fields.Char(compute='_compute_phone')
     visit_id = fields.Many2one('camp.visit', ondelete='cascade')
     referral_id = fields.Many2one('camp.referral', ondelete='cascade')
     kind = fields.Selection(REMINDER_KINDS, required=True)
@@ -36,11 +38,20 @@ class CampReminder(models.Model):
     _once = models.Constraint('UNIQUE(camp_id, patient_id, kind, referral_id, visit_id)',
                               'This reminder already exists.')
 
+    @api.depends('patient_id.phone', 'team_member_id.phone')
+    def _compute_phone(self):
+        for r in self:
+            r.phone = r.patient_id.phone or r.team_member_id.phone or False
+
+    @property
+    def _who(self):
+        return self.patient_id.name or self.team_member_id.name or ''
+
     @api.depends('patient_id', 'kind')
     def _compute_display_name(self):
         kinds = dict(REMINDER_KINDS)
         for r in self:
-            r.display_name = f'{r.patient_id.name or ""}: {kinds.get(r.kind, "")}'
+            r.display_name = f'{r._who}: {kinds.get(r.kind, "")}'
 
     # ── Making the reminders ───────────────────────────────────
     @api.model
@@ -102,6 +113,25 @@ class CampReminder(models.Model):
                         'السلام علیکم۔ مفت میڈیکل کیمپ %(date)s کو %(site)s میں لگ رہا ہے۔ تشریف لائیں اور پرانا کیمپ کارڈ ساتھ لائیں۔',
                         name=p.name, site=camp.site or camp.area, date=camp.date_start.strftime('%d %b'))
                 self._make(camp, p, 'next_camp', msg, due)
+
+        # Team: the day before the camp, with their shift.
+        for camp in Camp.search([('state', 'in', ('draft', 'ready')), ('date_start', '>=', today),
+                                 ('date_start', '<=', today + timedelta(days=2))]):
+            for m in camp.team_member_ids.filtered(lambda m: (m.phone or '').strip()):
+                if self.sudo().search_count([('camp_id', '=', camp.id), ('team_member_id', '=', m.id),
+                                             ('kind', '=', 'team_shift')]):
+                    continue
+                shift = ''
+                if m.shift_start or m.shift_end:
+                    hm = lambda h: '%d:%02d' % (int(h), round((h - int(h)) * 60))  # noqa: E731
+                    shift = f' ({hm(m.shift_start)}–{hm(m.shift_end)})'
+                msg = _('Assalam-o-Alaikum %(name)s. Reminder: you are serving at %(camp)s on %(date)s at '
+                        '%(site)s%(shift)s. Thank you!\n'
+                        'السلام علیکم۔ یاد دہانی: آپ %(date)s کو %(site)s میں کیمپ پر خدمت کریں گے%(shift)s۔ شکریہ!',
+                        name=m.name, camp=camp.name, date=camp.date_start.strftime('%d %b'),
+                        site=camp.site or camp.area or '', shift=shift)
+                self.sudo().create({'camp_id': camp.id, 'team_member_id': m.id, 'kind': 'team_shift',
+                                    'message': msg, 'due_date': max(today, camp.date_start - timedelta(days=1))})
         return True
 
     @api.model

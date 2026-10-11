@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_camp_stock_plan_form" model="ir.ui.view">
+        <field name="name">camp.stock.plan.form</field>
+        <field name="model">camp.stock.plan</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="camp_id" readonly="1"/>
+                    <field name="expected_patients"/>
+                    <field name="based_on"/>
+                </group>
+                <p class="text-muted">
+                    Suggested = what earlier camps used per 100 patients × expected patients, plus 20%.
+                    Change "To send" as you like, then create a transfer for the stock team to check and validate.
+                </p>
+                <field name="line_ids">
+                    <list editable="bottom" create="0" delete="0"
+                          decoration-warning="expiring_qty &gt; 0" decoration-danger="to_send &gt; at_main">
+                        <field name="formulary_id"/>
+                        <field name="per_100"/>
+                        <field name="suggested"/>
+                        <field name="at_camp"/>
+                        <field name="at_main"/>
+                        <field name="to_send"/>
+                        <field name="expiring_qty"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_create_transfer" type="object" string="Create transfer to camp" class="btn-primary"/>
+                    <button name="action_recalculate" type="object" string="Recalculate"/>
+                    <button string="Close" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
