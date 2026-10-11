@@ -221,9 +221,7 @@ class CampApi(models.AbstractModel):
             'me': {'id': Env.user.id, 'name': Env.user.name, 'roles': self._roles(),
                    'has_pmdc_number': bool(Env.user.camp_pmdc_number),
                    'team_member_id': camp.sudo().team_member_ids.filtered(lambda m: m.user_id == Env.user)[:1].id or None},
-            'team': [{'id': m.id, 'name': m.name, 'role': m.role, 'user_id': m.user_id.id or None,
-                      'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at)}
-                     for m in camp.sudo().team_member_ids],
+            'team': self._team(camp),
             'flag_rules': [{'id': r.id, 'name': r.name, 'name_ur': r.name_ur or '', 'measure': r.measure,
                             'operator': r.operator, 'value': r.value, 'priority': r.priority}
                            for r in Env['camp.flag.rule'].search([])] if can('camp.flag.rule') else [],
@@ -284,6 +282,7 @@ class CampApi(models.AbstractModel):
             'diagnosis_codes_changed': self._diagnosis_list(since) if since and can('camp.diagnosis.code') else [],
             'rx_templates_changed': self._rx_templates(since) if since and can('camp.rx.template') else [],
             'me_roles': sorted(self._roles()),
+            'team': self._team(camp),
         }
         return out
 
@@ -330,6 +329,76 @@ class CampApi(models.AbstractModel):
             counts[v.state] = counts.get(v.state, 0) + 1
         return {'camp': self._camp(camp), 'visits_by_state': counts,
                 'waiting': sum(counts.get(s, 0) for s in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))}
+
+    @api.model
+    def camp_summary(self, camp_id):
+        """End-of-day figures for the coordinator to share (e.g. on WhatsApp).
+        Counts only: no patient names, phones or notes."""
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.camp_summary(camp_id)
+        if not ({'coordinator', 'lead'} & set(self._roles())):
+            raise AccessError(_('Only the coordinator can see the camp summary.'))
+        env = self.env(su=True)
+        visits = env['camp.visit'].search([('camp_id', '=', camp.id)])
+        seen = visits.filtered(lambda v: v.state != 'cancelled')
+        patients = seen.patient_id
+        consults = env['camp.consultation'].search([('camp_id', '=', camp.id), ('state', '=', 'done')])
+        lines = env['camp.prescription.line'].search([('camp_id', '=', camp.id)])
+        referrals = env['camp.referral'].search([('camp_id', '=', camp.id)])
+        sessions = env['camp.education.session'].search([('camp_id', '=', camp.id)])
+
+        dx_count = {}
+        for c in consults:
+            for d in c.diagnosis_ids:
+                dx_count[d] = dx_count.get(d, 0) + 1
+        top_dx = sorted(dx_count.items(), key=lambda kv: (-kv[1], kv[0].code or ''))[:5]
+
+        given = {}
+        for line in lines.filtered(lambda l: l.dispensed_qty > 0):
+            med = line.substitute_formulary_id or line.formulary_id
+            if med:
+                given[med] = given.get(med, 0) + line.dispensed_qty
+        top_meds = sorted(given.items(), key=lambda kv: -kv[1])[:5]
+
+        by_hospital = {}
+        for r in referrals:
+            by_hospital[r.hospital_id.name or ''] = by_hospital.get(r.hospital_id.name or '', 0) + 1
+
+        now = fields.Datetime.now()
+        team = camp.sudo().team_member_ids
+        return {
+            'camp': self._camp(camp),
+            'generated_at': fields.Datetime.to_string(now),
+            'patients': len(seen),
+            'seen_by_doctor': len(consults.visit_id),
+            'finished': len(seen.filtered(lambda v: v.state in ('done', 'referred'))),
+            'still_waiting': len(seen.filtered(lambda v: v.state in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))),
+            'left_early': len(visits) - len(seen),
+            'new_patients': len(seen.filtered('is_first_visit')),
+            'returning': len(seen.filtered(lambda v: not v.is_first_visit)),
+            'women': len(patients.filtered(lambda p: p.sex == 'female')),
+            'men': len(patients.filtered(lambda p: p.sex == 'male')),
+            'children': len(patients.filtered(lambda p: p.age_years and p.age_years < 12)),
+            'elderly': len(patients.filtered(lambda p: p.age_years and p.age_years >= 60)),
+            'urgent': len(seen.filtered(lambda v: v.priority == 'urgent')),
+            'top_diagnoses': [{'code': d.code, 'name': d.name, 'name_ur': d.name_ur or '', 'count': n}
+                              for d, n in top_dx],
+            'referrals': len(referrals),
+            'urgent_referrals': len(referrals.filtered(lambda r: r.urgency == 'urgent')),
+            'referral_hospitals': [{'name': k, 'count': v}
+                                   for k, v in sorted(by_hospital.items(), key=lambda kv: -kv[1])[:3]],
+            'prescriptions': len(consults.filtered('prescription_line_ids')),
+            'medicine_units_given': sum(given.values()),
+            'top_medicines': [{'name': f.display_name, 'quantity': q} for f, q in top_meds],
+            'not_available': len(lines.filtered(lambda l: l.state == 'not_given' or l.shortage_qty > 0)),
+            'buy_outside': len(lines.filtered(lambda l: l.state == 'outside')),
+            'health_talks': len(sessions),
+            'talk_attendees': sum(sessions.mapped('attendees_count')),
+            'team': len(team),
+            'team_checked_in': len(team.filtered(
+                lambda m: m.checked_in_at and (not m.checked_out_at or m.checked_out_at < m.checked_in_at))),
+        }
 
     @api.model
     def close_camp(self, camp_id):
@@ -746,6 +815,11 @@ class CampApi(models.AbstractModel):
     @staticmethod
     def _dt(value):
         return fields.Datetime.to_string(value) if value else None
+
+    def _team(self, camp):
+        return [{'id': m.id, 'name': m.name, 'role': m.role, 'user_id': m.user_id.id or None,
+                 'checked_in_at': self._dt(m.checked_in_at), 'checked_out_at': self._dt(m.checked_out_at)}
+                for m in camp.sudo().team_member_ids]
 
     def _camp(self, c):
         return {'id': c.id, 'name': c.name, 'date_start': fields.Date.to_string(c.date_start),

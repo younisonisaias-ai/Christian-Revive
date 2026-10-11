@@ -160,6 +160,10 @@ class CampApiController(http.Controller):
     def status(self, camp_id, **kwargs):
         return _json(request.env['camp.api'].camp_status(camp_id))
 
+    @camp_route('/api/camp/<int:camp_id>/summary', ['GET'])
+    def summary(self, camp_id, **kwargs):
+        return _json(request.env['camp.api'].camp_summary(camp_id))
+
     @camp_route('/api/camp/patients', ['GET'])
     def patients(self, q='', limit='30', **kwargs):
         return _json(request.env['camp.api'].search_patients(q, limit=int(limit or 30)))

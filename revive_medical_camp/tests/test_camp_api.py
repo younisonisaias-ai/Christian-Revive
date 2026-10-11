@@ -3,6 +3,7 @@ import uuid
 from datetime import timedelta
 
 from odoo import fields
+from odoo.exceptions import AccessError
 from odoo.tests import HttpCase, tagged
 
 from .test_camp_flow import TestCampFlow
@@ -110,6 +111,30 @@ class TestCampSync(TestCampFlow):
         self.assertFalse(mine.active)
         changed = self.api(self.doctor).changes(self.camp.id, since=since)['rx_templates_changed']
         self.assertIn((t_uuid, False), [(t['client_uuid'], t['active']) for t in changed])
+
+    def test_end_of_day_summary(self):
+        icd = self.env.ref('revive_medical_camp.icd_i10')
+        for name in ['Sum One', 'Sum Two']:
+            _p, visit = self._register(name)
+            consult = self.env['camp.consultation'].with_user(self.doctor).create({
+                'visit_id': visit.id, 'diagnosis_ids': [(6, 0, icd.ids)],
+                'prescription_line_ids': [(0, 0, {'formulary_id': self.formulary.id, 'days': 1, 'quantity': 2})]})
+            consult.action_finish()
+            consult.prescription_line_ids.with_user(self.pharmacist).action_dispense()
+        _p, left = self._register('Sum Left')
+        left.action_cancel()
+
+        data = self.env['camp.api'].with_user(self.coordinator).camp_summary(self.camp.id)
+        self.assertEqual((data['patients'], data['seen_by_doctor'], data['left_early']), (2, 2, 1))
+        self.assertEqual(data['top_diagnoses'][0]['code'], 'I10')
+        self.assertEqual(data['top_diagnoses'][0]['count'], 2)
+        self.assertEqual(data['medicine_units_given'], 4)
+        self.assertEqual(data['top_medicines'][0]['quantity'], 4)
+        self.assertNotIn('Sum One', str(data), 'no names in the summary')
+        # Station staff cannot pull it; the team list comes with every sync.
+        with self.assertRaises(AccessError):
+            self.env['camp.api'].with_user(self.nurse).camp_summary(self.camp.id)
+        self.assertTrue(self.api(self.nurse).changes(self.camp.id, since=None)['team'])
 
     def test_call_screen(self):
         _p, visit = self._register('Called Kiran')
