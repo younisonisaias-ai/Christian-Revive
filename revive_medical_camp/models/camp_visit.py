@@ -36,6 +36,9 @@ class CampVisit(models.Model):
     called_station = fields.Selection(
         [('triage', 'Triage'), ('doctor', 'Doctor'), ('pharmacy', 'Pharmacy'), ('lab', 'Lab')], readonly=True)
     called_room = fields.Char(readonly=True)
+    pharmacy_reopened = fields.Boolean(
+        string='Medicine added after the visit', readonly=True,
+        help='The doctor added a medicine after the visit was finished: the patient goes back to the pharmacy.')
     pregnant = fields.Boolean(tracking=True, help='Pregnant at this visit: Camp Mode warns about risky medicines.')
     state = fields.Selection(VISIT_STATES, default='registered', required=True, tracking=True, index=True)
     priority = fields.Selection(PRIORITIES, default='normal', required=True, tracking=True)

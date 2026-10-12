@@ -29,6 +29,12 @@
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
+                    <div class="alert alert-warning" role="alert" invisible="not amend_count">
+                        Corrected after the visit (<field name="amend_count" readonly="1" class="d-inline"/>×).
+                        Last: <field name="last_amend_reason" readonly="1" class="d-inline"/>
+                        — <field name="last_amended_by_id" readonly="1" class="d-inline"/>,
+                        <field name="last_amended_at" readonly="1" class="d-inline"/>
+                    </div>
                     <group>
                         <group>
                             <field name="visit_id" readonly="id"/>

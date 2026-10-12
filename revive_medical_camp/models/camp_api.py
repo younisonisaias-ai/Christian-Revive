@@ -281,6 +281,7 @@ class CampApi(models.AbstractModel):
             if can('camp.prescription.line') else [],
             'referrals': [self._referral(r) for r in Env['camp.referral'].search(dom)]
             if can('camp.referral') else [],
+            'camp_closed_at': self._dt(camp.closed_at),
             'education_sessions': [{'id': s.id, 'client_uuid': s.client_uuid, 'topic': s.topic,
                                     'educator': s.educator or '', 'start_time': self._dt(s.start_time),
                                     'attendees_count': s.attendees_count}
@@ -610,13 +611,36 @@ class CampApi(models.AbstractModel):
         if 'pregnant' in item and bool(item['pregnant']) != visit.pregnant:
             visit.pregnant = bool(item['pregnant'])
         existing = self.env['camp.consultation'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
-        if existing and existing.state == 'done':
-            return existing, 'exists'
         update = {k: v for k, v in vals.items() if k != 'visit_id'}
+        if existing and existing.state == 'done':
+            return self._amend_consultation(existing, item, update)
         record, status = self._upsert('camp.consultation', item, vals, update_vals=update)
         if item.get('finished'):
             batch.to_finish |= record
         return record, status
+
+    def _amend_consultation(self, consult, item, update):
+        """A correction to a finished visit (Edit on the doctor's Done list).
+        A resend of the same correction is ignored."""
+        amend_id = item.get('amend_id')
+        reason = (item.get('amend_reason') or '').strip()
+        if not amend_id or not reason or consult.last_amend_id == amend_id:
+            return consult, 'exists'
+        consult._check_can_amend()
+        changed = {k: v for k, v in update.items() if k == 'diagnosis_ids' or self._differs(consult, k, v)}
+        if 'diagnosis_ids' in changed and set(consult.diagnosis_ids.ids) == set(changed['diagnosis_ids'][0][2]):
+            changed.pop('diagnosis_ids')
+        consult.write({**changed, 'amend_count': consult.amend_count + 1, 'last_amend_id': amend_id,
+                       'last_amend_reason': reason[:200], 'last_amended_at': fields.Datetime.now(),
+                       'last_amended_by_id': self.env.user.id})
+        fields_txt = ', '.join(sorted(consult._fields[k].string for k in changed)) or _('medicines only')
+        consult.message_post(body=_('Corrected after the visit by %(user)s: %(reason)s (%(fields)s)',
+                                    user=self.env.user.name, reason=reason, fields=fields_txt))
+        self.env['camp.audit.log'].log('change', consult, details=f'Correction: {reason[:120]}')
+        if consult.follow_up_needed:
+            self.env['camp.followup']._ensure(consult.visit_id, 'doctor',
+                                              consult.follow_up_reason or _('Doctor asked for a follow-up call'))
+        return consult, 'updated'
 
     def _sync_diagnosis_code(self, item):
         """A diagnosis a doctor added on the phone (not in the list)."""
@@ -681,8 +705,24 @@ class CampApi(models.AbstractModel):
         existing = self.env['camp.prescription.line'].search([('client_uuid', '=', item['client_uuid'])], limit=1)
         if existing and existing.state != 'prescribed':
             return existing, 'exists'   # already handled at the pharmacy
+        after_visit = consult.state == 'done'
+        if after_visit:
+            consult._check_can_amend()
+            if formulary and consult.camp_id.state == 'closed':
+                raise UserError(_('The camp is closed: write the medicine as "buy outside".'))
+        if item.get('removed'):
+            # A medicine the doctor took off before the pharmacy gave it.
+            if existing:
+                existing.unlink()
+            return existing, 'updated'
         update = {k: v for k, v in vals.items() if k != 'consultation_id'}
-        return self._upsert('camp.prescription.line', item, vals, update_vals=update)
+        line, status = self._upsert('camp.prescription.line', item, vals, update_vals=update)
+        visit = consult.visit_id
+        if after_visit and line.state == 'prescribed' and visit.state in ('done', 'referred'):
+            # Added after the visit: the patient goes back to the pharmacy.
+            visit.write({'state': 'at_pharmacy', 'pharmacy_reopened': True})
+            consult.message_post(body=_('Medicine added after the visit: %s', line.display_name))
+        return line, status
 
     def _finish_consultations(self, batch):
         for consult in batch.to_finish.filtered(lambda c: c.state == 'draft'):
@@ -1093,7 +1133,7 @@ class CampApi(models.AbstractModel):
         return {'id': v.id, 'client_uuid': v.client_uuid, 'patient_id': v.patient_id.id,
                 'patient_client_uuid': v.patient_id.client_uuid, 'token_no': v.token_no, 'qr_code': v.qr_code,
                 'state': v.state, 'priority': v.priority, 'consent_confirmed': v.consent_confirmed,
-                'pregnant': v.pregnant,
+                'pregnant': v.pregnant, 'pharmacy_reopened': v.pharmacy_reopened,
                 'called_at': self._dt(v.called_at), 'called_station': v.called_station or '',
                 'called_room': v.called_room or '',
                 'arrived_at': self._dt(v.arrived_at), 'flag_rule_ids': v.flag_rule_ids.ids,
@@ -1107,7 +1147,8 @@ class CampApi(models.AbstractModel):
         return {'id': c.id, 'client_uuid': c.client_uuid, 'visit_id': c.visit_id.id,
                 'doctor_id': c.doctor_id.id, 'doctor_name': c.doctor_id.name, 'state': c.state,
                 'diagnosis_codes': c.diagnosis_ids.mapped('code'),
-                **{f: c[f] or ('' if f not in ('follow_up_needed',) else False) for f in CONSULT_FIELDS}}
+                **{f: c[f] or ('' if f not in ('follow_up_needed',) else False) for f in CONSULT_FIELDS},
+                'amend_count': c.amend_count, 'last_amend_reason': c.last_amend_reason or ''}
 
     def _diagnosis_list(self, since):
         """Doctors and pharmacists get the full list (pharmacists print slips);

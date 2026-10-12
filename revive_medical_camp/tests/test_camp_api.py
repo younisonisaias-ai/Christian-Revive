@@ -112,6 +112,69 @@ class TestCampSync(TestCampFlow):
         changed = self.api(self.doctor).changes(self.camp.id, since=since)['rx_templates_changed']
         self.assertIn((t_uuid, False), [(t['client_uuid'], t['active']) for t in changed])
 
+    def test_doctor_corrects_a_finished_visit(self):
+        icd = self.env.ref('revive_medical_camp.icd_i10')
+        p_uuid, v_uuid, c_uuid, l_uuid = _uuid(), _uuid(), _uuid(), _uuid()
+        self.api(self.registration).sync(self.camp.id, {
+            'patients': [{'client_uuid': p_uuid, 'name': 'Fix Farah', 'sex': 'female', 'age_years': 40,
+                          'consent_care': True}],
+            'visits': [{'client_uuid': v_uuid, 'patient': p_uuid, 'consent_confirmed': True}]})
+        self.api(self.doctor).sync(self.camp.id, {
+            'consultations': [{'client_uuid': c_uuid, 'visit': v_uuid, 'complaint': 'Headache', 'finished': True}],
+            'prescription_lines': [{'client_uuid': l_uuid, 'consultation': c_uuid, 'formulary_id': self.formulary.id,
+                                    'days': 3}]})
+        consult = self.env['camp.consultation'].search([('client_uuid', '=', c_uuid)])
+        visit = consult.visit_id
+        self.assertEqual((consult.state, visit.state), ('done', 'at_pharmacy'))
+        self.api(self.pharmacist).sync(self.camp.id, {'dispenses': [{'client_uuid': _uuid(), 'line': l_uuid}]})
+        self.assertEqual(visit.state, 'done')
+
+        # A resend without a correction changes nothing (as before).
+        self.api(self.doctor).sync(self.camp.id, {'consultations': [
+            {'client_uuid': c_uuid, 'visit': v_uuid, 'complaint': 'Changed silently'}]})
+        self.assertEqual(consult.complaint, 'Headache')
+
+        # The doctor corrects it, with a reason.
+        amend = {'client_uuid': c_uuid, 'visit': v_uuid, 'complaint': 'Headache and dizziness',
+                 'diagnosis_codes': ['I10'], 'amend_id': _uuid(), 'amend_reason': 'Missed the diagnosis'}
+        res = self.api(self.doctor).sync(self.camp.id, {'consultations': [amend]})
+        self.assertEqual(res['results']['consultations'][0]['status'], 'updated')
+        self.assertEqual((consult.complaint, consult.diagnosis_ids, consult.amend_count),
+                         ('Headache and dizziness', icd, 1))
+        self.assertEqual(consult.last_amended_by_id, self.doctor)
+        # The same correction sent twice counts once.
+        self.api(self.doctor).sync(self.camp.id, {'consultations': [amend]})
+        self.assertEqual(consult.amend_count, 1)
+
+        # Another doctor cannot change it.
+        other = self.api(self.doctor_no_pmdc).sync(self.camp.id, {'consultations': [
+            {**amend, 'amend_id': _uuid(), 'complaint': 'Other'}]})
+        self.assertEqual(other['results']['consultations'][0]['status'], 'error')
+
+        # A given medicine stays; a new one sends the patient back to the pharmacy.
+        given = self.api(self.doctor).sync(self.camp.id, {'prescription_lines': [
+            {'client_uuid': l_uuid, 'consultation': c_uuid, 'formulary_id': self.formulary.id, 'days': 10}]})
+        self.assertEqual(given['results']['prescription_lines'][0]['status'], 'exists')
+        new_uuid = _uuid()
+        self.api(self.doctor).sync(self.camp.id, {'prescription_lines': [
+            {'client_uuid': new_uuid, 'consultation': c_uuid, 'formulary_id': self.formulary.id, 'days': 2}]})
+        self.assertEqual((visit.state, visit.pharmacy_reopened), ('at_pharmacy', True))
+        # Taken off again before the pharmacy gave it.
+        self.api(self.doctor).sync(self.camp.id, {'prescription_lines': [
+            {'client_uuid': new_uuid, 'consultation': c_uuid, 'formulary_id': self.formulary.id, 'removed': True}]})
+        self.assertFalse(self.env['camp.prescription.line'].search([('client_uuid', '=', new_uuid)]))
+
+        # Closed camp: only "buy outside"; after 7 days only the medical lead in Odoo.
+        visit.state = 'done'
+        self.camp.action_close()
+        bad = self.api(self.doctor).sync(self.camp.id, {'prescription_lines': [
+            {'client_uuid': _uuid(), 'consultation': c_uuid, 'formulary_id': self.formulary.id}]})
+        self.assertEqual(bad['results']['prescription_lines'][0]['status'], 'error')
+        self.camp.closed_at = fields.Datetime.now() - timedelta(days=8)
+        late = self.api(self.doctor).sync(self.camp.id, {'consultations': [
+            {**amend, 'amend_id': _uuid(), 'complaint': 'Too late'}]})
+        self.assertEqual(late['results']['consultations'][0]['status'], 'error')
+
     def test_end_of_day_summary(self):
         icd = self.env.ref('revive_medical_camp.icd_i10')
         for name in ['Sum One', 'Sum Two']:

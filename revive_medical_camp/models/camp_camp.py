@@ -56,6 +56,7 @@ class CampCamp(models.Model):
                                    string='Sponsors')
     speciality_ids = fields.Many2many('camp.speciality', string='Specialities')
     expected_patients = fields.Integer()
+    closed_at = fields.Datetime(readonly=True, help='Doctors can correct finished visits until 7 days after this.')
     coordinator_id = fields.Many2one('res.users', string='Coordinator', default=lambda self: self.env.user)
     state = fields.Selection([
         ('draft', 'Planning'),
@@ -162,7 +163,7 @@ class CampCamp(models.Model):
                 raise UserError(_('%(count)s patients are still waiting (doctor or pharmacy). '
                                   'Finish or cancel their visits before closing the camp.',
                                   count=len(waiting)))
-        self.write({'state': 'closed'})
+        self.write({'state': 'closed', 'closed_at': fields.Datetime.now()})
 
     def action_prepare_reminders(self):
         self.env['camp.reminder']._generate(self)
@@ -199,7 +200,7 @@ class CampCamp(models.Model):
                 'view_mode': 'form', 'target': 'current'}
 
     def action_reopen(self):
-        self.write({'state': 'running'})
+        self.write({'state': 'running', 'closed_at': False})
 
     def _reserve_tokens(self, count=50):
         """Hand a block of token numbers to a phone for offline registration."""

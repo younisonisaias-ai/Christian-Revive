@@ -1,4 +1,6 @@
 """Doctor's consultation, prescription lines and dispensing from camp stock."""
+from datetime import timedelta
+
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import float_compare
@@ -27,6 +29,30 @@ class CampConsultation(models.Model):
     referral_ids = fields.One2many('camp.referral', 'consultation_id', string='Referrals')
     state = fields.Selection([('draft', 'In progress'), ('done', 'Finished')],
                              default='draft', required=True, tracking=True)
+    # Corrections after the visit was finished (who, when, why).
+    amend_count = fields.Integer(string='Corrections', readonly=True)
+    last_amend_id = fields.Char(readonly=True, copy=False)
+    last_amend_reason = fields.Char(string='Last correction reason', readonly=True)
+    last_amended_at = fields.Datetime(readonly=True)
+    last_amended_by_id = fields.Many2one('res.users', string='Last corrected by', readonly=True)
+
+    AMEND_DAYS = 7
+
+    def _check_can_amend(self, user=None):
+        """Only the doctor who saw the patient (or the medical lead) corrects a
+        finished visit, while the camp is open and up to 7 days after it closes."""
+        user = user or self.env.user
+        is_lead = user.has_group('revive_medical_camp.group_camp_lead')
+        for c in self:
+            if c.doctor_id != user and not is_lead:
+                raise AccessError(_('Only %s (who saw this patient) or the medical lead can change it.',
+                                    c.doctor_id.name))
+            camp = c.camp_id
+            if camp.state == 'closed' and not is_lead:
+                closed = camp.closed_at or camp.write_date
+                if closed and closed < fields.Datetime.now() - timedelta(days=self.AMEND_DAYS):
+                    raise UserError(_('This camp closed more than %s days ago. Ask the medical lead to make '
+                                      'the change in Odoo.', self.AMEND_DAYS))
 
     @api.model_create_multi
     def create(self, vals_list):
