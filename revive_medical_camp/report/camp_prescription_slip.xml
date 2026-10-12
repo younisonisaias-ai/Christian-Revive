@@ -12,11 +12,33 @@
         </style>
     </template>
 
+    <!-- Page layout for every camp report: the Christian Revive logo at the top. -->
+    <template id="camp_layout">
+        <t t-set="camp_company" t-value="(o.camp_id.company_id if 'camp_id' in o._fields else o.company_id) if o else env.company"/>
+        <div class="article" t-att-data-oe-model="o and o._name" t-att-data-oe-id="o and o.id"
+             t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <table style="width: 100%; border-bottom: 2px solid #DEC09C; margin-bottom: 14px;">
+                <tr>
+                    <td style="vertical-align: middle; padding-bottom: 8px;">
+                        <img t-att-src="env['camp.camp']._camp_report_logo()" style="height: 34px;" alt="Christian Revive"/>
+                    </td>
+                    <td style="vertical-align: middle; text-align: right; padding-bottom: 8px; font-size: 10px; color: #555;">
+                        <div style="font-weight: bold; color: #35302A;">Medical Camp</div>
+                        <div t-if="camp_company.phone" t-esc="camp_company.phone"/>
+                        <div t-if="camp_company.website" t-esc="camp_company.website"/>
+                    </td>
+                </tr>
+            </table>
+            <t t-out="0"/>
+        </div>
+    </template>
+
     <!-- Patient card with QR: every station scans it instead of searching. -->
     <template id="report_patient_card">
         <t t-call="web.basic_layout">
             <t t-foreach="docs" t-as="o">
                 <div class="page" style="font-family: sans-serif;">
+                    <img t-att-src="env['camp.camp']._camp_report_logo()" style="height: 18px; margin-bottom: 4px;" alt="Christian Revive"/>
                     <table style="width: 100%;">
                         <tr>
                             <td style="vertical-align: top;">
@@ -44,7 +66,7 @@
     <template id="report_prescription_slip">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.external_layout">
+                <t t-call="revive_medical_camp.camp_layout">
                     <t t-call="revive_medical_camp.camp_report_style"/>
                     <div class="page">
                         <h4 class="mb-0">Prescription <span class="camp-ur">نسخہ</span></h4>

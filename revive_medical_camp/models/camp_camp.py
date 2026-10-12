@@ -170,6 +170,14 @@ class CampCamp(models.Model):
         return self.env['ir.actions.act_window']._for_xml_id('revive_medical_camp.action_camp_reminder') | {
             'domain': [('camp_id', 'in', self.ids)]}
 
+    @api.model
+    def _camp_report_logo(self):
+        """The Christian Revive logo for every camp report, as a data URI."""
+        import base64
+        from odoo.tools.misc import file_open
+        with file_open('revive_medical_camp/static/img/christian_revive_logo.png', 'rb') as f:
+            return 'data:image/png;base64,' + base64.b64encode(f.read()).decode()
+
     def action_stock_plan(self):
         self.ensure_one()
         return {'type': 'ir.actions.act_window', 'name': _('Stock plan'), 'res_model': 'camp.stock.plan',

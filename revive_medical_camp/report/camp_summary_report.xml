@@ -42,7 +42,7 @@
     <template id="report_camp_summary">
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="o">
-                <t t-call="web.external_layout">
+                <t t-call="revive_medical_camp.camp_layout">
                     <t t-call="revive_medical_camp.camp_report_style"/>
                     <t t-set="s" t-value="o._report_stats()"/>
                     <div class="page">
