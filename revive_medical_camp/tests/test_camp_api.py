@@ -215,6 +215,13 @@ class TestCampSync(TestCampFlow):
         feed = self.api(self.registration).changes(self.camp.id, since=None)
         row = next(v for v in feed['visits'] if v['client_uuid'] == v_uuid)
         self.assertEqual((row['called_station'], row['called_room']), ('doctor', '2'))
+        # The call screen's quick check: who was called, by whom, where.
+        quick = self.api(self.registration).calls(self.camp.id)
+        row = next(c for c in quick['calls'] if c['client_uuid'] == v_uuid)
+        self.assertEqual((row['token_no'], row['called_room'], row['called_by'], row['patient_name']),
+                         (visit.token_no, '2', self.doctor.name, 'Called Kiran'))
+        self.assertFalse(self.api(self.registration).calls(self.camp.id, since=quick['server_time'])['calls'][1:],
+                         'only calls after "since"')
         # Only the station's own staff can call to it.
         bad = self.api(self.registration).sync(self.camp.id, {'calls': [
             {'client_uuid': _uuid(), 'visit': v_uuid, 'station': 'doctor'}]})

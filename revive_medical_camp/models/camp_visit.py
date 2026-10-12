@@ -36,6 +36,7 @@ class CampVisit(models.Model):
     called_station = fields.Selection(
         [('triage', 'Triage'), ('doctor', 'Doctor'), ('pharmacy', 'Pharmacy'), ('lab', 'Lab')], readonly=True)
     called_room = fields.Char(readonly=True)
+    called_by_id = fields.Many2one('res.users', string='Called by', readonly=True)
     pharmacy_reopened = fields.Boolean(
         string='Medicine added after the visit', readonly=True,
         help='The doctor added a medicine after the visit was finished: the patient goes back to the pharmacy.')

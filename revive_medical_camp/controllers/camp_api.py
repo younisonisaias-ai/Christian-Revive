@@ -211,6 +211,10 @@ class CampApiController(http.Controller):
     def status(self, camp_id, **kwargs):
         return _json(request.env['camp.api'].camp_status(camp_id))
 
+    @camp_route('/api/camp/<int:camp_id>/calls', ['GET'])
+    def calls(self, camp_id, since=None, **kwargs):
+        return _json(request.env['camp.api'].calls(camp_id, since=since or None))
+
     @camp_route('/api/camp/<int:camp_id>/summary', ['GET'])
     def summary(self, camp_id, **kwargs):
         return _json(request.env['camp.api'].camp_summary(camp_id))

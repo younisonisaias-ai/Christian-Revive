@@ -355,6 +355,25 @@ class CampApi(models.AbstractModel):
                 'waiting': sum(counts.get(s, 0) for s in ('registered', 'triaged', 'with_doctor', 'at_pharmacy'))}
 
     @api.model
+    def calls(self, camp_id, since=None):
+        """The call screen's quick check (every few seconds): the latest
+        calls only, instead of the whole camp's changes."""
+        api_env, camp = self._worker(camp_id)
+        if api_env is not self:
+            return api_env.calls(camp_id, since)
+        now = fields.Datetime.now()
+        start = fields.Datetime.to_datetime(since) if since else now - timedelta(hours=12)
+        visits = self.env['camp.visit'].sudo().search(
+            [('camp_id', '=', camp.id), ('called_at', '>=', start)], order='called_at desc', limit=20)
+        return {
+            'server_time': fields.Datetime.to_string(now),
+            'calls': [{'client_uuid': v.client_uuid, 'token_no': v.token_no, 'patient_name': v.patient_id.name or '',
+                       'called_at': self._dt(v.called_at), 'called_station': v.called_station or '',
+                       'called_room': v.called_room or '', 'called_by': v.called_by_id.name or ''}
+                      for v in visits],
+        }
+
+    @api.model
     def camp_summary(self, camp_id):
         """End-of-day figures for the coordinator to share (e.g. on WhatsApp).
         Counts only: no patient names, phones or notes."""
@@ -895,7 +914,8 @@ class CampApi(models.AbstractModel):
         if visit.called_at and visit.called_at > when:
             return visit, 'exists'   # a later call already arrived
         visit.sudo().write({'called_at': when, 'called_station': station,
-                            'called_room': (item.get('room') or '').strip()[:20] or False})
+                            'called_room': (item.get('room') or '').strip()[:20] or False,
+                            'called_by_id': self.env.user.id})
         return visit, 'updated'
 
     def _sync_visit_action(self, item):
@@ -1135,7 +1155,7 @@ class CampApi(models.AbstractModel):
                 'state': v.state, 'priority': v.priority, 'consent_confirmed': v.consent_confirmed,
                 'pregnant': v.pregnant, 'pharmacy_reopened': v.pharmacy_reopened,
                 'called_at': self._dt(v.called_at), 'called_station': v.called_station or '',
-                'called_room': v.called_room or '',
+                'called_room': v.called_room or '', 'called_by': v.called_by_id.name or '',
                 'arrived_at': self._dt(v.arrived_at), 'flag_rule_ids': v.flag_rule_ids.ids,
                 'is_first_visit': v.is_first_visit, 'write_date': self._dt(v.write_date)}
 
