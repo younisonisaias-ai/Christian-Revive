@@ -7,6 +7,7 @@
             <head>
                 <meta charset="utf-8"/>
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="robots" content="noindex, nofollow"/>
                 <title>Medical camp referral</title>
                 <style>
                     body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #FAF7F2;
@@ -30,7 +31,19 @@
                 <div class="card">
                     <div class="head">Medical camp referral · میڈیکل کیمپ ریفرل</div>
                     <div class="body">
-                        <t t-if="not r">
+                        <t t-if="state == 'closed'">
+                            <p class="ok">
+                                Arrival already confirmed<t t-if="confirmed.attended_at"> on <t t-esc="confirmed.attended_at.strftime('%d %b %Y')"/></t>. Thank you!
+                                <div class="ur">مریض کی آمد کی تصدیق ہو چکی ہے۔ شکریہ!</div>
+                            </p>
+                        </t>
+                        <t t-elif="state == 'expired'">
+                            <p class="warn">This referral link has expired (30 days).<br/>یہ ریفرل لنک ختم ہو چکا ہے (30 دن)۔</p>
+                        </t>
+                        <t t-elif="state == 'blocked'">
+                            <p class="warn">Too many wrong links from this network. Try again later.<br/>اس نیٹ ورک سے بہت سے غلط لنک۔ بعد میں کوشش کریں۔</p>
+                        </t>
+                        <t t-elif="not r">
                             <p class="warn">This referral link is not valid.<br/>یہ ریفرل لنک درست نہیں۔</p>
                         </t>
                         <t t-else="">

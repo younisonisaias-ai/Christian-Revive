@@ -10,4 +10,5 @@ from . import camp_followup
 from . import camp_lab
 from . import camp_reminder
 from . import camp_care
+from . import camp_security
 from . import camp_api

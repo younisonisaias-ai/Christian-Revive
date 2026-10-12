@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Audit log (medical lead) -->
+    <record id="view_camp_audit_log_list" model="ir.ui.view">
+        <field name="name">camp.audit.log.list</field>
+        <field name="model">camp.audit.log</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0" decoration-danger="action in ('sign_in_failed', 'wipe', 'delete')"
+                  decoration-info="action in ('export', 'print', 'download')">
+                <field name="date"/>
+                <field name="user_id"/>
+                <field name="action"/>
+                <field name="patient_id"/>
+                <field name="camp_id" optional="show"/>
+                <field name="model" optional="hide"/>
+                <field name="res_id" optional="hide"/>
+                <field name="details"/>
+                <field name="ip" optional="show"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_camp_audit_log_search" model="ir.ui.view">
+        <field name="name">camp.audit.log.search</field>
+        <field name="model">camp.audit.log</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="patient_id"/>
+                <field name="user_id"/>
+                <field name="camp_id"/>
+                <field name="ip"/>
+                <filter name="views" string="Opened" domain="[('action', '=', 'view')]"/>
+                <filter name="changes" string="Changed" domain="[('action', '=', 'change')]"/>
+                <filter name="exports" string="Exported / printed" domain="[('action', 'in', ('export', 'print', 'download'))]"/>
+                <filter name="failed" string="Failed sign-ins" domain="[('action', '=', 'sign_in_failed')]"/>
+                <separator/>
+                <filter name="today" string="Today" domain="[('date', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="group_user" string="User" context="{'group_by': 'user_id'}"/>
+                <filter name="group_action" string="Action" context="{'group_by': 'action'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_camp_audit_log" model="ir.actions.act_window">
+        <field name="name">Audit log</field>
+        <field name="res_model">camp.audit.log</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nothing logged yet</p>
+            <p>Who opened, changed, printed or exported patient records, downloads to phones, and sign-ins.</p>
+        </field>
+    </record>
+    <menuitem id="menu_camp_audit_log" name="Audit log" parent="menu_camp_config" sequence="90"
+              action="action_camp_audit_log" groups="group_camp_lead"/>
+
+    <!-- Data retention setting -->
+    <record id="view_camp_privacy_settings" model="ir.ui.view">
+        <field name="name">camp.privacy.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="Patient data retention">
+                <group>
+                    <field name="camp_retention_years"/>
+                </group>
+                <p class="text-muted">
+                    Every night, patients not seen for this many years lose their name, phone, date of birth,
+                    allergies, photos and signatures. Age, sex and diagnoses stay for anonymous reports.
+                    0 keeps everything. A single patient can be anonymised at any time from their record.
+                </p>
+                <footer>
+                    <button name="execute" type="object" string="Save" class="btn-primary"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="action_camp_privacy_settings" model="ir.actions.act_window">
+        <field name="name">Patient data retention</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_camp_privacy_settings"/>
+        <field name="target">new</field>
+    </record>
+    <menuitem id="menu_camp_privacy" name="Data retention" parent="menu_camp_config" sequence="95"
+              action="action_camp_privacy_settings" groups="base.group_system"/>
+
+    <!-- Patient: remove personal data on request -->
+    <record id="view_camp_patient_form_privacy" model="ir.ui.view">
+        <field name="name">camp.patient.form.privacy</field>
+        <field name="model">camp.patient</field>
+        <field name="inherit_id" ref="view_camp_patient_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_anonymise" type="object" string="Remove personal data"
+                            invisible="anonymised" groups="revive_medical_camp.group_camp_coordinator"
+                            confirm="Remove this patient's name, phone, date of birth, allergies, photos and signatures? Age, sex and diagnoses stay for anonymous reports. This cannot be undone."/>
+                    <field name="anonymised" invisible="1"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Team: sign a lost phone out -->
+    <record id="view_camp_camp_form_signout" model="ir.ui.view">
+        <field name="name">camp.camp.form.signout</field>
+        <field name="model">camp.camp</field>
+        <field name="inherit_id" ref="view_camp_camp_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='team_member_ids']/list/button[@name='action_check_out']" position="after">
+                <button name="action_sign_out_phone" type="object" icon="fa-ban" title="Sign out this person's phone"
+                        invisible="not user_id" groups="revive_medical_camp.group_camp_coordinator"
+                        confirm="Sign this person's phone out of Camp Mode? The phone deletes this camp's data when it next connects. They can sign in again with their password."/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

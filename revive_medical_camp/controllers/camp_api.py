@@ -48,7 +48,11 @@ def _body():
         raise UserError('The request body must be JSON.')  # noqa: B904
 
 
-def camp_route(route, methods):
+def _ip():
+    return request.httprequest.remote_addr or '?'
+
+
+def camp_route(route, methods, password_change=False):
     """A JSON route that needs a camp API key and turns errors into JSON."""
     def decorator(func):
         @http.route(route, type='http', auth='public', methods=methods, csrf=False, save_session=False)
@@ -59,8 +63,13 @@ def camp_route(route, methods):
             if token:
                 uid = request.env['res.users.apikeys'].sudo()._check_credentials(scope=API_SCOPE, key=token)
             if not uid:
+                if token and request.env['camp.revoked.key'].sudo().search_count([('index', '=', token[:INDEX_SIZE])]):
+                    # Signed out from Odoo (lost phone): the phone deletes its camp data.
+                    return _error('wiped', 'This phone was signed out by the camp coordinator.', 401)
                 return _error('unauthorized', 'Sign in again (missing or expired key).', 401)
             request.update_env(user=uid)
+            if not password_change and request.env.user.camp_must_change_password:
+                return _error('password_change_required', 'Choose a new password first.', 403)
             if not request.env['camp.api']._is_camp_worker():
                 return _error('forbidden', 'This login has no medical camp role.', 403)
             return _call(func, self, *args, **kwargs)
@@ -94,6 +103,18 @@ class CampApiController(http.Controller):
             login, password = (body.get('login') or '').strip(), body.get('password') or ''
             if not login or not password:
                 raise UserError('Enter your login and password.')
+            Throttle, Captcha = request.env['camp.auth.throttle'], request.env['camp.captcha']
+            keys = [f'login:{login.lower()}', f'ip:{_ip()}']
+            locked, need_captcha = Throttle.status(keys)
+            if locked:
+                return _error('locked', f'Too many wrong passwords. Try again in {locked} minutes.', 429)
+            if need_captcha and not Captcha.check(body.get('captcha_token'), body.get('captcha_answer')):
+                # After 3 wrong passwords: prove a person is typing.
+                token, image = Captcha.new()
+                return _json({'error': {'code': 'captcha_required',
+                                        'message': 'Type the numbers in the picture.' if not body.get('captcha_token')
+                                        else 'The numbers did not match. Try the new picture.',
+                                        'captcha_token': token, 'captcha_image': image}}, status=401)
             # Workers may type their login, email or phone number. Several
             # users can match (e.g. an old office user with the same email):
             # the password decides which one it is, camp workers first.
@@ -113,7 +134,14 @@ class CampApiController(http.Controller):
             if not user and not_worker:
                 return _error('forbidden', 'This login has no medical camp role. Ask your camp coordinator.', 403)
             if not user:
+                Throttle.failed(keys, lock_key=keys[0])
+                request.env['camp.audit.log'].sudo().log('sign_in_failed', details=f'login {login[:60]}',
+                                                         user=request.env.ref('base.public_user'))
+                locked, need_captcha = Throttle.status(keys)
+                if locked:
+                    return _error('locked', f'Too many wrong passwords. Try again in {locked} minutes.', 429)
                 return _error('unauthorized', 'Wrong login or password.', 401)
+            Throttle.succeeded(keys)
             if user._mfa_url():
                 return _error('mfa_not_supported',
                               'This login uses two-step verification, which Camp Mode does not support yet. '
@@ -122,12 +150,35 @@ class CampApiController(http.Controller):
             key = request.env['res.users.apikeys'].with_user(user).sudo()._generate(
                 API_SCOPE, f'Camp Mode: {device}', datetime.now() + timedelta(days=KEY_DAYS))
             request.update_env(user=user.id)
+            request.env['camp.audit.log'].log('sign_in', details=f'Camp Mode: {device}')
             data = request.env['camp.api'].me()
             data.update({'token': key, 'expires_in_days': KEY_DAYS})
             return _json(data)
         return _call(_do)
 
-    @camp_route('/api/camp/logout', ['POST'])
+    @camp_route('/api/camp/password', ['POST'], password_change=True)
+    def change_password(self, **kwargs):
+        """First sign-in: replace the one-time password from the coordinator."""
+        def _do():
+            from ..models.camp_security import password_problem
+            body = _body()
+            old, new = body.get('old_password') or '', body.get('new_password') or ''
+            user = request.env.user
+            problem = password_problem(new, user.login)
+            if problem:
+                raise UserError(problem)
+            if new == old:
+                raise UserError('Choose a password different from the one you were given.')
+            try:
+                user._check_credentials({'type': 'password', 'password': old}, {'interactive': False})
+            except AccessDenied:
+                return _error('unauthorized', 'The current password is wrong.', 401)
+            user.sudo()._change_password(new)
+            user.sudo().camp_must_change_password = False
+            return _json({'ok': True})
+        return _call(_do)
+
+    @camp_route('/api/camp/logout', ['POST'], password_change=True)
     def logout(self, **kwargs):
         token = _bearer_token()
         Keys = request.env['res.users.apikeys'].sudo()

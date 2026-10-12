@@ -1,6 +1,6 @@
 {
     'name': 'Medical Camp Management',
-    'version': '19.0.1.11.0',
+    'version': '19.0.1.12.0',
     'category': 'Healthcare',
     'summary': 'Run free medical camps end to end: registration, triage, doctor, pharmacy, referrals, sponsor reports',
     'description': """
@@ -53,6 +53,7 @@ membership, donations or any other module.
         'wizard/camp_stock_plan_views.xml',
         'views/camp_care_views.xml',
         'wizard/camp_health_export_views.xml',
+        'views/camp_security_views.xml',
     ],
     'demo': [
         'demo/camp_demo.xml',

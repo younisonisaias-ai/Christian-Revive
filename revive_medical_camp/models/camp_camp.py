@@ -412,6 +412,7 @@ class CampTeamMember(models.Model):
             'name': self.name, 'login': login, 'email': email or False, 'phone': phone or False,
             'password': password,
             'group_ids': [(6, 0, [self.env.ref('base.group_portal').id])],
+            'camp_must_change_password': True,
         })
         self.user_id = user
         return {'type': 'ir.actions.client', 'tag': 'display_notification', 'params': {

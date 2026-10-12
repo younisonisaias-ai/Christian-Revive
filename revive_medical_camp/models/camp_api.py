@@ -207,6 +207,7 @@ class CampApi(models.AbstractModel):
                 'id': user.id, 'name': user.name, 'login': user.login,
                 'roles': self._roles(user),
                 'has_pmdc_number': bool(user.camp_pmdc_number),
+                'must_change_password': bool(user.camp_must_change_password),
             },
             'camps': [self._camp(c) for c in camps],
             'server_time': fields.Datetime.to_string(fields.Datetime.now()),
@@ -251,6 +252,8 @@ class CampApi(models.AbstractModel):
         if reserve_tokens and 'registration' in self._roles():
             data['token_block'] = camp.sudo()._reserve_tokens(reserve_tokens)
         data.update(self.changes(camp.id, since=None))   # also sets server_time
+        self.env['camp.audit.log'].log('download', camp=camp,
+                                       details=f'{len(data["patients"])} patients to a phone')
         return data
 
     @api.model
@@ -334,6 +337,7 @@ class CampApi(models.AbstractModel):
         patients = self.env['camp.patient'].search(
             ['|', '|', ('name', 'ilike', query), ('phone', 'ilike', query), ('patient_code', 'ilike', query)],
             limit=min(int(limit or 30), 100))
+        self.env['camp.audit.log'].log('search', details=f'"{query[:40]}": {len(patients)} found')
         return {'patients': [self._patient(p) for p in patients]}
 
     @api.model
@@ -359,6 +363,7 @@ class CampApi(models.AbstractModel):
         if not ({'coordinator', 'lead'} & set(self._roles())):
             raise AccessError(_('Only the coordinator can see the camp summary.'))
         env = self.env(su=True)
+        self.env['camp.audit.log'].log('export', camp=camp, details='End-of-day summary')
         visits = env['camp.visit'].search([('camp_id', '=', camp.id)])
         seen = visits.filtered(lambda v: v.state not in ('cancelled', 'booked'))
         patients = seen.patient_id
@@ -452,10 +457,16 @@ class CampApi(models.AbstractModel):
         """Save a batch of records made offline. Each record is saved on its own,
         so one bad record never blocks the rest. Returns, per kind, the server id
         for every client_uuid, plus warnings (e.g. stock shortages)."""
+        if not self.env.context.get('camp_no_audit'):
+            # One audit line for the whole upload instead of one per record.
+            return self.with_context(camp_no_audit=True).sync(camp_id, payload)
         api_env, camp = self._worker(camp_id)
         if api_env is not self:
             return api_env.sync(camp_id, payload)
         payload = payload or {}
+        counts = {k: len(v) for k, v in payload.items() if isinstance(v, list) and v}
+        if counts:
+            self.env['camp.audit.log'].log('upload', camp=camp, details=', '.join(f'{k} {n}' for k, n in counts.items()))
         batch, results = _Batch(self.env), {}
         steps = [
             ('patients', lambda item: self._sync_patient(item)),

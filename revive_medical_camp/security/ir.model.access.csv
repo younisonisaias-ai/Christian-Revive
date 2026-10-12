@@ -81,3 +81,7 @@ access_camp_vaccine_lead,camp.vaccine.record lead,model_camp_vaccine_record,grou
 access_camp_stock_plan,camp.stock.plan coordinator,model_camp_stock_plan,group_camp_coordinator,1,1,1,1
 access_camp_stock_plan_line,camp.stock.plan.line coordinator,model_camp_stock_plan_line,group_camp_coordinator,1,1,1,1
 access_camp_health_export,camp.health.export coordinator,model_camp_health_export,group_camp_coordinator,1,1,1,1
+access_camp_audit_lead,camp.audit.log lead,model_camp_audit_log,group_camp_lead,1,0,0,0
+access_camp_throttle_admin,camp.auth.throttle admin,model_camp_auth_throttle,base.group_system,1,0,0,1
+access_camp_captcha_admin,camp.captcha admin,model_camp_captcha,base.group_system,1,0,0,1
+access_camp_revoked_admin,camp.revoked.key admin,model_camp_revoked_key,base.group_system,1,0,0,1
