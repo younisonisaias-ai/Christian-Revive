@@ -165,10 +165,13 @@ def load():
         visitors.append(visitor)
 
     # ── Cell groups and pastor assignments ────────────────────
+    # Member indexes (18 people, 0-17): Masih 0-3, Gill 4-6, Bhatti 7-9,
+    # Khokhar 10-12, Sahotra 13-14, Nazir 15-17.
     for name, leader, roster, day, place in [
             ('Lahore East Cell (Sample)', 0, [0, 1, 2, 3, 13, 14], 'wednesday', 'Masih home, Lahore'),
-            ('Youth Fellowship (Sample)', 9, [2, 3, 6, 9, 15, 18, 19], 'friday', 'Church hall'),
-            ('Women of Faith (Sample)', 4, [1, 5, 9, 12, 16, 18], 'thursday', 'Gill home, Karachi')]:
+            ('Youth Fellowship (Sample)', 8, [2, 3, 6, 8, 12, 13, 14, 17], 'friday', 'Church hall'),
+            ('Women of Faith (Sample)', 11, [1, 5, 9, 11, 12, 16], 'thursday', 'Gill home, Karachi')]:
+        roster = [i for i in roster if i < len(members)]
         make('cell.group', {'name': name, 'leader_id': members[leader].id, 'meeting_day': day,
                             'meeting_time': '6:30 PM', 'meeting_location': place,
                             'member_ids': [(6, 0, [members[i].id for i in roster])]})
