@@ -3,3 +3,12 @@ access_church_give_fund,church.give.fund,model_church_give_fund,base.group_user,
 access_church_give_pledge,church.give.pledge,model_church_give_pledge,base.group_user,1,1,1,1
 access_church_give_reconciliation_batch,church.give.reconciliation.batch,model_church_give_reconciliation_batch,base.group_user,1,1,1,1
 access_church_report,church.report,model_church_report,base.group_user,1,1,1,1
+access_church_expense_category_user,church.expense.category user,model_church_expense_category,base.group_user,1,0,0,0
+access_church_expense_category_system,church.expense.category system,model_church_expense_category,base.group_system,1,1,1,0
+access_church_expense_user,church.expense user,model_church_expense,base.group_user,1,0,0,0
+access_church_expense_system,church.expense system,model_church_expense,base.group_system,1,1,1,1
+access_church_expense_log_system,church.expense.log system,model_church_expense_log,base.group_system,1,0,0,0
+access_church_budget_user,church.budget user,model_church_budget,base.group_user,1,0,0,0
+access_church_budget_system,church.budget system,model_church_budget,base.group_system,1,1,1,1
+access_church_budget_line_user,church.budget.line user,model_church_budget_line,base.group_user,1,0,0,0
+access_church_budget_line_system,church.budget.line system,model_church_budget_line,base.group_system,1,1,1,1

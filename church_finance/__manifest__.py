@@ -1,6 +1,6 @@
 {
     'name': 'Church Finance',
-    'version': '1.0.0',
+    'version': '1.1.0',
     'category': 'Church',
     'summary': 'Pledges, restricted funds, reconciliation and reports for Christian Revive',
     'description': """
@@ -9,6 +9,7 @@
         - Recurring/one-time pledges with progress tracking
         - Restricted funds, layered on top of Church Give's categories/projects
         - Reconciliation batches (finance officer approval workflow)
+        - Expenses with approval limits, yearly budgets and fund balances
         - Reports: membership growth, giving by fund, attendance trends
         - API endpoints for the Flutter mobile app (app_get_my_pledges,
           app_create_pledge, app_get_funds, app_get_giving_by_fund, etc.)
@@ -28,6 +29,8 @@
         'views/church_give_transaction_ext_views.xml',
         'views/reconciliation_views.xml',
         'views/menu.xml',
+        'data/expense_data.xml',
+        'views/expense_views.xml',
     ],
     'installable': True,
     'application': True,

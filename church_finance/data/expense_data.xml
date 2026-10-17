@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_church_expense" model="ir.sequence">
+        <field name="name">Church Expense</field>
+        <field name="code">church.expense</field>
+        <field name="prefix">EXP-%(year)s-</field>
+        <field name="padding">5</field>
+    </record>
+
+    <!-- Starting categories; churches rename or add their own in the app. -->
+    <data noupdate="1">
+        <record id="expense_category_salaries" model="church.expense.category">
+            <field name="name">Salaries &amp; honoraria</field><field name="sequence">1</field>
+        </record>
+        <record id="expense_category_utilities" model="church.expense.category">
+            <field name="name">Utilities (electricity, gas, water, internet)</field><field name="sequence">2</field>
+        </record>
+        <record id="expense_category_rent" model="church.expense.category">
+            <field name="name">Rent &amp; building</field><field name="sequence">3</field>
+        </record>
+        <record id="expense_category_maintenance" model="church.expense.category">
+            <field name="name">Repairs &amp; maintenance</field><field name="sequence">4</field>
+        </record>
+        <record id="expense_category_worship" model="church.expense.category">
+            <field name="name">Worship &amp; services</field><field name="sequence">5</field>
+        </record>
+        <record id="expense_category_outreach" model="church.expense.category">
+            <field name="name">Outreach &amp; evangelism</field><field name="sequence">6</field>
+        </record>
+        <record id="expense_category_welfare" model="church.expense.category">
+            <field name="name">Welfare &amp; helping the needy</field><field name="sequence">7</field>
+        </record>
+        <record id="expense_category_children" model="church.expense.category">
+            <field name="name">Children &amp; youth ministry</field><field name="sequence">8</field>
+        </record>
+        <record id="expense_category_events" model="church.expense.category">
+            <field name="name">Events &amp; hospitality</field><field name="sequence">9</field>
+        </record>
+        <record id="expense_category_transport" model="church.expense.category">
+            <field name="name">Travel &amp; transport</field><field name="sequence">10</field>
+        </record>
+        <record id="expense_category_office" model="church.expense.category">
+            <field name="name">Office &amp; printing</field><field name="sequence">11</field>
+        </record>
+        <record id="expense_category_media" model="church.expense.category">
+            <field name="name">Media &amp; equipment</field><field name="sequence">12</field>
+        </record>
+        <record id="expense_category_missions" model="church.expense.category">
+            <field name="name">Missions &amp; denomination dues</field><field name="sequence">13</field>
+        </record>
+        <record id="expense_category_other" model="church.expense.category">
+            <field name="name">Other</field><field name="sequence">99</field>
+        </record>
+    </data>
+</odoo>

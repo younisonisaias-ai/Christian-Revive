@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_church_expense_list" model="ir.ui.view">
+        <field name="name">church.expense.list</field>
+        <field name="model">church.expense</field>
+        <field name="arch" type="xml">
+            <list string="Expenses" create="0" decoration-muted="state in ('rejected', 'reversed')"
+                  decoration-info="state == 'submitted'" decoration-success="state == 'paid'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="description"/>
+                <field name="category_id"/>
+                <field name="fund_id"/>
+                <field name="payee"/>
+                <field name="amount"/>
+                <field name="currency"/>
+                <field name="amount_pkr" sum="Total PKR"/>
+                <field name="state"/>
+                <field name="submitted_by_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_church_expense_form" model="ir.ui.view">
+        <field name="name">church.expense.form</field>
+        <field name="model">church.expense</field>
+        <field name="arch" type="xml">
+            <form string="Expense" create="0">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="date" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="description" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="category_id" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="fund_id" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="payee" readonly="state not in ('draft', 'rejected')"/>
+                        </group>
+                        <group>
+                            <field name="amount" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="currency" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="amount_pkr" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="method"/>
+                            <field name="reference"/>
+                            <field name="receipt" filename="receipt_filename" readonly="state not in ('draft', 'rejected')"/>
+                            <field name="receipt_filename" invisible="1"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="submitted_by_id" readonly="1"/>
+                            <field name="approved_by_id"/>
+                            <field name="approved_at"/>
+                            <field name="paid_by_id"/>
+                            <field name="paid_at"/>
+                        </group>
+                        <group>
+                            <field name="rejected_reason" invisible="not rejected_reason"/>
+                            <field name="reversed_by_id" invisible="state != 'reversed'"/>
+                            <field name="reversal_reason" invisible="state != 'reversed'"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes" readonly="state not in ('draft', 'rejected')"/>
+                    <field name="log_ids" readonly="1">
+                        <list>
+                            <field name="create_date" string="When"/>
+                            <field name="action"/>
+                            <field name="staff_id"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_church_expense_search" model="ir.ui.view">
+        <field name="name">church.expense.search</field>
+        <field name="model">church.expense</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="description"/>
+                <field name="payee"/>
+                <field name="name"/>
+                <field name="category_id"/>
+                <filter name="waiting" string="Waiting for approval" domain="[('state', '=', 'submitted')]"/>
+                <filter name="to_pay" string="Approved, not paid" domain="[('state', '=', 'approved')]"/>
+                <filter name="paid" string="Paid" domain="[('state', '=', 'paid')]"/>
+                <group>
+                    <filter name="by_category" string="Category" context="{'group_by': 'category_id'}"/>
+                    <filter name="by_fund" string="Fund" context="{'group_by': 'fund_id'}"/>
+                    <filter name="by_month" string="Month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_church_expenses" model="ir.actions.act_window">
+        <field name="name">Expenses</field>
+        <field name="res_model">church.expense</field>
+        <field name="view_mode">list,form,pivot,graph</field>
+        <field name="help">Expenses are recorded and approved in the Christian Revive app.</field>
+    </record>
+
+    <record id="view_church_expense_category_list" model="ir.ui.view">
+        <field name="name">church.expense.category.list</field>
+        <field name="model">church.expense.category</field>
+        <field name="arch" type="xml">
+            <list string="Expense Categories" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="fund_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_church_expense_categories" model="ir.actions.act_window">
+        <field name="name">Expense Categories</field>
+        <field name="res_model">church.expense.category</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <record id="view_church_budget_form" model="ir.ui.view">
+        <field name="name">church.budget.form</field>
+        <field name="model">church.budget</field>
+        <field name="arch" type="xml">
+            <form string="Budget">
+                <sheet>
+                    <group>
+                        <field name="year"/>
+                        <field name="total_planned"/>
+                        <field name="updated_by_id"/>
+                    </group>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="category_id"/>
+                            <field name="amount" sum="Total"/>
+                        </list>
+                    </field>
+                    <field name="notes" placeholder="Notes"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_church_budget_list" model="ir.ui.view">
+        <field name="name">church.budget.list</field>
+        <field name="model">church.budget</field>
+        <field name="arch" type="xml">
+            <list string="Budgets">
+                <field name="name"/>
+                <field name="total_planned"/>
+                <field name="updated_by_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_church_budgets" model="ir.actions.act_window">
+        <field name="name">Budgets</field>
+        <field name="res_model">church.budget</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_church_expenses" name="Expenses" parent="menu_church_finance_root"
+              action="action_church_expenses" sequence="4"/>
+    <menuitem id="menu_church_budgets" name="Budgets" parent="menu_church_finance_root"
+              action="action_church_budgets" sequence="5"/>
+    <menuitem id="menu_church_expense_categories" name="Expense Categories" parent="menu_church_finance_root"
+              action="action_church_expense_categories" sequence="6"/>
+</odoo>
