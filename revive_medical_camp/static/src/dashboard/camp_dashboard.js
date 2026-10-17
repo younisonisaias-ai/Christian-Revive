@@ -72,8 +72,8 @@ export class CampDashboard extends Component {
             { id: "cd-overview", label: _t("Overview"), icon: "fa-th-large" },
             { id: "cd-flow", label: _t("Patient flow"), icon: "fa-random" },
             { id: "cd-clinical", label: _t("Clinical"), icon: "fa-stethoscope" },
-            { id: "cd-pharmacy", label: _t("Pharmacy"), icon: "fa-medkit" },
-            { id: "cd-team", label: _t("Team & calls"), icon: "fa-user-md" },
+            { id: "cd-pharmacy", label: _t("Pharmacy & team"), icon: "fa-medkit" },
+            { id: "cd-team", label: _t("Referrals & calls"), icon: "fa-ambulance" },
             { id: "cd-money", label: _t("Money"), icon: "fa-money" },
             { id: "cd-camps", label: _t("All camps"), icon: "fa-map-marker" },
         ];

@@ -149,7 +149,7 @@ button.o_camp_dash_kpi:focus-visible, .o_camp_dash_stage:focus-visible, .o_camp_
 }
 
 // Cards and grids
-.o_camp_dash_grid { display: grid; gap: 16px; align-items: start; }
+.o_camp_dash_grid { display: grid; gap: 16px; align-items: stretch; }
 .o_camp_dash_grid_2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .o_camp_dash_grid_3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .o_camp_dash_grid_2_1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
@@ -322,3 +322,5 @@ button.o_camp_dash_kpi:focus-visible, .o_camp_dash_stage:focus-visible, .o_camp_
 
 // A column of cards inside a grid cell.
 .o_camp_dash_stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+// The last card in a column takes up any spare height, so both columns end level.
+.o_camp_dash_stack > .o_camp_dash_card:last-child { flex: 1 1 auto; }
