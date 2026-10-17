@@ -25,8 +25,13 @@ def _minutes(delta):
     return round(delta.total_seconds() / 60.0, 1)
 
 
+# Longer than this means a visit was left open (e.g. not finished on the day),
+# not a real wait; such visits are left out of the average waiting times.
+MAX_REAL_WAIT_MINUTES = 12 * 60
+
+
 def _avg(values):
-    values = [v for v in values if v is not None and v >= 0]
+    values = [v for v in values if v is not None and 0 <= v <= MAX_REAL_WAIT_MINUTES]
     return round(sum(values) / len(values), 1) if values else None
 
 
