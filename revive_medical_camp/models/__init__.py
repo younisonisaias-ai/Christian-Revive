@@ -12,3 +12,4 @@ from . import camp_reminder
 from . import camp_care
 from . import camp_security
 from . import camp_api
+from . import camp_dashboard

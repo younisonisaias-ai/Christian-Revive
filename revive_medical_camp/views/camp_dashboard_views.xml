@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_camp_dashboard" model="ir.actions.client">
+        <field name="name">Camp Dashboard</field>
+        <field name="tag">camp_dashboard</field>
+    </record>
+
+    <menuitem id="menu_camp_dashboard" name="Dashboard" parent="menu_camp_root" sequence="1"
+              action="action_camp_dashboard" groups="group_camp_coordinator"/>
+</odoo>

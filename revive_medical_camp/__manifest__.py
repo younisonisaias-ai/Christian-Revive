@@ -1,6 +1,6 @@
 {
     'name': 'Medical Camp Management',
-    'version': '19.0.1.15.0',
+    'version': '19.0.1.16.0',
     'category': 'Healthcare',
     'summary': 'Run free medical camps end to end: registration, triage, doctor, pharmacy, referrals, sponsor reports',
     'description': """
@@ -47,6 +47,7 @@ membership, donations or any other module.
         'views/camp_camp_views.xml',
         'views/res_users_views.xml',
         'views/camp_menus.xml',
+        'views/camp_dashboard_views.xml',
         'views/camp_lab_reminder_views.xml',
         'views/camp_referral_page.xml',
         'wizard/camp_patient_merge_views.xml',
@@ -61,6 +62,11 @@ membership, donations or any other module.
     'assets': {
         'web.report_assets_common': [
             'revive_medical_camp/static/src/scss/camp_report_fonts.scss',
+        ],
+        'web.assets_backend': [
+            'revive_medical_camp/static/src/dashboard/camp_dashboard.js',
+            'revive_medical_camp/static/src/dashboard/camp_dashboard.xml',
+            'revive_medical_camp/static/src/dashboard/camp_dashboard.scss',
         ],
     },
     'post_init_hook': 'post_init_hook',
