@@ -67,6 +67,26 @@ export class CampDashboard extends Component {
         this.load(true);
     }
 
+    get sections() {
+        return [
+            { id: "cd-overview", label: _t("Overview"), icon: "fa-th-large" },
+            { id: "cd-flow", label: _t("Patient flow"), icon: "fa-random" },
+            { id: "cd-clinical", label: _t("Clinical"), icon: "fa-stethoscope" },
+            { id: "cd-pharmacy", label: _t("Pharmacy"), icon: "fa-medkit" },
+            { id: "cd-team", label: _t("Team & calls"), icon: "fa-user-md" },
+            { id: "cd-money", label: _t("Money"), icon: "fa-money" },
+            { id: "cd-camps", label: _t("All camps"), icon: "fa-map-marker" },
+        ];
+    }
+
+    scrollTo(id) {
+        const target = document.getElementById(id);
+        if (target) {
+            const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            target.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+        }
+    }
+
     // ── Formatting ───────────────────────────────────────────
 
     num(value, digits = 0) {

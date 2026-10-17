@@ -20,7 +20,8 @@
 
     <t t-name="revive_medical_camp.CampDashboard">
         <div class="o_camp_dash h-100 overflow-auto">
-            <!-- Top bar -->
+            <!-- Top bar and section menu stay on screen together -->
+            <div class="o_camp_dash_sticky">
             <div class="o_camp_dash_topbar">
                 <div class="o_camp_dash_title">
                     <i class="fa fa-heartbeat" aria-hidden="true"/>
@@ -64,6 +65,13 @@
                 </div>
             </div>
 
+            <nav t-if="state.data and !state.data.empty" class="o_camp_dash_nav" aria-label="Dashboard sections">
+                <button t-foreach="sections" t-as="sec" t-key="sec.id" t-on-click="() => this.scrollTo(sec.id)">
+                    <i t-attf-class="fa {{ sec.icon }}" aria-hidden="true"/> <t t-out="sec.label"/>
+                </button>
+            </nav>
+            </div>
+
             <div t-if="state.loading and !state.data" class="o_camp_dash_center">
                 <i class="fa fa-circle-o-notch fa-spin fa-2x" aria-hidden="true"/>
                 <span class="visually-hidden">Loading</span>
@@ -83,51 +91,51 @@
                 <t t-set="k" t-value="d.kpis"/>
 
                 <!-- 1. Key numbers -->
-                <section class="o_camp_dash_kpis" aria-label="Key numbers">
+                <section id="cd-overview" class="o_camp_dash_kpis o_camp_dash_anchor" aria-label="Key numbers">
                     <button class="o_camp_dash_kpi o_camp_dash_kpi_wide" t-on-click="() => this.openVisits([['state', 'not in', ['cancelled', 'booked']]], 'Patients seen')">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-users" aria-hidden="true"/> Patients seen</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-users" aria-hidden="true"/> Patients seen</div>
                         <div class="o_camp_dash_kpi_value"><t t-out="num(k.patients_seen)"/>
                             <small t-if="k.expected"> / <t t-out="num(k.expected)"/> expected</small></div>
                         <div t-if="k.progress !== null" class="o_camp_dash_progress"><div t-att-style="progressStyle(k.progress)"/></div>
                         <div class="o_camp_dash_kpi_note"><t t-out="num(k.first_visits)"/> first visits</div>
                     </button>
                     <button class="o_camp_dash_kpi" t-on-click="() => this.openVisits([['state', 'in', ['registered', 'triaged', 'with_doctor', 'at_pharmacy']]], 'Waiting now')">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-hourglass-half" aria-hidden="true"/> Waiting now</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-hourglass-half" aria-hidden="true"/> Waiting now</div>
                         <div class="o_camp_dash_kpi_value" t-out="num(k.waiting_now)"/>
                         <div class="o_camp_dash_kpi_note" t-attf-class="{{ k.urgent_waiting ? 'o_camp_dash_text_danger' : '' }}"><t t-out="num(k.urgent_waiting)"/> urgent</div>
                     </button>
                     <button class="o_camp_dash_kpi o_camp_dash_kpi_danger" t-on-click="() => this.openVisits([['flag_rule_ids', '!=', false]], 'Red flags')">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-flag" aria-hidden="true"/> Red flags</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-flag" aria-hidden="true"/> Red flags</div>
                         <div class="o_camp_dash_kpi_value" t-out="num(k.red_flags)"/>
                         <div class="o_camp_dash_kpi_note">patients with a danger sign</div>
                     </button>
                     <button class="o_camp_dash_kpi" t-on-click="() => this.open('camp.referral', 'Referrals')">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-ambulance" aria-hidden="true"/> Referrals</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-ambulance" aria-hidden="true"/> Referrals</div>
                         <div class="o_camp_dash_kpi_value" t-out="num(k.referrals)"/>
                         <div class="o_camp_dash_kpi_note"><t t-out="num(k.urgent_referrals)"/> urgent (today)</div>
                     </button>
                     <div class="o_camp_dash_kpi">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-medkit" aria-hidden="true"/> Medicines given</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-medkit" aria-hidden="true"/> Medicines given</div>
                         <div class="o_camp_dash_kpi_value" t-out="num(k.medicines_units)"/>
                         <div class="o_camp_dash_kpi_note">units · <t t-out="money(k.medicines_value)"/></div>
                     </div>
                     <div class="o_camp_dash_kpi">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-money" aria-hidden="true"/> Cost per patient</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-money" aria-hidden="true"/> Cost per patient</div>
                         <div class="o_camp_dash_kpi_value" t-out="money(k.cost_per_patient)"/>
                         <div class="o_camp_dash_kpi_note">total <t t-out="money(k.total_cost)"/></div>
                     </div>
                     <button class="o_camp_dash_kpi" t-attf-class="{{ k.followups_overdue ? 'o_camp_dash_kpi_warning' : '' }}"
                             t-on-click="() => this.open('camp.followup', 'Follow-up calls', [['state', 'in', ['to_call', 'no_answer']]])">
-                        <div class="o_camp_dash_kpi_label"><i class="fa fa-phone" aria-hidden="true"/> Follow-up calls due</div>
+                        <div class="o_camp_dash_kpi_label"><i class="o_camp_dash_kpi_icon fa fa-phone" aria-hidden="true"/> Follow-up calls due</div>
                         <div class="o_camp_dash_kpi_value" t-out="num(k.followups_due)"/>
                         <div class="o_camp_dash_kpi_note"><t t-out="num(k.followups_overdue)"/> overdue</div>
                     </button>
                 </section>
 
                 <!-- 2. Live patient flow -->
-                <div class="o_camp_dash_grid o_camp_dash_grid_2_1">
+                <div id="cd-flow" class="o_camp_dash_grid o_camp_dash_grid_2_1 o_camp_dash_anchor">
                     <section class="o_camp_dash_card">
-                        <header><h2>Patient flow</h2><span class="o_camp_dash_hint">Click a station to see who is there</span></header>
+                        <header><h2><i class="fa fa-random" aria-hidden="true"/>Patient flow</h2><span class="o_camp_dash_hint">Click a station to see who is there</span></header>
                         <div class="o_camp_dash_flow">
                             <t t-foreach="d.flow.stages" t-as="stage" t-key="stage.key">
                                 <button t-attf-class="o_camp_dash_stage o_camp_dash_stage_{{ stage.key }}"
@@ -145,7 +153,7 @@
                         </div>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Waiting longest</h2></header>
+                        <header><h2><i class="fa fa-clock-o" aria-hidden="true"/>Waiting longest</h2></header>
                         <t t-if="d.flow.longest.length">
                             <button t-foreach="d.flow.longest" t-as="v" t-key="v.id" class="o_camp_dash_person"
                                     t-on-click="() => this.openVisit(v.id)">
@@ -165,7 +173,7 @@
                 <div class="o_camp_dash_grid o_camp_dash_grid_2_1">
                     <section class="o_camp_dash_card">
                         <t t-if="d.day.kind === 'hours'">
-                            <header><h2>Through the day</h2>
+                            <header><h2><i class="fa fa-bar-chart" aria-hidden="true"/>Through the day</h2>
                                 <span class="o_camp_dash_legend"><i class="o_camp_dash_dot o_camp_dash_tone_primary"/> Arrived
                                     <i class="o_camp_dash_dot o_camp_dash_tone_success"/> Finished
                                     <t t-if="d.day.day"> · <t t-out="date(d.day.day)"/></t></span></header>
@@ -182,14 +190,14 @@
                             <div t-else="" class="o_camp_dash_empty">No arrivals recorded yet</div>
                         </t>
                         <t t-else="">
-                            <header><h2>Patients per camp</h2></header>
+                            <header><h2><i class="fa fa-bar-chart" aria-hidden="true"/>Patients per camp</h2></header>
                             <t t-call="revive_medical_camp.CampBars">
                                 <t t-set="bars" t-value="{rows: d.day.rows, max: maxOf(d.day.rows, 'value')}"/>
                             </t>
                         </t>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Who came</h2></header>
+                        <header><h2><i class="fa fa-users" aria-hidden="true"/>Who came</h2></header>
                         <t t-set="c" t-value="d.clinical"/>
                         <div class="o_camp_dash_sexbar" t-if="c.sexes.male + c.sexes.female + c.sexes.other">
                             <t t-set="stotal" t-value="c.sexes.male + c.sexes.female + c.sexes.other"/>
@@ -222,15 +230,15 @@
                 </div>
 
                 <!-- 4. Clinical picture -->
-                <div class="o_camp_dash_grid o_camp_dash_grid_3">
+                <div id="cd-clinical" class="o_camp_dash_grid o_camp_dash_grid_3 o_camp_dash_anchor">
                     <section class="o_camp_dash_card">
-                        <header><h2>Top diagnoses</h2><span class="o_camp_dash_hint"><t t-out="num(d.clinical.consultations)"/> consultations</span></header>
+                        <header><h2><i class="fa fa-stethoscope" aria-hidden="true"/>Top diagnoses</h2><span class="o_camp_dash_hint"><t t-out="num(d.clinical.consultations)"/> consultations</span></header>
                         <t t-call="revive_medical_camp.CampBars">
                             <t t-set="bars" t-value="{rows: d.clinical.diagnoses, max: maxOf(d.clinical.diagnoses, 'value'), empty: 'No diagnoses recorded yet'}"/>
                         </t>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Red flags by type</h2></header>
+                        <header><h2><i class="fa fa-flag" aria-hidden="true"/>Red flags by type</h2></header>
                         <t t-call="revive_medical_camp.CampBars">
                             <t t-set="bars" t-value="{rows: d.clinical.flags, max: maxOf(d.clinical.flags, 'value'), tone: 'danger', empty: 'No red flags'}"/>
                         </t>
@@ -243,7 +251,7 @@
                         </button>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Referrals</h2>
+                        <header><h2><i class="fa fa-ambulance" aria-hidden="true"/>Referrals</h2>
                             <button class="btn btn-link btn-sm" t-on-click="() => this.open('camp.referral', 'Referrals')">Open list</button></header>
                         <div class="o_camp_dash_minis">
                             <div><strong t-out="num(d.clinical.referral_status.issued || 0)"/><span>letter issued</span></div>
@@ -263,7 +271,7 @@
 
                 <!-- Care programmes -->
                 <section class="o_camp_dash_card">
-                    <header><h2>Tests and care programmes</h2></header>
+                    <header><h2><i class="fa fa-heartbeat" aria-hidden="true"/>Tests and care programmes</h2></header>
                     <div class="o_camp_dash_programmes">
                         <div class="o_camp_dash_programme">
                             <h3><i class="fa fa-flask" aria-hidden="true"/> Lab tests</h3>
@@ -317,9 +325,9 @@
 
                 <!-- 5. Pharmacy -->
                 <t t-set="p" t-value="d.pharmacy"/>
-                <div class="o_camp_dash_grid o_camp_dash_grid_2">
+                <div id="cd-pharmacy" class="o_camp_dash_grid o_camp_dash_grid_2 o_camp_dash_anchor">
                     <section class="o_camp_dash_card">
-                        <header><h2>Medicines dispensed</h2><span class="o_camp_dash_hint">units</span></header>
+                        <header><h2><i class="fa fa-medkit" aria-hidden="true"/>Medicines dispensed</h2><span class="o_camp_dash_hint">units</span></header>
                         <t t-call="revive_medical_camp.CampBars">
                             <t t-set="bars" t-value="{rows: p.top_medicines, max: maxOf(p.top_medicines, 'value'), tone: 'success', empty: 'Nothing dispensed yet'}"/>
                         </t>
@@ -331,7 +339,7 @@
                         </div>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Stock alerts</h2>
+                        <header><h2><i class="fa fa-cubes" aria-hidden="true"/>Stock alerts</h2>
                             <span class="o_camp_dash_hint" t-if="d.mode === 'camp'">camp store · <t t-out="p.stock_counts.count"/> stock counts</span></header>
                         <div t-if="d.mode !== 'camp'" class="o_camp_dash_empty">Choose one camp to see its store</div>
                         <t t-else="">
@@ -358,9 +366,9 @@
                 </div>
 
                 <!-- 6 + 7. Team and follow-up -->
-                <div class="o_camp_dash_grid o_camp_dash_grid_2">
+                <div id="cd-team" class="o_camp_dash_grid o_camp_dash_grid_2 o_camp_dash_anchor">
                     <section class="o_camp_dash_card">
-                        <header><h2>Team</h2><span class="o_camp_dash_hint"><t t-out="d.team.size"/> people</span></header>
+                        <header><h2><i class="fa fa-user-md" aria-hidden="true"/>Team</h2><span class="o_camp_dash_hint"><t t-out="d.team.size"/> people</span></header>
                         <div class="o_camp_dash_tags o_camp_dash_tags_roles">
                             <span t-foreach="d.team.roles" t-as="r" t-key="r_index"><t t-out="r.label"/> <strong t-out="r.value"/></span>
                         </div>
@@ -382,7 +390,7 @@
                         </t>
                     </section>
                     <section class="o_camp_dash_card">
-                        <header><h2>Follow-up calls</h2>
+                        <header><h2><i class="fa fa-phone" aria-hidden="true"/>Follow-up calls</h2>
                             <button class="btn btn-link btn-sm" t-on-click="() => this.open('camp.followup', 'Follow-up calls')">Open list</button></header>
                         <div class="o_camp_dash_minis">
                             <div><strong t-out="num(d.followup.total)"/><span>calls planned</span></div>
@@ -403,8 +411,8 @@
 
                 <!-- 8. Money -->
                 <t t-set="m" t-value="d.money"/>
-                <section class="o_camp_dash_card">
-                    <header><h2>Budget and costs</h2></header>
+                <section id="cd-money" class="o_camp_dash_card o_camp_dash_anchor">
+                    <header><h2><i class="fa fa-money" aria-hidden="true"/>Budget and costs</h2></header>
                     <div class="o_camp_dash_money">
                         <div class="o_camp_dash_minis">
                             <div><strong t-out="money(m.planned)"/><span>planned</span></div>
@@ -431,8 +439,8 @@
                 </section>
 
                 <!-- 9. All camps -->
-                <section class="o_camp_dash_card">
-                    <header><h2>All camps</h2>
+                <section id="cd-camps" class="o_camp_dash_card o_camp_dash_anchor">
+                    <header><h2><i class="fa fa-map-marker" aria-hidden="true"/>All camps</h2>
                         <span class="o_camp_dash_hint"><t t-out="num(d.all_camps.totals.patients)"/> patients across <t t-out="d.all_camps.totals.camps"/> camps</span></header>
                     <div class="o_camp_dash_table_wrap">
                         <table class="o_camp_dash_table">
