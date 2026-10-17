@@ -86,6 +86,11 @@ export class CampDashboard extends Component {
         if (value < 60) {
             return `${Math.round(value)} min`;
         }
+        if (value >= 1440) {
+            // Visits left open from an earlier day: days and hours read better.
+            const days = Math.floor(value / 1440);
+            return `${days} d ${Math.floor((value - days * 1440) / 60)} h`;
+        }
         const hours = Math.floor(value / 60);
         return `${hours} h ${Math.round(value - hours * 60)} min`;
     }
