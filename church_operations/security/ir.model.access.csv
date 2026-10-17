@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+ops_task_system,Church tasks,model_church_ops_task,base.group_system,1,1,1,0
+ops_contact_system,Church contact history,model_church_ops_contact,base.group_system,1,0,0,0
+ops_audit_system,Church audit history,model_church_ops_audit,base.group_system,1,0,0,0
+ops_request_system,Church save requests,model_church_ops_request,base.group_system,0,0,0,0
+ops_reconcile_system,Church reconciliation,model_church_ops_reconcile,base.group_system,1,0,0,0
+ops_refund_system,Church refunds,model_church_ops_refund,base.group_system,1,0,0,0

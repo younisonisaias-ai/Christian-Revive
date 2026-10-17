@@ -205,6 +205,11 @@ class ChurchMember(models.Model):
                 assigned = self.env['pastor.assignment'].sudo().search([
                     ('pastor_id', '=', employee.id),
                 ]).mapped('member_id').ids
+                if assigned:
+                    # Relatives an assigned member added from the app share
+                    # that member's pastor (so they can be found and verified).
+                    assigned += self.sudo().search(
+                        [('added_by_partner_id', 'in', assigned)]).ids
                 return ('assigned', assigned)
             return ('denied', None)
 

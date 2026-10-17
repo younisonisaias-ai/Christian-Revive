@@ -1,0 +1,26 @@
+<odoo>
+  <record id="tasks_list" model="ir.ui.view">
+    <field name="name">church.ops.task.list</field><field name="model">church.ops.task</field>
+    <field name="arch" type="xml"><list create="0" edit="0" delete="0" decoration-muted="state != 'open'">
+      <field name="name"/><field name="kind"/><field name="member_id"/><field name="assigned_to_id"/>
+      <field name="due_date"/><field name="state"/><field name="completed_at"/>
+    </list></field>
+  </record>
+  <record id="audit_list" model="ir.ui.view">
+    <field name="name">church.ops.audit.list</field><field name="model">church.ops.audit</field>
+    <field name="arch" type="xml"><list create="0" edit="0" delete="0">
+      <field name="create_date"/><field name="action"/><field name="staff_id"/><field name="odoo_user_id"/>
+      <field name="source_model"/><field name="source_id"/><field name="changed_fields"/>
+    </list></field>
+  </record>
+  <record id="tasks_action" model="ir.actions.act_window"><field name="name">Church Tasks</field><field name="res_model">church.ops.task</field><field name="view_mode">list,form</field></record>
+  <record id="audit_action" model="ir.actions.act_window"><field name="name">Church Audit Trail</field><field name="res_model">church.ops.audit</field><field name="view_mode">list,form</field></record>
+  <menuitem id="operations_root" name="Church Operations" sequence="80" groups="base.group_system"/>
+  <menuitem id="operations_tasks" name="Tasks" parent="operations_root" action="tasks_action" sequence="10"/>
+  <menuitem id="operations_audit" name="Audit Trail" parent="operations_root" action="audit_action" sequence="20"/>
+  <record id="employee_church_volunteer" model="ir.ui.view">
+    <field name="name">hr.employee.church.volunteer</field><field name="model">hr.employee</field>
+    <field name="inherit_id" ref="hr.view_employee_form"/>
+    <field name="arch" type="xml"><xpath expr="//field[@name='department_id']" position="after"><field name="church_operations_volunteer" groups="base.group_system"/></xpath></field>
+  </record>
+</odoo>
