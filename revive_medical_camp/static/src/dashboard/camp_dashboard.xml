@@ -132,8 +132,10 @@
                     </button>
                 </section>
 
-                <!-- 2. Live patient flow -->
+                <!-- 2 + 3. Flow and the day (left), who is waiting and who came (right).
+                     Two independent columns, so a tall card never leaves a gap. -->
                 <div id="cd-flow" class="o_camp_dash_grid o_camp_dash_grid_2_1 o_camp_dash_anchor">
+                    <div class="o_camp_dash_stack">
                     <section class="o_camp_dash_card">
                         <header><h2><i class="fa fa-random" aria-hidden="true"/>Patient flow</h2><span class="o_camp_dash_hint">Click a station to see who is there</span></header>
                         <div class="o_camp_dash_flow">
@@ -152,25 +154,6 @@
                             <div><span>Average time in camp</span><strong t-out="minutes(d.flow.avg_visit_time)"/></div>
                         </div>
                     </section>
-                    <section class="o_camp_dash_card">
-                        <header><h2><i class="fa fa-clock-o" aria-hidden="true"/>Waiting longest</h2></header>
-                        <t t-if="d.flow.longest.length">
-                            <button t-foreach="d.flow.longest" t-as="v" t-key="v.id" class="o_camp_dash_person"
-                                    t-on-click="() => this.openVisit(v.id)">
-                                <span t-attf-class="o_camp_dash_token o_camp_dash_priority_{{ v.priority }}">#<t t-out="v.token"/></span>
-                                <span class="o_camp_dash_person_main">
-                                    <strong t-out="v.name"/>
-                                    <small><t t-out="v.state_label"/><t t-if="v.flags.length"> · <span class="o_camp_dash_text_danger" t-out="v.flags.join(', ')"/></t></small>
-                                </span>
-                                <span class="o_camp_dash_person_time" t-out="minutes(v.minutes)"/>
-                            </button>
-                        </t>
-                        <div t-else="" class="o_camp_dash_empty">Nobody is waiting</div>
-                    </section>
-                </div>
-
-                <!-- 3. Through the day + who came -->
-                <div class="o_camp_dash_grid o_camp_dash_grid_2_1">
                     <section class="o_camp_dash_card">
                         <t t-if="d.day.kind === 'hours'">
                             <header><h2><i class="fa fa-bar-chart" aria-hidden="true"/>Through the day</h2>
@@ -195,6 +178,23 @@
                                 <t t-set="bars" t-value="{rows: d.day.rows, max: maxOf(d.day.rows, 'value')}"/>
                             </t>
                         </t>
+                    </section>
+                    </div>
+                    <div class="o_camp_dash_stack">
+                    <section class="o_camp_dash_card">
+                        <header><h2><i class="fa fa-clock-o" aria-hidden="true"/>Waiting longest</h2></header>
+                        <t t-if="d.flow.longest.length">
+                            <button t-foreach="d.flow.longest" t-as="v" t-key="v.id" class="o_camp_dash_person"
+                                    t-on-click="() => this.openVisit(v.id)">
+                                <span t-attf-class="o_camp_dash_token o_camp_dash_priority_{{ v.priority }}">#<t t-out="v.token"/></span>
+                                <span class="o_camp_dash_person_main">
+                                    <strong t-out="v.name"/>
+                                    <small><t t-out="v.state_label"/><t t-if="v.flags.length"> · <span class="o_camp_dash_text_danger" t-out="v.flags.join(', ')"/></t></small>
+                                </span>
+                                <span class="o_camp_dash_person_time" t-out="minutes(v.minutes)"/>
+                            </button>
+                        </t>
+                        <div t-else="" class="o_camp_dash_empty">Nobody is waiting</div>
                     </section>
                     <section class="o_camp_dash_card">
                         <header><h2><i class="fa fa-users" aria-hidden="true"/>Who came</h2></header>
@@ -227,6 +227,7 @@
                             <div><strong t-out="num(c.pregnant)"/><span>pregnant</span></div>
                         </div>
                     </section>
+                    </div>
                 </div>
 
                 <!-- 4. Clinical picture -->

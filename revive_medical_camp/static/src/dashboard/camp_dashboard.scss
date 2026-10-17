@@ -319,3 +319,6 @@ button.o_camp_dash_kpi:focus-visible, .o_camp_dash_stage:focus-visible, .o_camp_
 .o_camp_dash_table_compact { td, th { padding: 5px 6px; } tbody tr { cursor: default; } }
 .o_camp_dash_row_active { background: var(--cd-primary-soft) !important; }
 .o_camp_dash_footer { color: var(--cd-muted); font-size: 12px; text-align: right; }
+
+// A column of cards inside a grid cell.
+.o_camp_dash_stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
