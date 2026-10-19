@@ -11,3 +11,5 @@ from . import member_app_data
 from . import pastor_alerts
 from . import visitors
 from . import service_schedule
+from . import app_session
+from . import smart_attendance

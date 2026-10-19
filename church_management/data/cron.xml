@@ -24,4 +24,16 @@
             <field name="active" eval="True"/>
         </record>
     </data>
+    <data noupdate="1">
+        <!-- Remove signed-out and expired app sessions. -->
+        <record id="cron_purge_app_sessions" model="ir.cron">
+            <field name="name">Church: remove expired app sign-in sessions</field>
+            <field name="model_id" ref="model_church_app_session"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_purge()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
 </odoo>

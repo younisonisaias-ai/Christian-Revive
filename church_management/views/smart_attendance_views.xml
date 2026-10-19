@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- ── Church locations ───────────────────────────────────── -->
+
+    <record id="view_church_location_list" model="ir.ui.view">
+        <field name="name">church.location.list</field>
+        <field name="model">church.location</field>
+        <field name="arch" type="xml">
+            <list string="Church Locations">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="address" optional="show"/>
+                <field name="geofence_radius_m" string="Radius (m)"/>
+                <field name="geofence_enabled" widget="boolean_toggle"/>
+                <field name="location_validation_enabled" widget="boolean_toggle"/>
+                <field name="timezone" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_church_location_form" model="ir.ui.view">
+        <field name="name">church.location.form</field>
+        <field name="model">church.location</field>
+        <field name="arch" type="xml">
+            <form string="Church Location">
+                <sheet>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Main Church, Lahore"/></h1>
+                    </div>
+                    <group>
+                        <group string="Where">
+                            <field name="address"/>
+                            <field name="latitude"/>
+                            <field name="longitude"/>
+                            <field name="timezone"/>
+                        </group>
+                        <group string="Check-in">
+                            <field name="radius_preset"/>
+                            <field name="geofence_radius_m" string="Radius (m)"
+                                   invisible="radius_preset != 'custom'"/>
+                            <field name="geofence_enabled"/>
+                            <field name="location_validation_enabled"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Copy the latitude and longitude from a map pin on the church entrance.
+                        Phones are not exact, so 100 m suits most buildings; use a larger radius
+                        for big compounds or camp grounds. Members' locations are only checked at
+                        the moment they check in and are never stored.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_church_locations" model="ir.actions.act_window">
+        <field name="name">Church Locations</field>
+        <field name="res_model">church.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add your church's location</p>
+            <p>Members can then check in from the app when they arrive.</p>
+        </field>
+    </record>
+
+    <!-- ── Check-in settings on a service ─────────────────────── -->
+
+    <record id="view_church_service_form_smart_attendance" model="ir.ui.view">
+        <field name="name">church.service.form.smart.attendance</field>
+        <field name="model">church.service</field>
+        <field name="inherit_id" ref="view_church_service_form"/>
+        <field name="arch" type="xml">
+            <field name="is_active" position="after">
+                <field name="cancelled"/>
+                <field name="location_id"/>
+            </field>
+            <xpath expr="//page[@name='attendance']//field[@name='method']" position="after">
+                <field name="status"/>
+                <field name="attendee_kind" optional="show"/>
+                <field name="location_verified" optional="hide"/>
+            </xpath>
+            <page name="attendance" position="after">
+                <page string="Check-in" name="checkin_settings">
+                    <group>
+                        <group string="Who can check in">
+                            <field name="attendance_enabled"/>
+                            <field name="smart_checkin_enabled"/>
+                            <field name="geofence_required"/>
+                            <field name="family_checkin_enabled"/>
+                            <field name="guest_checkin_enabled"/>
+                            <field name="manual_checkin_enabled"/>
+                            <field name="notify_on_arrival"/>
+                        </group>
+                        <group string="When">
+                            <field name="checkin_open_minutes_before"/>
+                            <field name="checkin_close_minutes_after_start"/>
+                            <field name="checkin_close_at"/>
+                            <field name="grace_minutes"/>
+                            <field name="radius_override_m"/>
+                            <field name="min_age"/>
+                            <field name="max_age"/>
+                        </group>
+                    </group>
+                </page>
+            </page>
+        </field>
+    </record>
+
+    <record id="view_church_service_list_smart_attendance" model="ir.ui.view">
+        <field name="name">church.service.list.smart.attendance</field>
+        <field name="model">church.service</field>
+        <field name="inherit_id" ref="view_church_service_list"/>
+        <field name="arch" type="xml">
+            <field name="is_active" position="after">
+                <field name="cancelled" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ── Check-in defaults on a weekly schedule ─────────────── -->
+
+    <record id="view_church_service_schedule_form_smart_attendance" model="ir.ui.view">
+        <field name="name">church.service.schedule.form.smart.attendance</field>
+        <field name="model">church.service.schedule</field>
+        <field name="inherit_id" ref="view_church_service_schedule_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//separator[@string='Services created']" position="before">
+                <separator string="Check-in for these services"/>
+                <group>
+                    <group>
+                        <field name="location_id"/>
+                        <field name="attendance_enabled"/>
+                        <field name="smart_checkin_enabled"/>
+                        <field name="geofence_required"/>
+                        <field name="family_checkin_enabled"/>
+                        <field name="guest_checkin_enabled"/>
+                        <field name="manual_checkin_enabled"/>
+                    </group>
+                    <group>
+                        <field name="checkin_open_minutes_before"/>
+                        <field name="checkin_close_minutes_after_start"/>
+                        <field name="grace_minutes"/>
+                        <field name="radius_override_m"/>
+                        <field name="notify_on_arrival"/>
+                        <field name="min_age"/>
+                        <field name="max_age"/>
+                    </group>
+                </group>
+                <div class="text-muted">
+                    New services created from this schedule start with these settings.
+                    Change a single week (or cancel it) under Services &amp; Events.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ── Attendance list ────────────────────────────────────── -->
+
+    <record id="view_church_event_attendance_list_smart" model="ir.ui.view">
+        <field name="name">church.event.attendance.list.smart</field>
+        <field name="model">church.event.attendance</field>
+        <field name="inherit_id" ref="view_church_event_attendance_list"/>
+        <field name="arch" type="xml">
+            <field name="method" position="after">
+                <field name="status" decoration-muted="status == 'removed'"
+                       decoration-warning="status == 'late'"/>
+                <field name="attendee_kind" optional="show"/>
+                <field name="family_id" optional="show"/>
+                <field name="checked_in_by_partner_id" optional="hide"/>
+                <field name="location_verified" optional="hide"/>
+                <field name="distance_m" optional="hide"/>
+                <field name="notes" optional="hide"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- ── History (admins) and app sign-ins (system admins) ──── -->
+
+    <record id="view_church_attendance_log_list" model="ir.ui.view">
+        <field name="name">church.attendance.log.list</field>
+        <field name="model">church.attendance.log</field>
+        <field name="arch" type="xml">
+            <list string="Attendance History" create="0" edit="0" delete="0">
+                <field name="create_date" string="When"/>
+                <field name="action"/>
+                <field name="service_id"/>
+                <field name="member_id"/>
+                <field name="actor_partner_id"/>
+                <field name="actor_staff_id"/>
+                <field name="method" optional="show"/>
+                <field name="details"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_church_attendance_log" model="ir.actions.act_window">
+        <field name="name">Attendance History</field>
+        <field name="res_model">church.attendance.log</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_church_app_session_list" model="ir.ui.view">
+        <field name="name">church.app.session.list</field>
+        <field name="model">church.app.session</field>
+        <field name="arch" type="xml">
+            <list string="App Sign-ins" create="0" editable="bottom">
+                <field name="kind" readonly="1"/>
+                <field name="partner_id" readonly="1"/>
+                <field name="employee_id" readonly="1"/>
+                <field name="device_id" readonly="1" optional="hide"/>
+                <field name="create_date" string="Signed in" readonly="1"/>
+                <field name="last_used_at" readonly="1"/>
+                <field name="expires_at" readonly="1"/>
+                <field name="revoked" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_church_app_sessions" model="ir.actions.act_window">
+        <field name="name">App Sign-ins</field>
+        <field name="res_model">church.app.session</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('revoked', '=', False)]</field>
+        <field name="help" type="html">
+            <p>People signed in to the app. Turn on "Revoked" to sign a lost phone out.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_church_locations"
+        name="Church Locations"
+        parent="menu_church_management_root"
+        action="action_church_locations"
+        groups="church_management.group_church_admin,base.group_system"
+        sequence="8"/>
+
+    <menuitem id="menu_church_attendance_log"
+        name="Attendance History"
+        parent="menu_church_management_root"
+        action="action_church_attendance_log"
+        groups="church_management.group_church_admin,base.group_system"
+        sequence="9"/>
+
+    <menuitem id="menu_church_app_sessions"
+        name="App Sign-ins"
+        parent="menu_church_management_root"
+        action="action_church_app_sessions"
+        groups="base.group_system"
+        sequence="30"/>
+
+</odoo>

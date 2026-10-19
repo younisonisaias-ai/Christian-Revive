@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.12.0',
+    'version': '1.13.0',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care, attendance and admin dashboard for Christian Revive',
     'description': """
@@ -24,8 +24,9 @@
     'website': 'https://christianrevive.com',
     'depends': ['base', 'contacts', 'hr', 'volunteer_and_donation_management'],
     'data': [
-        'security/ir.model.access.csv',
+        # Groups first: the access rules below refer to them.
         'security/church_management_security.xml',
+        'security/ir.model.access.csv',
         'data/member_sequence.xml',
         'data/cron.xml',
         'views/church_dashboard_views.xml',
@@ -37,6 +38,8 @@
         'views/church_service_views.xml',
         'views/event_attendance_views.xml',
         'views/menu.xml',
+        # After menu.xml: its menu items sit under the Church Management menu.
+        'views/smart_attendance_views.xml',
     ],
     'assets': {
         'web.assets_backend': [
