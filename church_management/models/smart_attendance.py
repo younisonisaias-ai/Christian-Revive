@@ -134,7 +134,7 @@ class AttendanceSettingsMixin(models.AbstractModel):
         string='Must be at the church', default=True,
         help='Members can check in from the app only when their phone is at the church.')
     family_checkin_enabled = fields.Boolean(string='Family check-in', default=True)
-    guest_checkin_enabled = fields.Boolean(string='Guests', default=True)
+    guest_checkin_enabled = fields.Boolean(string='Guest check-in', default=True)
     manual_checkin_enabled = fields.Boolean(
         string='Staff check-in', default=True,
         help='Staff can check people in by hand, for example when a phone has no location.')

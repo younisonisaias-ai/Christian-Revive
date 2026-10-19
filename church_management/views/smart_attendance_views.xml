@@ -127,7 +127,8 @@
         <field name="model">church.service.schedule</field>
         <field name="inherit_id" ref="view_church_service_schedule_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//separator[@string='Services created']" position="before">
+            <!-- After the help text, i.e. just above "Services created". -->
+            <xpath expr="//sheet/div[hasclass('text-muted')]" position="after">
                 <separator string="Check-in for these services"/>
                 <group>
                     <group>
