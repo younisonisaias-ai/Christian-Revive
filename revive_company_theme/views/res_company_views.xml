@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_company_form_app_theme" model="ir.ui.view">
+        <field name="name">res.company.form.app.theme</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <separator string="App Theme"/>
+                    <group name="app_theme">
+                        <group>
+                            <field name="app_theme_primary" widget="color" placeholder="#4A3728"/>
+                            <field name="app_theme_secondary" widget="color" placeholder="#8B6B4A"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Colours used in the ERP while you work in this company. Leave them
+                        empty to keep the default look. Reload the page after changing them.
+                    </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

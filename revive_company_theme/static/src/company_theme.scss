@@ -1,0 +1,100 @@
+// Company colours, applied only when the current company has some
+// (html.o_revive_company_themed, set by company_theme.js). Pages stay white;
+// only the accent colour changes.
+html.o_revive_company_themed {
+    --primary: var(--revive-primary);
+    --bs-primary: var(--revive-primary);
+    --bs-primary-rgb: var(--revive-primary-rgb);
+    --link-color: var(--revive-primary);
+    --bs-link-color: var(--revive-primary);
+    --bs-link-color-rgb: var(--revive-primary-rgb);
+    --bs-link-hover-color: var(--revive-primary-dark);
+
+    // Buttons ("New", "Save", primary actions)
+    .btn-primary,
+    .btn-primary:disabled,
+    .btn-primary.disabled {
+        background-color: var(--revive-primary) !important;
+        border-color: var(--revive-primary) !important;
+        color: #fff !important;
+    }
+    .btn-primary:hover,
+    .btn-primary:focus,
+    .btn-primary:active,
+    .btn-primary.active {
+        background-color: var(--revive-primary-dark) !important;
+        border-color: var(--revive-primary-dark) !important;
+        color: #fff !important;
+    }
+    .btn-outline-primary {
+        color: var(--revive-primary) !important;
+        border-color: var(--revive-primary) !important;
+        &:hover,
+        &.active {
+            background-color: var(--revive-primary) !important;
+            color: #fff !important;
+        }
+    }
+    .btn-link {
+        color: var(--revive-primary);
+    }
+
+    // Links inside the content area (not menus or buttons)
+    .o_content a:not(.btn):not(.dropdown-item):not(.nav-link),
+    .o_form_view a:not(.btn):not(.dropdown-item):not(.nav-link) {
+        color: var(--revive-primary);
+    }
+
+    // Text and fills that use the brand colour
+    .text-primary {
+        color: var(--revive-primary) !important;
+    }
+    .bg-primary,
+    .text-bg-primary,
+    .badge.text-bg-primary,
+    .progress-bar {
+        background-color: var(--revive-primary) !important;
+    }
+    .border-primary {
+        border-color: var(--revive-primary) !important;
+    }
+
+    // Checkboxes, radios and switches
+    .form-check-input:checked {
+        background-color: var(--revive-primary) !important;
+        border-color: var(--revive-primary) !important;
+    }
+    .form-check-input:focus,
+    .form-control:focus,
+    .form-select:focus,
+    .o_input:focus {
+        border-color: var(--revive-primary) !important;
+        box-shadow: 0 0 0 0.2rem rgba(var(--revive-primary-rgb), 0.2) !important;
+    }
+
+    // Tabs
+    .nav-tabs .nav-link.active,
+    .o_notebook .nav-link.active {
+        color: var(--revive-primary) !important;
+        border-bottom-color: var(--revive-primary);
+    }
+    .nav-pills .nav-link.active {
+        background-color: var(--revive-primary) !important;
+    }
+
+    // Menus and lists
+    .dropdown-item.active,
+    .dropdown-item:active {
+        background-color: var(--revive-primary) !important;
+        color: #fff !important;
+    }
+    .page-item.active .page-link {
+        background-color: var(--revive-primary) !important;
+        border-color: var(--revive-primary) !important;
+    }
+
+    // Search tags
+    .o_searchview_facet .o_searchview_facet_label {
+        background-color: var(--revive-secondary) !important;
+    }
+}
