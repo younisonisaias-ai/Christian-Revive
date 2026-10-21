@@ -71,7 +71,7 @@ class PastorAssignmentCare(models.Model):
         return info
 
 
-class ChurchCareReports(models.Model):
+class ChurchCareReports(models.AbstractModel):
     _inherit = 'church.dashboard'
 
     # ── Absence follow-ups ──────────────────────────────────────
