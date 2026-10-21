@@ -13,3 +13,5 @@ from . import visitors
 from . import service_schedule
 from . import app_session
 from . import smart_attendance
+from . import cell_group_chat
+from . import visit_request

@@ -14,3 +14,10 @@ access_church_location_system,church.location system,model_church_location,base.
 access_church_attendance_log_admin,church.attendance.log admin,model_church_attendance_log,group_church_admin,1,0,0,0
 access_church_attendance_log_system,church.attendance.log system,model_church_attendance_log,base.group_system,1,0,0,0
 access_church_app_session_system,church.app.session system,model_church_app_session,base.group_system,1,1,0,1
+access_cell_group_message_user,cell.group.message user,model_cell_group_message,base.group_user,1,0,0,0
+access_cell_group_message_admin,cell.group.message admin,model_cell_group_message,group_church_admin,1,1,0,1
+access_cell_group_message_system,cell.group.message system,model_cell_group_message,base.group_system,1,1,1,1
+access_cell_group_chat_seat_system,cell.group.chat.seat system,model_cell_group_chat_seat,base.group_system,1,1,1,1
+access_church_visit_request_user,church.visit.request user,model_church_visit_request,base.group_user,1,0,0,0
+access_church_visit_request_admin,church.visit.request admin,model_church_visit_request,group_church_admin,1,1,1,1
+access_church_visit_request_system,church.visit.request system,model_church_visit_request,base.group_system,1,1,1,1

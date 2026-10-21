@@ -165,6 +165,18 @@ class TestSmartAttendance(TransactionCase):
             'location_id': self.location.id})
         self.assertEqual(self.check_in(self.head, service=earlier)['failed'][0]['reason'], 'closed')
 
+    def test_service_lists_say_when_check_in_opens(self):
+        tomorrow = self.env['church.service'].create({
+            'name': 'Tomorrow', 'date_start': fields.Datetime.now() + timedelta(days=1),
+            'location_id': self.location.id})
+        Service = self.env['church.service'].with_context(app_staff_session_token=self.staff_token)
+        listed = {s['id']: s for s in Service.app_get_services(
+            requester_staff_id=self.staff.id)['services']}
+        self.assertEqual(listed[tomorrow.id]['checkin_state'], 'upcoming')
+        self.assertEqual(listed[tomorrow.id]['checkin_opens'],
+                         fields.Datetime.to_string(tomorrow._checkin_window()[0]))
+        self.assertEqual(listed[self.service.id]['checkin_state'], 'open')
+
     def test_cancelled_event(self):
         self.service.cancelled = True
         self.assertEqual(self.check_in(self.head)['failed'][0]['reason'], 'cancelled')

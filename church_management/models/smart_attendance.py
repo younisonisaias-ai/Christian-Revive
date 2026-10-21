@@ -184,6 +184,23 @@ class ChurchServiceAttendance(models.Model):
             self.date_start, self.date_end, self.checkin_open_minutes_before,
             self.checkin_close_minutes_after_start, self.checkin_close_at)
 
+    def _checkin_summary(self):
+        """Check-in state and window for the app, decided by server time."""
+        self.ensure_one()
+        opens, closes = self._checkin_window() if self.date_start else (False, False)
+        return {
+            'checkin_state': self._availability(),
+            'checkin_opens': fields.Datetime.to_string(opens) if opens else False,
+            'checkin_closes': fields.Datetime.to_string(closes) if closes else False,
+        }
+
+    def _rsvp_summary(self, partner_id=None):
+        # The service lists the app shows (Check-In and the member home) are
+        # built with this, so they also learn whether check-in is open.
+        result = super()._rsvp_summary(partner_id)
+        result.update(self._checkin_summary())
+        return result
+
     def _radius_m(self):
         self.ensure_one()
         return self.radius_override_m or self.location_id.geofence_radius_m or rules.DEFAULT_RADIUS_M

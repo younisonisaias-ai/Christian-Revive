@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- The group's chat from the app, under the roster. -->
+    <record id="view_cell_group_form_chat" model="ir.ui.view">
+        <field name="name">cell.group.form.chat</field>
+        <field name="model">cell.group</field>
+        <field name="inherit_id" ref="view_cell_group_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/field[@name='member_ids']" position="after">
+                <separator string="Group chat"/>
+                <group>
+                    <field name="chat_silenced_ids" widget="many2many_tags"/>
+                </group>
+                <field name="chat_message_ids" readonly="1">
+                    <list>
+                        <field name="create_date" string="Sent"/>
+                        <field name="author_name"/>
+                        <field name="body"/>
+                        <field name="has_image"/>
+                        <field name="deleted"/>
+                        <field name="deleted_by" optional="hide"/>
+                    </list>
+                    <form>
+                        <group>
+                            <field name="author_name"/>
+                            <field name="create_date" string="Sent"/>
+                            <field name="body"/>
+                            <field name="image" widget="image" invisible="not has_image"/>
+                            <field name="has_image" invisible="1"/>
+                            <field name="deleted"/>
+                            <field name="deleted_by" invisible="not deleted"/>
+                        </group>
+                    </form>
+                </field>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

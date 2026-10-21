@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_church_visit_request_list" model="ir.ui.view">
+        <field name="name">church.visit.request.list</field>
+        <field name="model">church.visit.request</field>
+        <field name="arch" type="xml">
+            <list string="Visit Requests" decoration-danger="is_urgent and state == 'requested'"
+                  decoration-muted="state in ('visited', 'declined', 'cancelled')">
+                <field name="create_date" string="Asked on"/>
+                <field name="member_id"/>
+                <field name="reason"/>
+                <field name="place"/>
+                <field name="is_urgent"/>
+                <field name="pastor_id"/>
+                <field name="scheduled_at"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_church_visit_request_form" model="ir.ui.view">
+        <field name="name">church.visit.request.form</field>
+        <field name="model">church.visit.request</field>
+        <field name="arch" type="xml">
+            <form string="Visit Request">
+                <header>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="requested,scheduled,visited"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="member_id"/>
+                            <field name="requested_by_id"/>
+                            <field name="reason"/>
+                            <field name="is_urgent"/>
+                        </group>
+                        <group>
+                            <field name="place"/>
+                            <field name="address"/>
+                            <field name="phone" widget="phone"/>
+                        </group>
+                    </group>
+                    <group string="Times that suit them">
+                        <group>
+                            <field name="pref1_date"/>
+                            <field name="pref2_date"/>
+                            <field name="pref3_date"/>
+                        </group>
+                        <group>
+                            <field name="pref1_part"/>
+                            <field name="pref2_part"/>
+                            <field name="pref3_part"/>
+                        </group>
+                    </group>
+                    <group string="Visit">
+                        <group>
+                            <field name="pastor_id"/>
+                            <field name="scheduled_at"/>
+                        </group>
+                        <group>
+                            <field name="care_note_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                        <field name="pastor_message"/>
+                        <field name="outcome"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_church_visit_request_search" model="ir.ui.view">
+        <field name="name">church.visit.request.search</field>
+        <field name="model">church.visit.request</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="member_id"/>
+                <field name="pastor_id"/>
+                <filter name="open" string="Open" domain="[('state', 'in', ('requested', 'scheduled'))]"/>
+                <filter name="urgent" string="Urgent" domain="[('is_urgent', '=', True)]"/>
+                <group>
+                    <filter name="by_pastor" string="Pastor" context="{'group_by': 'pastor_id'}"/>
+                    <filter name="by_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_church_visit_requests" model="ir.actions.act_window">
+        <field name="name">Visit Requests</field>
+        <field name="res_model">church.visit.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+    </record>
+
+    <menuitem id="menu_church_visit_requests"
+        name="Visit Requests"
+        parent="menu_church_management_root"
+        action="action_church_visit_requests"
+        sequence="7"/>
+
+</odoo>
