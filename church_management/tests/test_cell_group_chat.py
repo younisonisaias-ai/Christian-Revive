@@ -96,3 +96,33 @@ class TestCellGroupChat(TransactionCase):
         self.read(self.member)
         groups = self.as_member(self.member).app_get_cell_groups(requester_partner_id=self.member.id)
         self.assertEqual(groups['groups'][0]['chat_unread'], 0)
+
+    def test_reactions_toggle(self):
+        message = self.send(self.member, 'Praise report')['message']
+        Leader = self.as_member(self.leader)
+        pray = '🙏'
+        reacted = Leader.app_chat_react(message['id'], pray, requester_partner_id=self.leader.id)['message']
+        self.assertEqual(reacted['reactions'], {pray: 1})
+        self.assertEqual(reacted['my_reaction'], pray)
+        again = Leader.app_chat_react(message['id'], pray, requester_partner_id=self.leader.id)['message']
+        self.assertEqual(again['reactions'], {})
+        self.assertFalse(Leader.app_chat_react(message['id'], 'x', requester_partner_id=self.leader.id)['success'])
+
+    def test_seen_by_for_the_sender(self):
+        message = self.send(self.member, 'Did you see this?')['message']
+        self.assertEqual(message['seen'], 0)
+        self.read(self.leader)
+        mine = [m for m in self.read(self.member)['messages'] if m['id'] == message['id']][0]
+        self.assertEqual(mine['seen'], 1)
+        names = self.as_member(self.member).app_chat_seen_by(message['id'], requester_partner_id=self.member.id)
+        self.assertEqual(names['names'], ['Leader Gill'])
+
+    def test_voice_note(self):
+        m4a = base64.b64encode(b'\0\0\0\x18ftypM4A ' + b'\0' * 64).decode()
+        sent = self.send(self.member, audio=m4a, audio_seconds=12)
+        self.assertTrue(sent['message']['has_audio'])
+        self.assertEqual(sent['message']['audio_seconds'], 12)
+        audio = self.as_member(self.leader).app_chat_audio(sent['message']['id'], requester_partner_id=self.leader.id)
+        self.assertTrue(audio['success'])
+        bad = base64.b64encode(b'not audio at all, sorry').decode()
+        self.assertFalse(self.send(self.member, audio=bad)['success'])

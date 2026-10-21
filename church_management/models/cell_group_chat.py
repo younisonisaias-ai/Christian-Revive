@@ -20,6 +20,9 @@ _logger = logging.getLogger(__name__)
 
 MAX_TEXT = 2000
 MAX_IMAGE_BYTES = 3 * 1024 * 1024
+MAX_AUDIO_BYTES = 2 * 1024 * 1024
+MAX_AUDIO_SECONDS = 120
+REACTIONS = ('🙏', '❤️', '👍', '🙌', '😢')
 PAGE_SIZE = 40
 # JPEG, PNG and WebP start with these bytes.
 IMAGE_SIGNATURES = (b'\xff\xd8\xff', b'\x89PNG\r\n\x1a\n', b'RIFF')
@@ -40,6 +43,23 @@ def _image_bytes(data):
     return raw
 
 
+def _audio_bytes(data):
+    """Decoded voice note, or None when it is not an accepted recording
+    (AAC/M4A as the app records it, also OGG, WAV and raw AAC)."""
+    if not data:
+        return None
+    try:
+        raw = base64.b64decode(data, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    if len(raw) > MAX_AUDIO_BYTES or len(raw) < 12:
+        return None
+    if raw[4:8] == b'ftyp' or raw.startswith(b'OggS') or (raw.startswith(b'RIFF') and raw[8:12] == b'WAVE') \
+            or raw[:2] in (b'\xff\xf1', b'\xff\xf9'):
+        return raw
+    return None
+
+
 class CellGroupMessage(models.Model):
     _name = 'cell.group.message'
     _description = 'Cell group chat message'
@@ -52,17 +72,26 @@ class CellGroupMessage(models.Model):
     body = fields.Text(string='Message')
     image = fields.Binary(string='Photo', attachment=True)
     has_image = fields.Boolean(string='Photo attached', readonly=True)
+    audio = fields.Binary(string='Voice note', attachment=True)
+    has_audio = fields.Boolean(string='Voice note attached', readonly=True)
+    audio_seconds = fields.Integer(readonly=True)
+    reaction_ids = fields.One2many('cell.group.message.reaction', 'message_id')
     deleted = fields.Boolean(readonly=True)
     deleted_by = fields.Char(readonly=True)
     # Lets the app resend after a dropped connection without a duplicate.
     client_key = fields.Char(index=True, copy=False)
 
-    def _for_app(self, who):
+    def _for_app(self, who, reactions=None, seats=None):
+        """One message for the app. [reactions] and [seats] come from
+        _chat_extras, looked up once per page (here when not given)."""
         self.ensure_one()
         mine = bool(
             (who['partner'] and self.author_partner_id == who['partner']) or
             (who['employee'] and self.author_employee_id == who['employee']))
-        return {
+        if reactions is None or seats is None:
+            reactions, seats = self.group_id._chat_extras(self, who)
+        counts, my_reaction = reactions.get(self.id, ({}, ''))
+        data = {
             'id': self.id,
             'author_name': self.author_name,
             'author_partner_id': self.author_partner_id.id or False,
@@ -70,9 +99,33 @@ class CellGroupMessage(models.Model):
             'mine': mine,
             'body': '' if self.deleted else (self.body or ''),
             'has_image': self.has_image and not self.deleted,
+            'has_audio': self.has_audio and not self.deleted,
+            'audio_seconds': self.audio_seconds or 0,
             'deleted': self.deleted,
             'date': fields.Datetime.to_string(self.create_date),
+            'reactions': counts,
+            'my_reaction': my_reaction,
         }
+        if mine:
+            # Everyone else who has read up to (or past) this message.
+            data['seen'] = sum(1 for s in seats if s.last_read_id >= self.id and not self._is_author(s))
+        return data
+
+    def _is_author(self, seat):
+        self.ensure_one()
+        return bool((seat.partner_id and seat.partner_id == self.author_partner_id) or
+                    (seat.employee_id and seat.employee_id == self.author_employee_id))
+
+
+class CellGroupMessageReaction(models.Model):
+    """One reaction per person per message."""
+    _name = 'cell.group.message.reaction'
+    _description = 'Cell group chat reaction'
+
+    message_id = fields.Many2one('cell.group.message', required=True, ondelete='cascade', index=True)
+    partner_id = fields.Many2one('res.partner', ondelete='cascade')
+    employee_id = fields.Many2one('hr.employee', ondelete='cascade')
+    emoji = fields.Char(required=True)
 
 
 class CellGroupChatSeat(models.Model):
@@ -186,13 +239,14 @@ class CellGroupChat(models.Model):
             messages = Message.search(domain, order='id desc', limit=PAGE_SIZE + 1)
             has_more = len(messages) > PAGE_SIZE
             messages = messages[:PAGE_SIZE].sorted('id')
+        extras = group._chat_extras(messages, who)
         seat = group._chat_seat(who)
         if not before_id and messages and messages[-1].id > seat.last_read_id:
             seat.last_read_id = messages[-1].id
         return {
             'success': True,
             'group': {'id': group.id, 'name': group.name, 'leader_id': group.leader_id.id or False},
-            'messages': [m._for_app(who) for m in messages],
+            'messages': [m._for_app(who, *extras) for m in messages],
             'has_more': has_more,
             'can_post': group._chat_can_post(who),
             'can_moderate': who['moderator'],
@@ -201,7 +255,7 @@ class CellGroupChat(models.Model):
         }
 
     @api.model
-    def app_chat_send(self, group_id, body='', image=None, client_key=None,
+    def app_chat_send(self, group_id, body='', image=None, client_key=None, audio=None, audio_seconds=0,
                       requester_partner_id=None, requester_staff_id=None):
         group, who = self._chat_caller(group_id, requester_partner_id, requester_staff_id)
         if not group:
@@ -212,7 +266,10 @@ class CellGroupChat(models.Model):
         raw = _image_bytes(image) if image else None
         if image and raw is None:
             return {'success': False, 'error': 'That photo could not be sent. Use a JPG or PNG under 3 MB.'}
-        if not body and raw is None:
+        voice = _audio_bytes(audio) if audio else None
+        if audio and voice is None:
+            return {'success': False, 'error': 'That voice note could not be sent. Keep it under 2 minutes.'}
+        if not body and raw is None and voice is None:
             return {'success': False, 'error': 'Write a message or add a photo.'}
         if len(body) > MAX_TEXT:
             return {'success': False, 'error': 'Messages can be up to %d characters.' % MAX_TEXT}
@@ -232,6 +289,9 @@ class CellGroupChat(models.Model):
             'body': body,
             'image': base64.b64encode(raw) if raw is not None else False,
             'has_image': raw is not None,
+            'audio': base64.b64encode(voice) if voice is not None else False,
+            'has_audio': voice is not None,
+            'audio_seconds': max(0, min(int(audio_seconds or 0), MAX_AUDIO_SECONDS)),
             'client_key': client_key or False,
         })
         seat = group._chat_seat(who)
@@ -262,7 +322,7 @@ class CellGroupChat(models.Model):
             return {'success': False, 'error': who}
         if not (who['moderator'] or message._for_app(who)['mine']):
             return {'success': False, 'error': 'You can delete only your own messages'}
-        message.write({'deleted': True, 'body': False, 'image': False, 'deleted_by': who['name']})
+        message.write({'deleted': True, 'body': False, 'image': False, 'audio': False, 'deleted_by': who['name']})
         return {'success': True}
 
     @api.model
@@ -304,6 +364,75 @@ class CellGroupChat(models.Model):
             row['chat_unread'] = self.sudo().browse(row['id'])._chat_unread(who)
         return result
 
+    def _chat_extras(self, messages, who):
+        """({message id: ({emoji: count}, my emoji)}, seats) for a page."""
+        self.ensure_one()
+        reactions = {}
+        for r in self.env['cell.group.message.reaction'].sudo().search([('message_id', 'in', messages.ids)]):
+            counts, mine = reactions.get(r.message_id.id, ({}, ''))
+            counts[r.emoji] = counts.get(r.emoji, 0) + 1
+            if (who['partner'] and r.partner_id == who['partner']) or \
+                    (who['employee'] and r.employee_id == who['employee']):
+                mine = r.emoji
+            reactions[r.message_id.id] = (counts, mine)
+        seats = self.env['cell.group.chat.seat'].sudo().search([('group_id', '=', self.id)])
+        return reactions, seats
+
+    @api.model
+    def app_chat_react(self, message_id, emoji='', requester_partner_id=None, requester_staff_id=None):
+        """Set my reaction to a message; the same one again (or '') removes it."""
+        message = self.env['cell.group.message'].sudo().browse(int(message_id or 0)).exists()
+        if not message or message.deleted:
+            return {'success': False, 'error': 'Message not found'}
+        group, who = self._chat_caller(message.group_id.id, requester_partner_id, requester_staff_id)
+        if not group:
+            return {'success': False, 'error': who}
+        if emoji and emoji not in REACTIONS:
+            return {'success': False, 'error': 'Unknown reaction'}
+        Reaction = self.env['cell.group.message.reaction'].sudo()
+        domain = [('message_id', '=', message.id)]
+        domain += [('partner_id', '=', who['partner'].id)] if who['partner'] else \
+            [('employee_id', '=', who['employee'].id)]
+        current = Reaction.search(domain, limit=1)
+        if current and (not emoji or current.emoji == emoji):
+            current.unlink()
+        elif current:
+            current.emoji = emoji
+        elif emoji:
+            Reaction.create({'message_id': message.id, 'emoji': emoji,
+                             'partner_id': who['partner'].id or False,
+                             'employee_id': who['employee'].id or False})
+        return {'success': True, 'message': message._for_app(who)}
+
+    @api.model
+    def app_chat_audio(self, message_id, requester_partner_id=None, requester_staff_id=None):
+        message = self.env['cell.group.message'].sudo().browse(int(message_id or 0)).exists()
+        if not message:
+            return {'success': False, 'error': 'Message not found'}
+        group, who = self._chat_caller(message.group_id.id, requester_partner_id, requester_staff_id)
+        if not group:
+            return {'success': False, 'error': who}
+        if message.deleted or not message.has_audio:
+            return {'success': False, 'error': 'This voice note was removed'}
+        audio = message.audio
+        return {'success': True, 'audio': audio.decode() if isinstance(audio, bytes) else audio}
+
+    @api.model
+    def app_chat_seen_by(self, message_id, requester_partner_id=None, requester_staff_id=None):
+        """Who has read a message: for its sender and for moderators."""
+        message = self.env['cell.group.message'].sudo().browse(int(message_id or 0)).exists()
+        if not message:
+            return {'success': False, 'error': 'Message not found'}
+        group, who = self._chat_caller(message.group_id.id, requester_partner_id, requester_staff_id)
+        if not group:
+            return {'success': False, 'error': who}
+        if not (message._for_app(who)['mine'] or who['moderator']):
+            return {'success': False, 'error': 'Only the sender can see this'}
+        seats = self.env['cell.group.chat.seat'].sudo().search(
+            [('group_id', '=', group.id), ('last_read_id', '>=', message.id)])
+        names = sorted({(s.partner_id or s.employee_id).name or '' for s in seats if not message._is_author(s)})
+        return {'success': True, 'names': [n for n in names if n]}
+
     # ── Alerts ──────────────────────────────────────────────────
 
     def _chat_notify(self, message, who):
@@ -322,7 +451,10 @@ class CellGroupChat(models.Model):
             return
         text = (message.body or '').strip()
         preview = text if len(text) <= 120 else text[:117] + '...'
-        body = '%s: %s' % (who['name'], preview) if preview else '%s sent a photo' % who['name']
+        if preview:
+            body = '%s: %s' % (who['name'], preview)
+        else:
+            body = '%s sent a %s' % (who['name'], 'voice note' if message.has_audio else 'photo')
         data = {'type': 'cell_chat', 'group_id': self.id, 'message_id': message.id}
         sa_path = self.env['ir.config_parameter'].sudo().get_param('onevoice27.fcm_service_account_path', '')
         title = self.name

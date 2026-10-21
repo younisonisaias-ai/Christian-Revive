@@ -92,3 +92,24 @@ class TestVisitRequest(TransactionCase):
         self.assertEqual(cancelled['request']['state'], 'cancelled')
         self.assertFalse(self.as_member().app_cancel_visit(
             request['id'], requester_partner_id=self.member.id)['success'])
+
+    def test_reminders_day_before_and_hour_before(self):
+        request = self.env['church.visit.request'].browse(self.ask()['request']['id'])
+        now = fields.Datetime.now()
+        request.write({'state': 'scheduled', 'pastor_id': self.pastor.id,
+                       'scheduled_at': now + timedelta(hours=20), 'scheduled_on': now - timedelta(days=3)})
+        Visits = self.env['church.visit.request']
+        Visits._cron_visit_reminders()
+        self.assertTrue(request.reminded_day)
+        self.assertFalse(request.reminded_hour)
+        request.scheduled_at = now + timedelta(minutes=50)
+        Visits._cron_visit_reminders()
+        self.assertTrue(request.reminded_hour)
+        self.assertRegex(request._local_when(), r'^\w{3} \d{1,2} \w{3} at \d{1,2}:\d{2} (AM|PM)$')
+
+    def test_no_day_reminder_for_visits_booked_the_same_day(self):
+        request = self.env['church.visit.request'].browse(self.ask()['request']['id'])
+        now = fields.Datetime.now()
+        request.write({'state': 'scheduled', 'scheduled_at': now + timedelta(hours=20), 'scheduled_on': now})
+        self.env['church.visit.request']._cron_visit_reminders()
+        self.assertFalse(request.reminded_day)

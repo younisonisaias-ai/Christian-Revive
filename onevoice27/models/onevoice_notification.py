@@ -151,7 +151,9 @@ class OneVoiceNotification(models.Model):
 
     # ── Send to topic (all users) ────────────────────────────────
     def _send_to_topic(self, access_token, project_id):
-        payload = self._build_payload(topic='revive_ov27')
+        # Each church's app listens on its own prefix (Settings → Church).
+        prefix = self.env['ir.config_parameter'].sudo().get_param('revive.topic_prefix') or 'revive'
+        payload = self._build_payload(topic='%s_ov27' % prefix)
         try:
             self._fcm_post(access_token, project_id, payload)
             self.write({

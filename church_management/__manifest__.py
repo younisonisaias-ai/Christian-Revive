@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.15.0',
+    'version': '1.17.0',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care, attendance and admin dashboard for Christian Revive',
     'description': """
@@ -42,6 +42,8 @@
         # After menu.xml: its menu items sit under the Church Management menu.
         'views/smart_attendance_views.xml',
         'views/visit_request_views.xml',
+        'views/church_plan_views.xml',
+        'views/care_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

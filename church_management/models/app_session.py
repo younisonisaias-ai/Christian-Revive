@@ -181,6 +181,12 @@ class ChurchAppSession(models.Model):
                 'session_token': self._issue('staff', employee=employee, device_id=device_id)}
 
     @api.model
+    def app_session_policy(self):
+        """Lets the app ask people who signed in before tokens existed to
+        sign in again, once the church switches sessions on."""
+        return {'success': True, 'required': self._required()}
+
+    @api.model
     def app_sign_out(self):
         """Revoke the tokens sent with this request."""
         sessions = self._current_member() | self._current_staff()

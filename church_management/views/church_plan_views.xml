@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Settings → Church: the plan, add-ons and secure app sign-in. -->
+    <record id="res_config_settings_view_form_church" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.church</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Church" string="Church" name="church_management">
+                    <block title="Church app plan" name="church_plan_block">
+                        <setting id="church_plan_setting" string="Plan"
+                                 help="Features above this plan are not available in this church's app.">
+                            <field name="church_plan"/>
+                        </setting>
+                        <setting id="church_addon_giving_setting"
+                                 help="Online giving, pledges and funds on the Basic plan.">
+                            <field name="church_addon_giving"/>
+                        </setting>
+                        <setting id="church_addon_books_setting"
+                                 help="Book and study library on the Premium plan.">
+                            <field name="church_addon_books"/>
+                        </setting>
+                    </block>
+                    <block title="Notifications" name="church_notifications_block">
+                        <setting id="church_topic_prefix_setting" string="Topic prefix"
+                                 help="Must match this church's app, e.g. revive_premium. Leave as revive for Christian Revive.">
+                            <field name="church_topic_prefix"/>
+                        </setting>
+                    </block>
+                    <block title="Security" name="church_security_block">
+                        <setting id="church_require_app_session_setting"
+                                 help="Turn on once most members have the latest app. Anyone on an older version is asked to update and sign in again.">
+                            <field name="church_require_app_session"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

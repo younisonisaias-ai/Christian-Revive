@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Prayer chain and absence follow-ups on the member's Church Membership tab. -->
+    <record id="view_partner_form_church_care" model="ir.ui.view">
+        <field name="name">res.partner.form.church.care</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="view_partner_form_church_mgmt"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='membership_status']" position="after">
+                <field name="prayer_team"/>
+                <field name="absence_followup_date" invisible="not absence_followup_date"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

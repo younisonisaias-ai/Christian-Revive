@@ -148,7 +148,9 @@ class ReviveNotification(models.Model):
 
     # ── Send to all app users ────────────────────────────────────
     def _send_to_topic(self, access_token, project_id):
-        payload = self._build_payload(topic='revive_all')
+        # Each church's app listens on its own prefix (Settings → Church).
+        prefix = self.env['ir.config_parameter'].sudo().get_param('revive.topic_prefix') or 'revive'
+        payload = self._build_payload(topic='%s_all' % prefix)
         try:
             self._fcm_post(access_token, project_id, payload)
             self.write({

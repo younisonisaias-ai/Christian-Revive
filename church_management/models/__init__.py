@@ -15,3 +15,6 @@ from . import app_session
 from . import smart_attendance
 from . import cell_group_chat
 from . import visit_request
+from . import church_plan
+from . import care_automation
+from . import prayer_chain

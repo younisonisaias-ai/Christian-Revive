@@ -5,6 +5,10 @@ time, marks it visited (which records a pastoral care note) or declines.
 Requests go to the member's assigned pastor; senior pastors and admins see
 them all and can hand one to another pastor.
 """
+from datetime import timedelta
+
+import pytz
+
 from odoo import api, fields, models
 
 from .pastor_alerts import _send_fcm
@@ -60,6 +64,9 @@ class ChurchVisitRequest(models.Model):
     pastor_message = fields.Text(string='Message to the member')
     outcome = fields.Text()
     care_note_id = fields.Many2one('pastoral.care.note', string='Pastoral note', readonly=True)
+    scheduled_on = fields.Datetime(string='Booked on', readonly=True)
+    reminded_day = fields.Boolean(readonly=True, copy=False)
+    reminded_hour = fields.Boolean(readonly=True, copy=False)
 
     @api.depends('member_id', 'reason')
     def _compute_name(self):
@@ -105,15 +112,57 @@ class ChurchVisitRequest(models.Model):
             return partner.family_id.member_ids | partner
         return partner
 
-    def _tell_member(self, title, body):
-        """Push to the member who asked (and the person visited, if different)."""
-        people = (self.requested_by_id | self.member_id).filtered('app_fcm_token')
-        tokens = list(set(people.mapped('app_fcm_token')))
+    def _local_when(self):
+        """'Fri 23 Oct at 5:00 PM' in the church's time zone."""
+        self.ensure_one()
+        if not self.scheduled_at:
+            return ''
+        tz = self.env['church.service.schedule']._church_tz()
+        local = pytz.utc.localize(fields.Datetime.to_datetime(self.scheduled_at)).astimezone(tz)
+        hour = local.hour % 12 or 12
+        return '%s %d %s at %d:%02d %s' % (local.strftime('%a'), local.day, local.strftime('%b'),
+                                           hour, local.minute, 'AM' if local.hour < 12 else 'PM')
+
+    def _push(self, tokens, title, body, data):
+        tokens = [t for t in set(tokens) if t]
         if not tokens:
             return
         sa_path = self.env['ir.config_parameter'].sudo().get_param('onevoice27.fcm_service_account_path', '')
-        data = {'type': 'visit_request', 'id': self.id}
         self.env.cr.postcommit.add(lambda: _send_fcm(sa_path, tokens, title, body, data))
+
+    def _tell_member(self, title, body):
+        """Push to the member who asked (and the person visited, if different)."""
+        people = (self.requested_by_id | self.member_id).filtered('app_fcm_token')
+        self._push(people.mapped('app_fcm_token'), title, body, {'type': 'visit_request', 'id': self.id})
+
+    def _tell_pastor(self, title, body):
+        pastor = self.pastor_id
+        if pastor and pastor.is_app_active and pastor.app_fcm_token:
+            self._push([pastor.app_fcm_token], title, body,
+                       {'type': 'pastor_alert', 'kind': 'visit', 'id': self.id})
+
+    @api.model
+    def _cron_visit_reminders(self):
+        """The day before (for visits booked well ahead) and about an hour
+        before a booked visit, remind the member and the pastor."""
+        now = fields.Datetime.now()
+        booked = self.sudo().search([('state', '=', 'scheduled'), ('scheduled_at', '>', now),
+                                     ('scheduled_at', '<=', now + timedelta(hours=26))])
+        for visit in booked:
+            ahead = visit.scheduled_at - now
+            where = visit.member_id.name or ''
+            pastor = visit.pastor_id.name or 'Your pastor'
+            if ahead <= timedelta(minutes=75):
+                if not visit.reminded_hour:
+                    visit.write({'reminded_hour': True, 'reminded_day': True})
+                    visit._tell_member('Pastor visit soon', '%s will visit at %s.'
+                                       % (pastor, visit._local_when().split(' at ')[-1]))
+                    visit._tell_pastor('Visit soon', 'Visit %s at %s.'
+                                       % (where, visit._local_when().split(' at ')[-1]))
+            elif ahead > timedelta(hours=3) and not visit.reminded_day and                     visit.scheduled_on and visit.scheduled_at - visit.scheduled_on > timedelta(hours=26):
+                visit.reminded_day = True
+                visit._tell_member('Pastor visit tomorrow', '%s will visit on %s.' % (pastor, visit._local_when()))
+                visit._tell_pastor('Visit tomorrow', 'Visit %s on %s.' % (where, visit._local_when()))
 
     @api.model
     def _staff(self, requester_staff_id):
@@ -246,11 +295,14 @@ class ChurchVisitRequest(models.Model):
         request.write({
             'state': 'scheduled',
             'scheduled_at': when,
+            'scheduled_on': fields.Datetime.now(),
+            'reminded_day': False,
+            'reminded_hour': False,
             'pastor_id': request.pastor_id.id or employee.id,
             'pastor_message': (message or '').strip()[:1000],
         })
-        request._tell_member('Visit confirmed', '%s will visit. Open the app to see the day and time.'
-                             % (request.pastor_id.name or 'Your pastor'))
+        request._tell_member('Visit confirmed', '%s will visit on %s.'
+                             % (request.pastor_id.name or 'Your pastor', request._local_when()))
         return {'success': True, 'request': request._for_app()}
 
     @api.model

@@ -1,6 +1,6 @@
 {
     'name': 'Church Finance',
-    'version': '1.1.0',
+    'version': '1.2.0',
     'category': 'Church',
     'summary': 'Pledges, restricted funds, reconciliation and reports for Christian Revive',
     'description': """

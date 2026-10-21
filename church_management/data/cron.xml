@@ -36,4 +36,28 @@
             <field name="active" eval="True"/>
         </record>
     </data>
+    <data noupdate="1">
+        <!-- Remind members and pastors of booked visits (day before, hour before). -->
+        <record id="cron_visit_reminders" model="ir.cron">
+            <field name="name">Church: visit reminders</field>
+            <field name="model_id" ref="model_church_visit_request"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_visit_reminders()</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+    <data noupdate="1">
+        <!-- Members who stopped coming: a follow-up for their pastor. -->
+        <record id="cron_absence_followups" model="ir.cron">
+            <field name="name">Church: follow-ups for members missing church</field>
+            <field name="model_id" ref="model_church_dashboard"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_absence_followups()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
 </odoo>

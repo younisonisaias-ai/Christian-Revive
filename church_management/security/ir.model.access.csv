@@ -21,3 +21,4 @@ access_cell_group_chat_seat_system,cell.group.chat.seat system,model_cell_group_
 access_church_visit_request_user,church.visit.request user,model_church_visit_request,base.group_user,1,0,0,0
 access_church_visit_request_admin,church.visit.request admin,model_church_visit_request,group_church_admin,1,1,1,1
 access_church_visit_request_system,church.visit.request system,model_church_visit_request,base.group_system,1,1,1,1
+access_cell_group_message_reaction_system,cell.group.message.reaction system,model_cell_group_message_reaction,base.group_system,1,1,1,1
