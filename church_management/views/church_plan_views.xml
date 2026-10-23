@@ -23,6 +23,12 @@
                             <field name="church_addon_books"/>
                         </setting>
                     </block>
+                    <block title="Music" name="church_music_block">
+                        <setting id="church_music_artist_setting" string="Ministry name for songs"
+                                 help="Every song uploaded is published under this name. Leave empty to use the company name.">
+                            <field name="church_music_artist_name"/>
+                        </setting>
+                    </block>
                     <block title="Notifications" name="church_notifications_block">
                         <setting id="church_topic_prefix_setting" string="Topic prefix"
                                  help="Must match this church's app, e.g. revive_premium. Leave as revive for Christian Revive.">

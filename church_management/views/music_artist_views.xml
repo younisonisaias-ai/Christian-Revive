@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <!-- Client churches publish only their own music: Artist is the ministry name. -->
+    <record id="view_music_track_form_artist" model="ir.ui.view">
+        <field name="name">music.track.form.artist</field>
+        <field name="model">music.track</field>
+        <field name="inherit_id" ref="volunteer_and_donation_management.view_music_track_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='artist']" position="attributes">
+                <attribute name="readonly">artist_locked</attribute>
+            </xpath>
+            <xpath expr="//field[@name='artist']" position="after">
+                <field name="artist_locked" invisible="1"/>
+                <div class="text-muted small" colspan="2" invisible="not artist_locked">
+                    Songs are published under your ministry name (Settings → Church).
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

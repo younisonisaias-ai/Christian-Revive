@@ -1,6 +1,6 @@
 {
     'name': 'Church Management',
-    'version': '1.17.0',
+    'version': '1.18.0',
     'category': 'Church',
     'summary': 'Membership CRM, cell groups, pastoral care, attendance and admin dashboard for Christian Revive',
     'description': """
@@ -44,6 +44,7 @@
         'views/visit_request_views.xml',
         'views/church_plan_views.xml',
         'views/care_views.xml',
+        'views/music_artist_views.xml',
     ],
     'assets': {
         'web.assets_backend': [

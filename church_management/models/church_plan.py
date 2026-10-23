@@ -161,6 +161,9 @@ class ResConfigSettingsChurch(models.TransientModel):
         string='Notification topic prefix', config_parameter='revive.topic_prefix', default='revive',
         help="Must match this church's app (APP_TOPIC_PREFIX), e.g. revive_premium. Announcements go to "
              '<prefix>_all.')
+    church_music_artist_name = fields.Char(
+        string='Ministry name for songs', config_parameter='revive.music_artist_name',
+        help='Songs uploaded here are published under this name, e.g. God of Life.')
     church_require_app_session = fields.Boolean(
         string='Require secure sign-in', config_parameter='church_management.require_app_session',
         help='Turn on once most members have the latest app. Members on older versions are asked '

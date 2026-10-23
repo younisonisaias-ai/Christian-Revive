@@ -18,3 +18,4 @@ from . import visit_request
 from . import church_plan
 from . import care_automation
 from . import prayer_chain
+from . import music_artist
