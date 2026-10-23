@@ -8,6 +8,9 @@ class TestMusicArtist(TransactionCase):
         super().setUp()
         self.Artist = self.env['music.artist']
         self.Track = self.env['music.track']
+        # With Church Management installed, client ERPs lock every song to the
+        # ministry name; these tests need songs by different artists.
+        self.env['ir.config_parameter'].sudo().set_param('revive.music_any_artist', 'True')
 
     def test_add_from_songs_creates_each_artist_once(self):
         self.Track.create([
