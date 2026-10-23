@@ -22,5 +22,6 @@ from . import prayer_request
 from . import medical_codes
 from . import music
 from . import music_artist
+from . import music_play
 from . import daily_verse_model
 from . import push_notification

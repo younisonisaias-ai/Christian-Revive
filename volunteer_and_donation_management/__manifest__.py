@@ -1,6 +1,6 @@
 {
     'name': 'Revive Application',
-    'version': '1.5',
+    'version': '1.6',
     'category': 'Tools',
     'summary': 'Manage Membership, Partnerships, Volunteers, Donations, Events, Media Streaming and Broadcasting, store and more ministerials module.',
     'description': 'Module to manage volunteers and donors, track events, and handle various church-related activities.',
@@ -21,6 +21,7 @@
         'data/sequence.xml',
         'views/music.xml',
         'views/music_artist.xml',
+        'views/music_play.xml',
         'views/project.xml',
         'views/prayer_request.xml',
         
