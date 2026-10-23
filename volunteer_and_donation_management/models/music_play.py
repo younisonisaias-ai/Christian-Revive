@@ -1,7 +1,9 @@
 """How often each song is played in the app, per day.
 
-The app reports a play once a song has played for 30 seconds. No listener
-is recorded: only "song X was played N times on this day".
+Counted automatically in the background for the app's "Most played this
+month" row; there are no screens for it in the ERP. The app reports a play
+once a song has played for 30 seconds. No listener is recorded: only
+"song X was played N times on this day".
 """
 from datetime import timedelta
 
@@ -29,8 +31,7 @@ class MusicTrackPlay(models.Model):
 class MusicTrack(models.Model):
     _inherit = 'music.track'
 
-    play_count = fields.Integer(string='Plays', readonly=True, default=0, copy=False,
-                                help='Times played in the app (30 seconds or more).')
+    play_count = fields.Integer(string='Plays', readonly=True, default=0, copy=False)
 
     @api.model
     def app_record_plays(self, plays):

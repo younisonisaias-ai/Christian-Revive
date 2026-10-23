@@ -168,12 +168,6 @@
         action="action_music_artists"
         sequence="12"/>
 
-    <menuitem id="menu_music_top_songs"
-        name="Top Songs"
-        parent="menu_configuration_list"
-        action="action_music_top_songs"
-        sequence="12"/>
-
     <menuitem
         id="menu_daily_verse"
         name="Daily Verses"
