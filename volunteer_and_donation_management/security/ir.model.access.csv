@@ -28,5 +28,6 @@ access_medical_prescription_line_user,medical.prescription.line user,model_medic
 access_medical_diagnosis_line_user,medical.diagnosis.line user,model_medical_diagnosis_line,base.group_user,1,1,1,1
 access_medical_procedure_line_user,medical.procedure.line user,model_medical_procedure_line,base.group_user,1,1,1,1
 access_music_track,music.track,model_music_track,base.group_user,1,1,1,1
+access_music_artist,music.artist,model_music_artist,base.group_user,1,1,1,1
 access_church_daily_verse,church.daily.verse,model_church_daily_verse,base.group_user,1,1,1,1
 access_revive_notification,revive.notification,model_revive_notification,base.group_user,1,1,1,1

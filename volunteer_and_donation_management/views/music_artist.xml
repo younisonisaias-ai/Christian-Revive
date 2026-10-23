@@ -1,0 +1,90 @@
+<odoo>
+    <record id="view_music_artist_form" model="ir.ui.view">
+        <field name="name">music.artist.form</field>
+        <field name="model">music.artist</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_songs" type="object" class="oe_stat_button" icon="fa-music">
+                            <field name="track_count" widget="statinfo" string="Songs"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="image_1920" widget="image" class="oe_avatar" options="{'preview_image': 'image_128'}"/>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Artist name, exactly as on the songs"/></h1>
+                    </div>
+                    <field name="active" invisible="1"/>
+                    <group>
+                        <field name="bio" placeholder="A few lines about this artist, shown in the app"/>
+                    </group>
+                    <div class="text-muted small">
+                        The photo appears in the app on this artist's round picture and page.
+                        Songs are matched by the Artist name on each song.
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_music_artist_list" model="ir.ui.view">
+        <field name="name">music.artist.list</field>
+        <field name="model">music.artist</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_add_from_songs" type="object" string="Add artists from songs"
+                            class="btn-secondary" display="always"/>
+                </header>
+                <field name="image_128" widget="image" options="{'size': [40, 40]}" string="Photo"/>
+                <field name="name"/>
+                <field name="track_count"/>
+                <field name="has_image" string="Has photo"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_music_artist_kanban" model="ir.ui.view">
+        <field name="name">music.artist.kanban</field>
+        <field name="model">music.artist</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="id"/>
+                <templates>
+                    <t t-name="card" class="flex-row">
+                        <aside>
+                            <field name="image_128" widget="image" options="{'size': [64, 64], 'img_class': 'rounded-circle'}"/>
+                        </aside>
+                        <main class="ms-2">
+                            <field name="name" class="fw-bold fs-5"/>
+                            <span><field name="track_count"/> songs</span>
+                        </main>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="view_music_artist_search" model="ir.ui.view">
+        <field name="name">music.artist.search</field>
+        <field name="model">music.artist</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <filter name="no_photo" string="Without photo" domain="[('has_image', '=', False)]"/>
+                <filter name="archived" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_music_artists" model="ir.actions.act_window">
+        <field name="name">Music Artists</field>
+        <field name="res_model">music.artist</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Add an artist photo</p>
+            <p>Use <b>Add artists from songs</b> in the list view, then open each artist to upload a photo.</p>
+        </field>
+    </record>
+</odoo>

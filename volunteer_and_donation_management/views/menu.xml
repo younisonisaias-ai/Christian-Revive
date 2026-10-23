@@ -162,6 +162,12 @@
         action="action_music_tracks"
         sequence="12"/>
 
+    <menuitem id="menu_music_artists"
+        name="Music Artists"
+        parent="menu_configuration_list"
+        action="action_music_artists"
+        sequence="12"/>
+
     <menuitem
         id="menu_daily_verse"
         name="Daily Verses"
