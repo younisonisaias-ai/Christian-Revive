@@ -5,3 +5,5 @@ from . import test_church_plan
 from . import test_care_features
 from . import test_music_artist
 from . import test_church_location_app
+from . import test_church_service_app
+from . import test_checkin_alerts

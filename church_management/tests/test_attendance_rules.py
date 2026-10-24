@@ -175,14 +175,17 @@ class FamilyTests(unittest.TestCase):
         self.assertTrue(self.allowed(self.wife, self.head))
         self.assertTrue(self.allowed(self.wife, self.son))
 
-    def test_not_adult_children(self):
-        self.assertEqual(rules.family_permission(self.head, self.adult_son, TODAY), (False, 'adult'))
+    def test_head_checks_in_adult_children_too(self):
+        self.assertTrue(self.allowed(self.head, self.adult_son))
 
     def test_child_without_birthday_counts_as_dependent(self):
         self.assertTrue(self.allowed(self.head, person(6, relationship='daughter')))
 
-    def test_not_other_adults(self):
-        self.assertFalse(self.allowed(self.head, self.brother))
+    def test_head_checks_in_whole_family(self):
+        self.assertTrue(self.allowed(self.head, self.brother))
+
+    def test_other_members_check_in_only_themselves(self):
+        self.assertEqual(rules.family_permission(self.brother, self.son, TODAY), (False, 'not_authorized'))
 
     def test_child_cannot_check_in_parent(self):
         self.assertFalse(self.allowed(self.son, self.head))

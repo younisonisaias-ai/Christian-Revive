@@ -20,3 +20,5 @@ from . import care_automation
 from . import prayer_chain
 from . import music_artist
 from . import church_location_app
+from . import church_service_app
+from . import checkin_alerts

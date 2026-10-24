@@ -32,7 +32,7 @@ REASONS = {
     'family_off': 'Family check-in is not available for this event.',
     'guests_off': 'Guests are not checked in for this event.',
     'age': 'This event is for a different age group.',
-    'not_authorized': 'You can check in yourself and your dependents only.',
+    'not_authorized': 'Only the family head or their spouse can check in other family members.',
     'not_family': 'This person is not in your family.',
     'not_verified': 'This family member is waiting for church verification.',
     'adult': 'Adults check themselves in.',
@@ -580,17 +580,26 @@ class ChurchEventAttendanceSmart(models.Model):
     @api.model
     def _service_payload(self, service, people, at):
         opens, closes = service._checkin_window()
+        pinned = bool(service.location_id) and service.location_id._has_coordinates()
         records = self.sudo().search([('event_id', '=', service.id), ('member_id', 'in', people.ids),
                                       ('status', 'not in', ('removed', 'cancelled'))])
         payload = {
             'service_id': service.id, 'name': service.name,
             'service_type': service.service_type,
+            'service_type_label': dict(service._fields['service_type'].selection).get(service.service_type, ''),
+            'description': service.description or '',
+            'checked_in_total': self.sudo().search_count([
+                ('event_id', '=', service.id), ('status', 'not in', ('removed', 'cancelled'))]),
             'date_start': fields.Datetime.to_string(service.date_start),
             'date_end': fields.Datetime.to_string(service.date_end) if service.date_end else False,
             'opens_at': fields.Datetime.to_string(opens),
             'closes_at': fields.Datetime.to_string(closes),
             'state': service._availability(at),
             'location_id': service.location_id.id or False,
+            # Where the phone should watch for arrival (the church's own pin).
+            'location_lat': service.location_id.latitude if pinned else False,
+            'location_lon': service.location_id.longitude if pinned else False,
+            'location_radius': service.location_id.geofence_radius_m if service.location_id else False,
             'location_name': service.location_id.name or service.location or '',
             'family_checkin': service.family_checkin_enabled,
             'location_required': service._location_result(None, None, None)[0] != 'not_required',
@@ -638,20 +647,24 @@ class ChurchEventAttendanceSmart(models.Model):
                 'write_date': fields.Datetime.to_string(person.write_date),
             })
 
+        # Every place the phone is inside: the app turns Check In on only when
+        # it is inside the open event's own place, not just any church place.
         at_church = None
+        at_location_ids = []
         locations = self.env['church.location'].sudo().search([('active', '=', True)])
         if latitude is not None and longitude is not None:
             for loc in locations.filtered(lambda l: l._has_coordinates()):
                 res, _d = rules.check_location(loc.latitude, loc.longitude, loc.geofence_radius_m,
                                                latitude, longitude, accuracy)
                 if res == 'ok':
-                    at_church = loc.name
-                    break
+                    at_church = at_church or loc.name
+                    at_location_ids.append(loc.id)
         return {
             'success': True,
             'server_time': fields.Datetime.to_string(at),
             'member_id': partner.id,
             'at_church': at_church,
+            'at_location_ids': at_location_ids,
             'open': open_now,
             'upcoming': upcoming[:10],
             'household': household,

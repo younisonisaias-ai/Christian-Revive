@@ -111,12 +111,11 @@ class TestSmartAttendance(TransactionCase):
         self.assertEqual(self.Attendance.browse(result['successful'][2]['attendance_id']).method,
                          'geofence_family')
 
-    def test_cannot_check_in_unrelated_or_adult_child(self):
+    def test_head_checks_in_adult_child_but_not_strangers(self):
         result = self.check_in(self.head | self.stranger | self.adult_son)
-        self.assertEqual(len(result['successful']), 1)
+        self.assertEqual(len(result['successful']), 2)
         reasons = {f['member_id']: f['reason'] for f in result['failed']}
-        self.assertEqual(reasons[self.stranger.id], 'not_family')
-        self.assertEqual(reasons[self.adult_son.id], 'adult')
+        self.assertEqual(reasons, {self.stranger.id: 'not_family'})
 
     def test_outside_radius_refused_and_logged(self):
         result = self.check_in(self.head, metres=900)
@@ -210,7 +209,12 @@ class TestSmartAttendance(TransactionCase):
         self.assertIn(self.service.id, [e['service_id'] for e in home['open']])
         rows = {h['member_id']: h for h in home['household']}
         self.assertTrue(rows[self.child.id]['can_check_in'])
-        self.assertFalse(rows[self.adult_son.id]['can_check_in'])
+        # The family head checks in the whole family, adult children too.
+        self.assertTrue(rows[self.adult_son.id]['can_check_in'])
+        self.assertTrue(home['at_location_ids'])
+        event = next(e for e in home['open'] if e['service_id'] == self.service.id)
+        self.assertIn('checked_in_total', event)
+        self.assertIn('description', event)
 
     # ── Staff ───────────────────────────────────────────────────
 

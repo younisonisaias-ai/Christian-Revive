@@ -140,13 +140,12 @@ def family_permission(acting, attendee, today):
     """May `acting` check `attendee` in? Returns (allowed, reason).
 
     Both are dicts: id, family_id, is_family_head, relationship, verified,
-    guardian_id, date_of_birth. Rules (dependents + spouse):
+    guardian_id, date_of_birth. Rules:
       - anyone may check themselves in;
       - a guardian may check in the people they are guardian of;
       - in a verified family, the family head and the head's spouse may check
-        in the family's children who are not known to be adults;
-      - the family head and the head's spouse may check each other in.
-    Never other adults, never another family.
+        in everyone in that family (one phone for the whole family).
+    Other family members check in only themselves; never another family.
     """
     if acting['id'] == attendee['id']:
         return True, 'self'
@@ -161,11 +160,7 @@ def family_permission(acting, attendee, today):
     if not acting_parent:
         return False, 'not_authorized'
     if attendee.get('relationship') in CHILD_RELATIONSHIPS:
-        if is_minor(attendee.get('date_of_birth'), today) is False:
-            return False, 'adult'
         return True, 'child'
-    if acting.get('is_family_head') and attendee.get('relationship') == 'spouse':
+    if attendee.get('relationship') == 'spouse' or attendee.get('is_family_head'):
         return True, 'spouse'
-    if acting.get('relationship') == 'spouse' and attendee.get('is_family_head'):
-        return True, 'spouse'
-    return False, 'not_authorized'
+    return True, 'family'
