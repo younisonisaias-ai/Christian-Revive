@@ -22,3 +22,4 @@ from . import music_artist
 from . import church_location_app
 from . import church_service_app
 from . import checkin_alerts
+from . import account_deletion

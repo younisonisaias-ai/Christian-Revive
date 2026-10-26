@@ -7,3 +7,4 @@ from . import test_music_artist
 from . import test_church_location_app
 from . import test_church_service_app
 from . import test_checkin_alerts
+from . import test_account_deletion

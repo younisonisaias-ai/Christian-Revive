@@ -27,7 +27,8 @@ class TestRepeatingServices(TransactionCase):
         self.assertEqual(days[:3], [date(2026, 11, 1), date(2026, 11, 15), date(2026, 11, 29)])
 
     def test_weekly_unchanged(self):
-        weekly = self.schedule(weeks_ahead=3)
+        # A fixed start date: left empty, it becomes the day the test runs.
+        weekly = self.schedule(weeks_ahead=3, start_date=date(2026, 10, 4))
         self.assertEqual(weekly._upcoming_days(date(2026, 10, 21))[:3],
                          [date(2026, 10, 25), date(2026, 11, 1), date(2026, 11, 8)])
 
