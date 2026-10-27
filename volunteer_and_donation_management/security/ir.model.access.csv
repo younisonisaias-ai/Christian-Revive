@@ -30,5 +30,6 @@ access_medical_procedure_line_user,medical.procedure.line user,model_medical_pro
 access_music_track,music.track,model_music_track,base.group_user,1,1,1,1
 access_music_artist,music.artist,model_music_artist,base.group_user,1,1,1,1
 access_music_track_play,music.track.play,model_music_track_play,base.group_user,1,0,0,0
+access_revive_tts_clip,revive.tts.clip,model_revive_tts_clip,base.group_system,1,1,1,1
 access_church_daily_verse,church.daily.verse,model_church_daily_verse,base.group_user,1,1,1,1
 access_revive_notification,revive.notification,model_revive_notification,base.group_user,1,1,1,1

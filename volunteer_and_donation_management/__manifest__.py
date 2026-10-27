@@ -1,6 +1,6 @@
 {
     'name': 'Revive Application',
-    'version': '1.7',
+    'version': '1.8',
     'category': 'Tools',
     'summary': 'Manage Membership, Partnerships, Volunteers, Donations, Events, Media Streaming and Broadcasting, store and more ministerials module.',
     'description': 'Module to manage volunteers and donors, track events, and handle various church-related activities.',
