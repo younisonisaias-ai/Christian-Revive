@@ -1,4 +1,6 @@
-from odoo import fields, models
+from odoo import api, fields, models
+
+from .college_app_api import public_student
 
 
 class CollegeCourseContent(models.Model):
@@ -20,3 +22,21 @@ class CollegeCourseContent(models.Model):
     url = fields.Char(string='Link / Video URL')
     body = fields.Text(string='Text Content')
     active = fields.Boolean(default=True)
+
+    # ── App API (Phase 9: public student side, no login) ─────────
+    # A student may only download material for a course they are actually
+    # enrolled in — re-checked here, not assumed from the app's own UI.
+
+    @api.model
+    def app_college_student_content(self, code, email, content_id):
+        student = public_student(self.env, code, email)
+        if not student:
+            return {'success': False, 'error': 'No student found with that number and email'}
+        content = self.sudo().browse(content_id)
+        enrolled_course_ids = set(student.enrollment_ids.course_id.ids)
+        if not content.exists() or content.course_id.id not in enrolled_course_ids:
+            return {'success': False, 'error': 'Not found'}
+        if not content.attachment:
+            return {'success': False, 'error': 'No file attached'}
+        data = content.attachment.decode() if isinstance(content.attachment, bytes) else content.attachment
+        return {'success': True, 'filename': content.attachment_filename or content.name, 'data': data}

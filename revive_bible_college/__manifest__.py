@@ -1,12 +1,15 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.8.0',
+    'version': '19.0.1.9.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
     # app_college_check_application, app_college_public_lookups and
     # app_college_student_lookup. Grades are hidden from students until
     # their enrollment's grade_state is 'published' (see _app_self_detail).
+    # Also: app_college_student_content (download, scoped to enrolled
+    # courses only), app_college_student_assignments/submit_assignment
+    # (scoped to enrolled course+term pairs only).
     'description': """
 Bible College & Theology Management
 ====================================
