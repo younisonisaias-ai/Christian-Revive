@@ -35,7 +35,7 @@ class CollegeProgram(models.Model):
         return {
             'success': True,
             'programs': [{'id': p.id, 'name': p.name} for p in programs],
-            'terms': [{'id': t.id, 'name': t.name} for t in terms],
+            'terms': [{'id': t.id, 'name': t.name, 'state': t.state} for t in terms],
             'courses': [{'id': c.id, 'name': c.name, 'program_id': c.program_id.id} for c in courses],
         }
 

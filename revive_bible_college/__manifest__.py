@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.9.0',
+    'version': '19.0.1.10.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,

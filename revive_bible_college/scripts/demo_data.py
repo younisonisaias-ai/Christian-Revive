@@ -16,6 +16,30 @@ payment, and a graduation requirement + clearance.
 """
 import base64
 
+
+def sample_pdf(text):
+    stream = b'BT /F1 18 Tf 72 760 Td (' + text.encode('ascii') + b') Tj ET'
+    objects = [
+        b'<< /Type /Catalog /Pages 2 0 R >>',
+        b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+        b'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R '
+        b'/Resources << /Font << /F1 5 0 R >> >> >>',
+        b'<< /Length %d >>\nstream\n%s\nendstream' % (len(stream), stream),
+        b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    ]
+    pdf = b'%PDF-1.4\n'
+    offsets = []
+    for number, body in enumerate(objects, 1):
+        offsets.append(len(pdf))
+        pdf += b'%d 0 obj\n%s\nendobj\n' % (number, body)
+    xref = len(pdf)
+    pdf += b'xref\n0 %d\n0000000000 65535 f \n' % (len(objects) + 1)
+    for offset in offsets:
+        pdf += b'%010d 00000 n \n' % offset
+    pdf += b'trailer\n<< /Size %d /Root 1 0 R >>\nstartxref\n%d\n%%%%EOF\n' % (len(objects) + 1, xref)
+    return pdf
+
+
 Program = env['college.program']
 Term = env['college.term']
 Course = env['college.course']
@@ -55,12 +79,12 @@ else:
 
     Content.create({
         'name': 'Course Syllabus', 'course_id': course1.id, 'content_type': 'document', 'sequence': 1,
-        'attachment': base64.b64encode(b'This is a sample syllabus PDF placeholder.'),
+        'attachment': base64.b64encode(sample_pdf('Old Testament Survey: sample syllabus')),
         'attachment_filename': 'ot101_syllabus.pdf',
     })
     Content.create({
-        'name': 'Lecture 1: Creation and Covenant', 'course_id': course1.id, 'content_type': 'video', 'sequence': 2,
-        'url': 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        'name': 'Who Really Wrote the Bible?', 'course_id': course1.id, 'content_type': 'video', 'sequence': 2,
+        'url': 'https://www.youtube.com/watch?v=Qbkj3UrkYn0',
     })
     Content.create({
         'name': 'Reading: Genesis Overview', 'course_id': course1.id, 'content_type': 'text', 'sequence': 3,
@@ -231,6 +255,6 @@ else:
     print('  Applicants: one at each stage (draft/submitted/under review/accepted/rejected)')
     print('  Students: DEMO: Hannah Student (%s, published grade, GPA shows), DEMO: Timothy Student (%s, grade pending)'
           % (student1.student_code, student2.student_code))
-    print('  Hannah\'s login for the app My Status / Apply tabs: %s + demo.hannah@example.com' % student1.student_code)
+    print('  To sign in as Hannah in the app, use student number %s and demo.hannah@example.com' % student1.student_code)
     print('  Assignments: one graded, one submitted-awaiting-grade')
     print('  Also created: Bible Knowledge, Competency Assessment, Sermon, Formation, Fieldwork Placement, Fee+Payment, Graduation Clearance')

@@ -17,6 +17,7 @@ class CollegeGraduationClearance(models.Model):
     _name = 'college.graduation.clearance'
     _description = 'Bible College Graduation Clearance'
     _order = 'id desc'
+    _rec_name = 'student_id'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     term_id = fields.Many2one('college.term', string='Expected Graduation Term')
@@ -75,6 +76,7 @@ class CollegeGraduationChecklistLine(models.Model):
     _name = 'college.graduation.checklist.line'
     _description = 'Graduation Checklist Line'
     _order = 'id'
+    _rec_name = 'requirement_id'
 
     clearance_id = fields.Many2one('college.graduation.clearance', required=True, ondelete='cascade')
     requirement_id = fields.Many2one('college.graduation.requirement', required=True)

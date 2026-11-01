@@ -5,6 +5,7 @@ class CollegePlacement(models.Model):
     _name = 'college.placement'
     _description = 'Bible College Fieldwork / Ministry Placement'
     _order = 'start_date desc, id desc'
+    _rec_name = 'site_name'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     term_id = fields.Many2one('college.term')
@@ -54,6 +55,7 @@ class CollegePlacementLog(models.Model):
     _name = 'college.placement.log'
     _description = 'Bible College Placement Hours Log'
     _order = 'date desc, id desc'
+    _rec_name = 'placement_id'
 
     placement_id = fields.Many2one('college.placement', required=True, ondelete='cascade')
     date = fields.Date(default=fields.Date.context_today, required=True)

@@ -5,6 +5,7 @@ class CollegeBibleKnowledge(models.Model):
     _name = 'college.bible.knowledge'
     _description = 'Bible Knowledge / Scripture Memory Record'
     _order = 'date desc, id desc'
+    _rec_name = 'student_id'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     course_id = fields.Many2one('college.course')

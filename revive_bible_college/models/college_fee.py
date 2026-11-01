@@ -53,6 +53,7 @@ class CollegePayment(models.Model):
     _name = 'college.payment'
     _description = 'Bible College Fee Payment'
     _order = 'date desc, id desc'
+    _rec_name = 'fee_id'
 
     fee_id = fields.Many2one('college.fee', required=True, ondelete='cascade')
     date = fields.Date(default=fields.Date.context_today, required=True)

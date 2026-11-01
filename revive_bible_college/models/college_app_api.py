@@ -8,7 +8,8 @@ for the two roles this module adds.
 """
 import re
 
-COLLEGE_ROLES = ('college_staff', 'college_admin')
+COLLEGE_ROLES = ('college_staff', 'college_admin', 'admin')
+COLLEGE_ADMIN_ROLES = ('college_admin', 'admin')
 _CODE_RE = re.compile(r'^([A-Z]*)[\s-]*([0-9]+)$')
 
 
@@ -18,7 +19,7 @@ def college_app_staff(env):
     staff = session.employee_id if session else env['hr.employee']
     if not staff or not staff.is_app_active or staff.staff_role not in COLLEGE_ROLES:
         return env['hr.employee'], False
-    return staff, staff.staff_role == 'college_admin'
+    return staff, staff.staff_role in COLLEGE_ADMIN_ROLES
 
 
 def normalize_code(raw, prefix):

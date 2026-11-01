@@ -51,7 +51,9 @@ class CollegeEnrollment(models.Model):
     @api.depends('numeric_grade')
     def _compute_letter_grade(self):
         for enrollment in self:
-            if not enrollment.numeric_grade and enrollment.letter_grade:
+            # A score of 0 counts as no score here; a real zero is typed as F.
+            if not enrollment.numeric_grade:
+                enrollment.letter_grade = False
                 continue
             letter = 'F'
             for minimum, label in GRADE_SCALE:
@@ -59,6 +61,11 @@ class CollegeEnrollment(models.Model):
                     letter = label
                     break
             enrollment.letter_grade = letter
+
+    @api.depends('student_id.name', 'course_id.name')
+    def _compute_display_name(self):
+        for enrollment in self:
+            enrollment.display_name = '%s, %s' % (enrollment.student_id.name or '', enrollment.course_id.name or '')
 
     @api.depends('grade_state', 'course_id.credits')
     def _compute_credits_earned(self):
@@ -73,6 +80,8 @@ class CollegeEnrollment(models.Model):
         for enrollment in self:
             if enrollment.grade_state != 'draft':
                 continue
+            if not enrollment.numeric_grade and not enrollment.letter_grade:
+                raise UserError(_('Enter a score or letter grade for %s first.', enrollment.display_name))
             enrollment.write({
                 'grade_state': 'submitted',
                 'graded_by': self.env.user.id,

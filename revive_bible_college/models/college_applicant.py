@@ -77,6 +77,7 @@ class CollegeApplicant(models.Model):
             'decision_date': self.decision_date.isoformat() if self.decision_date else '',
             'decision_notes': self.decision_notes or '',
             'student_id': self.student_id.id or False,
+            'student_code': self.student_id.student_code or '',
         }
 
     @api.model

@@ -15,6 +15,7 @@ class CollegeCompetencyAssessment(models.Model):
     _name = 'college.competency.assessment'
     _description = 'Ministry Competency Assessment'
     _order = 'date desc, id desc'
+    _rec_name = 'student_id'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     competency_id = fields.Many2one('college.competency', required=True)

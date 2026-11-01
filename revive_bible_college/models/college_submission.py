@@ -5,6 +5,7 @@ class CollegeSubmission(models.Model):
     _name = 'college.submission'
     _description = 'Bible College Assignment Submission'
     _order = 'id desc'
+    _rec_name = 'assignment_id'
 
     assignment_id = fields.Many2one('college.assignment', required=True, ondelete='cascade')
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')

@@ -5,6 +5,7 @@ class CollegeFormation(models.Model):
     _name = 'college.formation'
     _description = 'Spiritual Formation Record'
     _order = 'date desc, id desc'
+    _rec_name = 'student_id'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     activity_type = fields.Selection([

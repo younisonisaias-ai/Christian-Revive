@@ -5,6 +5,7 @@ class CollegeSermon(models.Model):
     _name = 'college.sermon'
     _description = 'Bible College Sermon Submission'
     _order = 'sermon_date desc, id desc'
+    _rec_name = 'title'
 
     student_id = fields.Many2one('college.student', required=True, ondelete='cascade')
     course_id = fields.Many2one('college.course')

@@ -58,6 +58,9 @@ class CollegeAssignment(models.Model):
                 'due_date': assignment.due_date.isoformat() if assignment.due_date else '',
                 'max_score': assignment.max_score, 'description': assignment.description or '',
                 'submission_state': submission.state if submission else 'none',
+                'text_answer': (submission.text_answer or '') if submission else '',
+                'attachment_filename': (submission.attachment_filename or '') if submission else '',
+                'is_late': submission.is_late if submission else False,
                 'score': submission.score if submission and submission.state == 'graded' else None,
                 'feedback': submission.feedback if submission and submission.state == 'graded' else '',
             })
