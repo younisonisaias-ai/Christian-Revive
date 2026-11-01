@@ -247,6 +247,7 @@ else:
     clearance = Clearance.create({'student_id': student1.id, 'term_id': term.id})
     clearance.action_load_requirements()
 
+    hannah_code = student1._new_signin_code()
     env.cr.commit()
     print('Demo data created:')
     print('  Programs: DEMO: Diploma in Theology, DEMO: Certificate in Ministry')
@@ -256,6 +257,6 @@ else:
     print('  Students: DEMO: Hannah Student (%s, published grade, GPA shows), DEMO: Timothy Student (%s, grade pending)'
           % (student1.student_code, student2.student_code))
     print('  To sign in as Hannah, choose Student, then "First time here", and use student number %s with sign-in code %s'
-          % (student1.student_code, student1._new_signin_code()))
+          % (student1.student_code, hannah_code))
     print('  Assignments: one graded, one submitted-awaiting-grade')
     print('  Also created: Bible Knowledge, Competency Assessment, Sermon, Formation, Fieldwork Placement, Fee+Payment, Graduation Clearance')
