@@ -6,6 +6,8 @@ from . import college_course
 from . import college_course_content
 from . import college_applicant
 from . import college_student
+from . import college_student_auth
+from . import ir_ui_menu
 from . import college_enrollment
 from . import college_assignment
 from . import college_submission

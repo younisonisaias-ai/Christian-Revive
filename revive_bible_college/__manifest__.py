@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.10.0',
+    'version': '19.0.1.11.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -33,12 +33,14 @@ A standalone module for running a Bible college or seminary, start to finish:
 * Graduation requirements checklist and clearance (draft -> cleared ->
   graduated), which also marks the student record as graduated
 * Staff can manage applicants, students and course enrollment from the
-  Christian Revive app itself (adds Bible College Staff / Bible College
-  Admin as app staff roles, reusing the app's existing sign-in)
+  Christian Revive app itself, through their own College Staff and College
+  Admin sign-ins. Staff submit grades; admins approve and publish them.
+* Students sign in with their student number and a password, in the app or
+  at /college in a browser. A one-time code from the college office sets the
+  password. Grades only ever show once staff has published them.
 * Anyone can apply from the app with no account needed, and check their
-  application or (once enrolled) their enrollment/grades/course content
-  afterwards using their application/student number plus their email.
-  Grades only ever show once staff has published them.
+  application afterwards using their application number plus their email.
+* College staff with no other ERP role see only Bible College in the ERP.
 
 Core record-keeping stays independent of Church Management so it could
 move to its own database later; the app sign-in integration (above) is
@@ -52,6 +54,7 @@ the one part that depends on Church Management's session system.
         'security/college_security.xml',
         'security/ir.model.access.csv',
         'data/college_sequence.xml',
+        'data/college_cron.xml',
         'views/college_program_views.xml',
         'views/college_term_views.xml',
         'views/college_course_views.xml',
@@ -67,6 +70,7 @@ the one part that depends on Church Management's session system.
         'views/college_fee_views.xml',
         'views/college_graduation_views.xml',
         'views/college_student_views.xml',
+        'views/college_portal_templates.xml',
         'views/college_menus.xml',
     ],
     'installable': True,

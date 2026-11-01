@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Plain student pages (no website module needed), served at /college. -->
+    <template id="portal_layout" name="Bible College: page">
+        <t t-out="doctype"/>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="robots" content="noindex, nofollow"/>
+                <title>Bible College</title>
+                <style>
+                    * { box-sizing: border-box; }
+                    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #FAF7F2;
+                           color: #3B2D1F; margin: 0; line-height: 1.5; }
+                    header { background: #4B3726; color: #fff; padding: 14px 16px; }
+                    header .in { max-width: 720px; margin: 0 auto; display: flex; align-items: center;
+                                 justify-content: space-between; gap: 12px; }
+                    header a { color: #fff; text-decoration: none; font-size: 19px; font-weight: 700; }
+                    header button { width: auto; margin: 0; padding: 7px 12px; font-size: 14px; background: transparent;
+                                    border: 1px solid rgba(255,255,255,.6); border-radius: 9px; }
+                    main { max-width: 720px; margin: 0 auto; padding: 16px; }
+                    h1 { font-size: 24px; margin: 8px 0 4px; }
+                    h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #8A7A69; margin: 22px 4px 8px; }
+                    .sub { color: #7A6B5C; margin: 0 0 14px; }
+                    .card { background: #fff; border: 1px solid #EDE5DA; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+                    .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 16px;
+                           border-top: 1px solid #F0E9DF; color: inherit; text-decoration: none; }
+                    .row:first-child { border-top: 0; }
+                    .list { background: #fff; border: 1px solid #EDE5DA; border-radius: 16px; overflow: hidden; }
+                    .row b { display: block; }
+                    .row small { color: #7A6B5C; }
+                    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+                    .stat { background: #fff; border: 1px solid #EDE5DA; border-radius: 14px; padding: 12px; }
+                    .stat b { display: block; font-size: 21px; }
+                    .stat span { color: #7A6B5C; font-size: 13px; }
+                    .pill { white-space: nowrap; font-size: 12.5px; font-weight: 700; padding: 3px 10px; border-radius: 99px;
+                            background: #F1ECE5; color: #6B5C4C; }
+                    .good { background: #E8F5E9; color: #2E7D32; }
+                    .wait { background: #FFF3E0; color: #B26A00; }
+                    label { display: block; font-weight: 600; margin: 12px 0 4px; }
+                    input, textarea { width: 100%; padding: 12px; font: inherit; color: inherit; background: #fff;
+                                      border: 1px solid #CFC4B6; border-radius: 10px; }
+                    button { width: 100%; margin-top: 16px; padding: 13px; font: inherit; font-weight: 700; color: #fff;
+                             background: #4B3726; border: 0; border-radius: 12px; cursor: pointer; }
+                    .error { background: #FDECEA; color: #B71C1C; padding: 11px 13px; border-radius: 10px; margin: 12px 0 0; }
+                    .help { color: #7A6B5C; font-size: 14px; margin: 14px 0 0; text-align: center; }
+                    .act { font-weight: 700; color: #7A4A12; white-space: nowrap; }
+                    .text { white-space: pre-wrap; overflow-wrap: anywhere; }
+                    a { color: #7A4A12; }
+                    @media (prefers-color-scheme: dark) {
+                        body { background: #171310; color: #EFE7DC; }
+                        .card, .list, .stat, input, textarea { background: #221C17; border-color: #3A3027; color: inherit; }
+                        .row { border-color: #3A3027; }
+                        .sub, .row small, .stat span, .help, h2 { color: #B3A491; }
+                        .pill { background: #332A22; color: #D8CBB9; }
+                        .good { background: #1D3320; color: #8FD197; }
+                        .wait { background: #3A2A12; color: #EDB866; }
+                        .error { background: #3D1B18; color: #F5A8A0; }
+                        .act, a { color: #E0B27C; }
+                    }
+                </style>
+            </head>
+            <body>
+                <header>
+                    <div class="in">
+                        <a t-att-href="'/college/home' if signed_in else '/college'">Bible College</a>
+                        <form t-if="signed_in" action="/college/sign-out" method="post" style="margin:0">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <button type="submit">Sign out</button>
+                        </form>
+                    </div>
+                </header>
+                <main><t t-out="0"/></main>
+            </body>
+        </html>
+    </template>
+
+    <template id="portal_sign_in" name="Bible College: student sign-in">
+        <t t-call="revive_bible_college.portal_layout">
+            <h1>Student sign-in</h1>
+            <p class="sub">Use your student number and password.</p>
+            <form class="card" action="/college" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label for="code">Student number</label>
+                <input id="code" name="code" placeholder="e.g. BC-00001" autocomplete="username" required="required" t-att-value="code"/>
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required="required"/>
+                <p t-if="error" class="error" t-esc="error"/>
+                <button type="submit">Sign in</button>
+            </form>
+            <p class="help"><a href="/college/first-time">First time here, or forgot your password?</a><br/>You need a sign-in code from the college office.</p>
+        </t>
+    </template>
+
+    <template id="portal_first_time" name="Bible College: set a password">
+        <t t-call="revive_bible_college.portal_layout">
+            <h1>Set your password</h1>
+            <p class="sub">Enter the sign-in code from the college office, then choose a password.</p>
+            <form class="card" action="/college/first-time" method="post">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label for="code">Student number</label>
+                <input id="code" name="code" placeholder="e.g. BC-00001" autocomplete="username" required="required" t-att-value="code"/>
+                <label for="signin_code">Sign-in code</label>
+                <input id="signin_code" name="signin_code" autocomplete="one-time-code" required="required" t-att-value="signin_code"/>
+                <label for="password">New password (at least 8 characters)</label>
+                <input id="password" name="password" type="password" minlength="8" autocomplete="new-password" required="required"/>
+                <label for="confirm">Type it again</label>
+                <input id="confirm" name="confirm" type="password" minlength="8" autocomplete="new-password" required="required"/>
+                <p t-if="error" class="error" t-esc="error"/>
+                <button type="submit">Save and sign in</button>
+            </form>
+            <p class="help"><a href="/college">Back to sign-in</a></p>
+        </t>
+    </template>
+
+    <template id="portal_home" name="Bible College: my studies">
+        <t t-set="signed_in" t-value="True"/>
+        <t t-call="revive_bible_college.portal_layout">
+            <h1 t-esc="student['name']"/>
+            <p class="sub"><t t-esc="student['program_name']"/> · <t t-esc="student['code']"/></p>
+            <div class="stats">
+                <div class="stat"><b t-esc="'%.2f' % student['gpa'] if student['gpa'] else '–'"/><span>GPA</span></div>
+                <div class="stat"><b t-esc="'%g' % student['completed_credits']"/><span>Credits</span></div>
+                <div class="stat"><b t-esc="len(student['enrollments'])"/><span>Courses</span></div>
+            </div>
+            <t t-if="to_do">
+                <h2>To do</h2>
+                <div class="list">
+                    <a t-foreach="to_do" t-as="a" class="row" t-attf-href="/college/assignment/#{a['id']}">
+                        <span><b t-esc="a['name']"/><small t-esc="a['course_name']"/></span>
+                        <span class="pill wait" t-esc="('Due ' + a['due_date']) if a['due_date'] else 'No due date'"/>
+                    </a>
+                </div>
+            </t>
+            <h2>My courses</h2>
+            <div t-if="student['enrollments']" class="list">
+                <a t-foreach="student['enrollments']" t-as="e" class="row" t-attf-href="/college/course/#{e['id']}">
+                    <span><b t-esc="e['course_name']"/><small t-esc="e['term_name']"/></span>
+                    <span t-if="e['grade_pending']" class="pill wait">Grade pending</span>
+                    <span t-else="" class="pill good" t-esc="'Grade ' + e['letter_grade']"/>
+                </a>
+            </div>
+            <div t-else="" class="card">You are not enrolled in a course yet.</div>
+            <t t-if="done">
+                <h2>Handed in</h2>
+                <div class="list">
+                    <a t-foreach="done" t-as="a" class="row" t-attf-href="/college/assignment/#{a['id']}">
+                        <span><b t-esc="a['name']"/><small t-esc="a['course_name']"/></span>
+                        <span t-if="a['submission_state'] == 'graded'" class="pill good" t-esc="'Score %g / %g' % (a['score'], a['max_score'])"/>
+                        <span t-else="" class="pill">Waiting for grade</span>
+                    </a>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="portal_course" name="Bible College: course">
+        <t t-set="signed_in" t-value="True"/>
+        <t t-call="revive_bible_college.portal_layout">
+            <p class="help" style="text-align:left;margin:0"><a href="/college/home">Back to my studies</a></p>
+            <h1 t-esc="enrollment['course_name']"/>
+            <p class="sub" t-esc="enrollment['term_name']"/>
+            <p t-if="not enrollment['grade_pending']"><span class="pill good" t-esc="'Grade ' + enrollment['letter_grade']"/></p>
+            <h2>Course materials</h2>
+            <div t-if="not enrollment['content']" class="card">The college has not added materials yet.</div>
+            <t t-foreach="enrollment['content']" t-as="c">
+                <div t-if="c['content_type'] == 'text'" class="card">
+                    <b t-esc="c['name']"/>
+                    <div class="text" t-esc="c['body']"/>
+                </div>
+                <div t-else="" class="list" style="margin-bottom:12px">
+                    <a t-if="c['content_type'] in ('video', 'link') and c['url']" class="row" t-att-href="c['url']" target="_blank" rel="noopener noreferrer">
+                        <b t-esc="c['name']"/>
+                        <span class="act" t-esc="'Watch' if c['content_type'] == 'video' else 'Visit'"/>
+                    </a>
+                    <a t-elif="c['has_attachment']" class="row" t-attf-href="/college/file/#{c['id']}">
+                        <b t-esc="c['name']"/><span class="act">Download</span>
+                    </a>
+                    <div t-else="" class="row"><b t-esc="c['name']"/><small>Not added yet</small></div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="portal_assignment" name="Bible College: assignment">
+        <t t-set="signed_in" t-value="True"/>
+        <t t-call="revive_bible_college.portal_layout">
+            <p class="help" style="text-align:left;margin:0"><a href="/college/home">Back to my studies</a></p>
+            <h1 t-esc="a['name']"/>
+            <p class="sub">
+                <t t-esc="a['course_name']"/> · Out of <t t-esc="'%g' % a['max_score']"/>
+                <t t-if="a['due_date']"> · Due <t t-esc="a['due_date']"/></t>
+            </p>
+            <div t-if="a['description']" class="card text" t-esc="a['description']"/>
+            <form t-if="a['submission_state'] in ('none', 'draft')" class="card" t-attf-action="/college/assignment/#{a['id']}" method="post" enctype="multipart/form-data"
+                  onsubmit="return confirm('Submit this assignment? You cannot change your work after you submit it.')">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                <label for="text_answer">Your answer</label>
+                <textarea id="text_answer" name="text_answer" rows="9"><t t-esc="answer or ''"/></textarea>
+                <label for="attachment">Attach a file (optional, up to 5 MB)</label>
+                <input id="attachment" name="attachment" type="file"/>
+                <p t-if="error" class="error" t-esc="error"/>
+                <button type="submit">Submit assignment</button>
+            </form>
+            <t t-else="">
+                <div t-if="a['submission_state'] == 'graded'" class="card">
+                    <span class="pill good" t-esc="'Score %g / %g' % (a['score'], a['max_score'])"/>
+                    <p t-if="a['feedback']" class="text" t-esc="a['feedback']"/>
+                </div>
+                <div t-else="" class="card"><span class="pill">Waiting for grade</span></div>
+                <h2>What you handed in</h2>
+                <div class="card">
+                    <div t-if="a['text_answer']" class="text" t-esc="a['text_answer']"/>
+                    <p t-if="a['attachment_filename']"><small t-esc="'File: ' + a['attachment_filename']"/></p>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="view_college_signin_code_form" model="ir.ui.view">
+        <field name="name">college.signin.code.form</field>
+        <field name="model">college.signin.code</field>
+        <field name="arch" type="xml">
+            <form string="Sign-in code">
+                <group>
+                    <field name="student_id"/>
+                    <field name="code" widget="CopyClipboardChar"/>
+                </group>
+                <p>Give this code to the student. It works once, for 7 days. They enter it with their student number
+                    in the app or at /college, then choose a password. It will not be shown again.</p>
+                <footer>
+                    <button string="Close" special="cancel" class="btn-primary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

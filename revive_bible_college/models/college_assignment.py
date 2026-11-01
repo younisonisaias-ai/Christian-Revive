@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .college_app_api import public_student
+from .college_app_api import public_student, token_student
 
 
 class CollegeAssignment(models.Model):
@@ -43,6 +43,17 @@ class CollegeAssignment(models.Model):
         student = public_student(self.env, code, email)
         if not student:
             return {'success': False, 'error': 'No student found with that number and email'}
+        return {'success': True, 'assignments': self._student_assignments(student)}
+
+    @api.model
+    def app_college_my_assignments(self, token):
+        student = token_student(self.env, token)
+        if not student:
+            return {'success': False, 'error': 'Please sign in again'}
+        return {'success': True, 'assignments': self._student_assignments(student)}
+
+    @api.model
+    def _student_assignments(self, student):
         pairs = {(e.course_id.id, e.term_id.id) for e in student.enrollment_ids}
         assignments = self.sudo().search([('active', '=', True)])
         assignments = assignments.filtered(lambda a: (a.course_id.id, a.term_id.id) in pairs)
@@ -64,7 +75,7 @@ class CollegeAssignment(models.Model):
                 'score': submission.score if submission and submission.state == 'graded' else None,
                 'feedback': submission.feedback if submission and submission.state == 'graded' else '',
             })
-        return {'success': True, 'assignments': result}
+        return result
 
     @api.model
     def app_college_student_submit_assignment(self, code, email, assignment_id,
@@ -72,6 +83,17 @@ class CollegeAssignment(models.Model):
         student = public_student(self.env, code, email)
         if not student:
             return {'success': False, 'error': 'No student found with that number and email'}
+        return self._student_submit(student, assignment_id, text_answer, attachment, attachment_filename)
+
+    @api.model
+    def app_college_my_submit(self, token, assignment_id, text_answer='', attachment=None, attachment_filename=''):
+        student = token_student(self.env, token)
+        if not student:
+            return {'success': False, 'error': 'Please sign in again'}
+        return self._student_submit(student, assignment_id, text_answer, attachment, attachment_filename)
+
+    @api.model
+    def _student_submit(self, student, assignment_id, text_answer='', attachment=None, attachment_filename=''):
         assignment = self.sudo().browse(assignment_id)
         if not assignment.exists():
             return {'success': False, 'error': 'Assignment not found'}

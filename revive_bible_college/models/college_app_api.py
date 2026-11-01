@@ -43,13 +43,23 @@ def normalize_code(raw, prefix):
 
 
 def public_student(env, code, email):
-    """The student matching this code+email pair (Phase 9, no login), or
-    an empty recordset. Shared by every public student-side endpoint so
-    they all apply the same normalization and matching rules."""
+    """The student matching this code+email pair, or an empty recordset.
+
+    This is how app versions from before student passwords sign in. It stops
+    for a student once they set a password, and for everyone when the setting
+    revive_bible_college.allow_email_lookup is False."""
+    allowed = env['ir.config_parameter'].sudo().get_param('revive_bible_college.allow_email_lookup', 'True')
+    if allowed.lower() not in ('1', 'true', 'yes'):
+        return env['college.student']
     code = normalize_code(code, 'BC-')
     email = str(email or '').strip().lower()
     if not code or not email:
         return env['college.student']
     return env['college.student'].sudo().search([
-        ('student_code', '=ilike', code), ('email', '!=', False),
+        ('student_code', '=ilike', code), ('email', '!=', False), ('has_password', '=', False),
     ], limit=1).filtered(lambda s: s.email.strip().lower() == email)
+
+
+def token_student(env, token):
+    """The student signed in with this token, or an empty recordset."""
+    return env['college.student.session'].sudo()._find(token).student_id

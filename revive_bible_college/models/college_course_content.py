@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .college_app_api import public_student
+from .college_app_api import public_student, token_student
 
 
 class CollegeCourseContent(models.Model):
@@ -32,6 +32,17 @@ class CollegeCourseContent(models.Model):
         student = public_student(self.env, code, email)
         if not student:
             return {'success': False, 'error': 'No student found with that number and email'}
+        return self._student_file(student, content_id)
+
+    @api.model
+    def app_college_my_content(self, token, content_id):
+        student = token_student(self.env, token)
+        if not student:
+            return {'success': False, 'error': 'Please sign in again'}
+        return self._student_file(student, content_id)
+
+    @api.model
+    def _student_file(self, student, content_id):
         content = self.sudo().browse(content_id)
         enrolled_course_ids = set(student.enrollment_ids.course_id.ids)
         if not content.exists() or content.course_id.id not in enrolled_course_ids:

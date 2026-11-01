@@ -21,6 +21,8 @@
         <field name="arch" type="xml">
             <form string="Student">
                 <header>
+                    <button name="action_create_signin_code" type="object" string="Create Sign-in Code"
+                            invisible="state == 'withdrawn'"/>
                     <field name="state" widget="statusbar"/>
                 </header>
                 <sheet>
@@ -42,6 +44,7 @@
                         <group>
                             <field name="completed_credits"/>
                             <field name="gpa"/>
+                            <field name="has_password"/>
                         </group>
                     </group>
                     <notebook>

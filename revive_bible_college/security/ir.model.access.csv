@@ -41,3 +41,5 @@ access_college_graduation_clearance_staff,college.graduation.clearance staff,mod
 access_college_graduation_clearance_admin,college.graduation.clearance admin,model_college_graduation_clearance,group_college_admin,1,1,1,1
 access_college_graduation_checklist_line_staff,college.graduation.checklist.line staff,model_college_graduation_checklist_line,group_college_staff,1,1,1,0
 access_college_graduation_checklist_line_admin,college.graduation.checklist.line admin,model_college_graduation_checklist_line,group_college_admin,1,1,1,1
+access_college_student_session_admin,college.student.session admin,model_college_student_session,group_college_admin,1,0,0,0
+access_college_signin_code_staff,college.signin.code staff,model_college_signin_code,group_college_staff,1,1,1,0

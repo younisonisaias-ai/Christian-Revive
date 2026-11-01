@@ -255,6 +255,7 @@ else:
     print('  Applicants: one at each stage (draft/submitted/under review/accepted/rejected)')
     print('  Students: DEMO: Hannah Student (%s, published grade, GPA shows), DEMO: Timothy Student (%s, grade pending)'
           % (student1.student_code, student2.student_code))
-    print('  To sign in as Hannah in the app, use student number %s and demo.hannah@example.com' % student1.student_code)
+    print('  To sign in as Hannah, choose Student, then "First time here", and use student number %s with sign-in code %s'
+          % (student1.student_code, student1._new_signin_code()))
     print('  Assignments: one graded, one submitted-awaiting-grade')
     print('  Also created: Bible Knowledge, Competency Assessment, Sermon, Formation, Fieldwork Placement, Fee+Payment, Graduation Clearance')

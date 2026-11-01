@@ -59,8 +59,10 @@ class CollegeStudent(models.Model):
             'state': self.state, 'gpa': self.gpa, 'completed_credits': self.completed_credits,
         }
 
-    def _app_detail(self):
+    def _app_detail(self, viewer_is_admin=False):
         data = self._app_summary()
+        data['has_password'] = self.has_password
+        data['viewer_is_admin'] = viewer_is_admin
         data['enrollments'] = [{
             'id': e.id, 'course_id': e.course_id.id, 'course_name': e.course_id.name,
             'term_id': e.term_id.id, 'term_name': e.term_id.name,
@@ -80,17 +82,17 @@ class CollegeStudent(models.Model):
 
     @api.model
     def app_college_get_student(self, student_id):
-        staff, _is_admin = college_app_staff(self.env)
+        staff, is_admin = college_app_staff(self.env)
         if not staff:
             return {'success': False, 'error': 'Not authorized'}
         student = self.sudo().browse(student_id)
         if not student.exists():
             return {'success': False, 'error': 'Student not found'}
-        return {'success': True, 'student': student._app_detail()}
+        return {'success': True, 'student': student._app_detail(is_admin)}
 
     @api.model
     def app_college_enroll_student(self, student_id, course_id, term_id):
-        staff, _is_admin = college_app_staff(self.env)
+        staff, is_admin = college_app_staff(self.env)
         if not staff:
             return {'success': False, 'error': 'Not authorized'}
         student = self.sudo().browse(student_id)
@@ -104,12 +106,11 @@ class CollegeStudent(models.Model):
         self.env['college.enrollment'].sudo().create({
             'student_id': student_id, 'course_id': course_id, 'term_id': term_id,
         })
-        return {'success': True, 'student': student._app_detail()}
+        return {'success': True, 'student': student._app_detail(is_admin)}
 
-    # ── App API (Phase 9: public student side, no login) ─────────
-    # No account exists for students, so the student code + matching email
-    # together act as the lookup key. Grades only show once published —
-    # a student must never see a grade before staff releases it.
+    # ── App API (student's own view) ─────────────────────────────
+    # Grades only show once published: a student must never see a grade
+    # before staff releases it. See college_student_auth.py for sign-in.
 
     def _app_self_detail(self):
         data = self._app_summary()

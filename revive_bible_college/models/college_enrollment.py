@@ -1,6 +1,8 @@
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
+from .college_app_api import college_app_staff
+
 # Standard letter scale, used only as the starting suggestion — staff can
 # always type over the computed letter for a course with its own scale.
 GRADE_SCALE = [
@@ -77,6 +79,24 @@ class CollegeEnrollment(models.Model):
             raise UserError(_('Only a Bible College admin can do this.'))
 
     def action_submit_grade(self):
+        self._do_submit_grade(self.env.user)
+
+    def action_approve_grade(self):
+        self._require_admin()
+        self._do_approve_grade(self.env.user)
+
+    def action_publish_grade(self):
+        self._require_admin()
+        self._do_publish_grade()
+
+    def action_reset_to_draft(self):
+        self._require_admin()
+        self._do_reset_grade()
+
+    # The app checks the signed-in staff member's role itself, because every
+    # phone reaches the server through one shared ERP account.
+
+    def _do_submit_grade(self, user):
         for enrollment in self:
             if enrollment.grade_state != 'draft':
                 continue
@@ -84,23 +104,21 @@ class CollegeEnrollment(models.Model):
                 raise UserError(_('Enter a score or letter grade for %s first.', enrollment.display_name))
             enrollment.write({
                 'grade_state': 'submitted',
-                'graded_by': self.env.user.id,
+                'graded_by': user.id,
                 'graded_date': fields.Date.context_today(self),
             })
 
-    def action_approve_grade(self):
-        self._require_admin()
+    def _do_approve_grade(self, user):
         for enrollment in self:
             if enrollment.grade_state != 'submitted':
                 continue
             enrollment.write({
                 'grade_state': 'approved',
-                'approved_by': self.env.user.id,
+                'approved_by': user.id,
                 'approved_date': fields.Date.context_today(self),
             })
 
-    def action_publish_grade(self):
-        self._require_admin()
+    def _do_publish_grade(self):
         for enrollment in self:
             if enrollment.grade_state != 'approved':
                 continue
@@ -110,10 +128,45 @@ class CollegeEnrollment(models.Model):
                 'state': 'completed',
             })
 
-    def action_reset_to_draft(self):
-        self._require_admin()
+    def _do_reset_grade(self):
         self.write({
             'grade_state': 'draft',
             'graded_by': False, 'graded_date': False,
             'approved_by': False, 'approved_date': False, 'published_date': False,
         })
+
+    @api.model
+    def app_college_grade_action(self, enrollment_id, action, numeric_grade=None):
+        staff, is_admin = college_app_staff(self.env)
+        if not staff:
+            return {'success': False, 'error': 'Not authorized'}
+        enrollment = self.sudo().browse(enrollment_id)
+        if not enrollment.exists():
+            return {'success': False, 'error': 'Course not found'}
+        user = staff.user_id or self.env.user
+        if action == 'submit':
+            if enrollment.grade_state != 'draft':
+                return {'success': False, 'error': 'This grade was already submitted'}
+            if numeric_grade is not None:
+                if not isinstance(numeric_grade, (int, float)) or not 0 <= numeric_grade <= 100:
+                    return {'success': False, 'error': 'Enter a score from 0 to 100'}
+                enrollment.numeric_grade = numeric_grade
+            if not enrollment.numeric_grade and not enrollment.letter_grade:
+                return {'success': False, 'error': 'Enter a score first'}
+            enrollment._do_submit_grade(user)
+        elif action in ('approve', 'publish', 'reset'):
+            if not is_admin:
+                return {'success': False, 'error': 'Only a Bible College admin can do this.'}
+            if action == 'approve':
+                if enrollment.grade_state != 'submitted':
+                    return {'success': False, 'error': 'This grade is not waiting for approval'}
+                enrollment._do_approve_grade(user)
+            elif action == 'publish':
+                if enrollment.grade_state != 'approved':
+                    return {'success': False, 'error': 'Approve this grade first'}
+                enrollment._do_publish_grade()
+            else:
+                enrollment._do_reset_grade()
+        else:
+            return {'success': False, 'error': 'Unknown action'}
+        return {'success': True, 'student': enrollment.student_id._app_detail(is_admin)}
