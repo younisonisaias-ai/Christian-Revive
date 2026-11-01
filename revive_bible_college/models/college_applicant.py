@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .college_app_api import college_app_staff
+from .college_app_api import college_app_staff, normalize_code
 
 APPLICANT_ACTIONS = {
     'submit': 'action_submit',
@@ -159,12 +159,12 @@ class CollegeApplicant(models.Model):
 
     @api.model
     def app_college_check_application(self, code, email):
-        code = str(code or '').strip()
+        code = normalize_code(code, 'APP-')
         email = str(email or '').strip().lower()
         if not code or not email:
             return {'success': False, 'error': 'Enter your application number and email'}
         applicant = self.sudo().search([
-            ('applicant_code', '=', code), ('email', '!=', False),
+            ('applicant_code', '=ilike', code), ('email', '!=', False),
         ], limit=1).filtered(lambda a: a.email.strip().lower() == email)
         if not applicant:
             return {'success': False, 'error': 'No application found with that number and email'}

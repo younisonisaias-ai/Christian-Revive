@@ -17,3 +17,14 @@ def college_app_staff(env):
     if not staff or not staff.is_app_active or staff.staff_role not in COLLEGE_ROLES:
         return env['hr.employee'], False
     return staff, staff.staff_role == 'college_admin'
+
+
+def normalize_code(raw, prefix):
+    """A public lookup code, tolerant of someone typing just the digits
+    (e.g. "00001" or "1") instead of the full "APP-00001"/"BC-00001"."""
+    raw = str(raw or '').strip().upper()
+    if not raw or raw.startswith(prefix):
+        return raw
+    if raw.isdigit():
+        return '%s%s' % (prefix, raw.zfill(5))
+    return raw

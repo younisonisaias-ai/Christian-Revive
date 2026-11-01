@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .college_app_api import college_app_staff
+from .college_app_api import college_app_staff, normalize_code
 from .college_enrollment import GRADE_POINTS
 
 
@@ -128,12 +128,12 @@ class CollegeStudent(models.Model):
 
     @api.model
     def app_college_student_lookup(self, code, email):
-        code = str(code or '').strip()
+        code = normalize_code(code, 'BC-')
         email = str(email or '').strip().lower()
         if not code or not email:
             return {'success': False, 'error': 'Enter your student number and email'}
         student = self.sudo().search([
-            ('student_code', '=', code), ('email', '!=', False),
+            ('student_code', '=ilike', code), ('email', '!=', False),
         ], limit=1).filtered(lambda s: s.email.strip().lower() == email)
         if not student:
             return {'success': False, 'error': 'No student found with that number and email'}
