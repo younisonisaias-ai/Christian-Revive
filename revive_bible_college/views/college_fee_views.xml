@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_fee_list" model="ir.ui.view">
+        <field name="name">college.fee.list</field>
+        <field name="model">college.fee</field>
+        <field name="arch" type="xml">
+            <list string="Fees">
+                <field name="student_id"/>
+                <field name="name"/>
+                <field name="term_id"/>
+                <field name="due_date"/>
+                <field name="amount"/>
+                <field name="amount_due"/>
+                <field name="payment_state" widget="badge"
+                       decoration-danger="payment_state == 'unpaid'"
+                       decoration-warning="payment_state == 'partial'"
+                       decoration-success="payment_state == 'paid'"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_fee_form" model="ir.ui.view">
+        <field name="name">college.fee.form</field>
+        <field name="model">college.fee</field>
+        <field name="arch" type="xml">
+            <form string="Fee">
+                <header>
+                    <button name="action_post" type="object" string="Post"
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_cancel" type="object" string="Cancel"
+                            invisible="state != 'posted'"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,posted"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Tuition Fall 2026"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="term_id"/>
+                            <field name="due_date"/>
+                        </group>
+                        <group>
+                            <field name="amount"/>
+                            <field name="amount_paid" readonly="1"/>
+                            <field name="amount_due" readonly="1"/>
+                            <field name="payment_state" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Payments" name="payments">
+                            <field name="payment_ids">
+                                <list editable="bottom">
+                                    <field name="date"/>
+                                    <field name="amount"/>
+                                    <field name="method"/>
+                                    <field name="reference"/>
+                                    <field name="received_by"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_fees" model="ir.actions.act_window">
+        <field name="name">Fees</field>
+        <field name="res_model">college.fee</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="group_college_staff" model="res.groups">
+            <field name="name">Bible College: Staff</field>
+        </record>
+        <record id="group_college_admin" model="res.groups">
+            <field name="name">Bible College: Admin</field>
+            <field name="implied_ids" eval="[(4, ref('group_college_staff'))]"/>
+        </record>
+    </data>
+</odoo>

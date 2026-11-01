@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_enrollment_list" model="ir.ui.view">
+        <field name="name">college.enrollment.list</field>
+        <field name="model">college.enrollment</field>
+        <field name="arch" type="xml">
+            <list string="Gradebook">
+                <field name="student_id"/>
+                <field name="course_id"/>
+                <field name="term_id"/>
+                <field name="numeric_grade"/>
+                <field name="letter_grade"/>
+                <field name="grade_state" widget="badge"
+                       decoration-info="grade_state == 'draft'"
+                       decoration-warning="grade_state == 'submitted'"
+                       decoration-success="grade_state == 'published'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_enrollment_form" model="ir.ui.view">
+        <field name="name">college.enrollment.form</field>
+        <field name="model">college.enrollment</field>
+        <field name="arch" type="xml">
+            <form string="Enrollment / Grade">
+                <header>
+                    <button name="action_submit_grade" type="object" string="Submit Grade"
+                            invisible="grade_state != 'draft'" class="oe_highlight"/>
+                    <button name="action_approve_grade" type="object" string="Approve"
+                            invisible="grade_state != 'submitted'" class="oe_highlight"
+                            groups="revive_bible_college.group_college_admin"/>
+                    <button name="action_publish_grade" type="object" string="Publish"
+                            invisible="grade_state != 'approved'" class="oe_highlight"
+                            groups="revive_bible_college.group_college_admin"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="grade_state == 'draft'"
+                            groups="revive_bible_college.group_college_admin"/>
+                    <field name="grade_state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="course_id"/>
+                            <field name="term_id"/>
+                            <field name="state"/>
+                        </group>
+                        <group>
+                            <field name="numeric_grade" readonly="grade_state != 'draft'"/>
+                            <field name="letter_grade" readonly="grade_state != 'draft'"/>
+                            <field name="credits_earned"/>
+                        </group>
+                    </group>
+                    <group string="Grading Trail">
+                        <group>
+                            <field name="graded_by" readonly="1"/>
+                            <field name="graded_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="approved_by" readonly="1"/>
+                            <field name="approved_date" readonly="1"/>
+                            <field name="published_date" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_gradebook" model="ir.actions.act_window">
+        <field name="name">Gradebook</field>
+        <field name="res_model">college.enrollment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_placement_list" model="ir.ui.view">
+        <field name="name">college.placement.list</field>
+        <field name="model">college.placement</field>
+        <field name="arch" type="xml">
+            <list string="Fieldwork Placements">
+                <field name="student_id"/>
+                <field name="site_name"/>
+                <field name="term_id"/>
+                <field name="hours_completed"/>
+                <field name="hours_required"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state in ('active', 'completed')"
+                       decoration-success="state == 'verified'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_placement_form" model="ir.ui.view">
+        <field name="name">college.placement.form</field>
+        <field name="model">college.placement</field>
+        <field name="arch" type="xml">
+            <form string="Fieldwork Placement">
+                <header>
+                    <button name="action_activate" type="object" string="Activate"
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_complete" type="object" string="Mark Completed"
+                            invisible="state != 'active'" class="oe_highlight"/>
+                    <button name="action_verify" type="object" string="Verify"
+                            invisible="state != 'completed'" class="oe_highlight"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="site_name" placeholder="e.g. Grace Community Church"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="term_id"/>
+                            <field name="site_address"/>
+                        </group>
+                        <group>
+                            <field name="supervisor_name"/>
+                            <field name="supervisor_contact"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                        <group>
+                            <field name="hours_required"/>
+                            <field name="hours_completed"/>
+                        </group>
+                    </group>
+                    <group string="Verification" invisible="state != 'verified'">
+                        <field name="verified_by" readonly="1"/>
+                        <field name="verified_date" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Hours Log" name="log">
+                            <field name="log_ids">
+                                <list editable="bottom">
+                                    <field name="date"/>
+                                    <field name="hours"/>
+                                    <field name="activity"/>
+                                    <field name="logged_by"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notes" name="notes">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_placements" model="ir.actions.act_window">
+        <field name="name">Fieldwork Placements</field>
+        <field name="res_model">college.placement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

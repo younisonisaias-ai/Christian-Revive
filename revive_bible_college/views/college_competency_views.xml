@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_competency_list" model="ir.ui.view">
+        <field name="name">college.competency.list</field>
+        <field name="model">college.competency</field>
+        <field name="arch" type="xml">
+            <list string="Ministry Competencies">
+                <field name="name"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_competency_form" model="ir.ui.view">
+        <field name="name">college.competency.form</field>
+        <field name="model">college.competency</field>
+        <field name="arch" type="xml">
+            <form string="Ministry Competency">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Preaching"/></h1>
+                    </div>
+                    <field name="active"/>
+                    <field name="description" placeholder="What this competency covers..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_competencies" model="ir.actions.act_window">
+        <field name="name">Ministry Competencies</field>
+        <field name="res_model">college.competency</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_college_competency_assessment_list" model="ir.ui.view">
+        <field name="name">college.competency.assessment.list</field>
+        <field name="model">college.competency.assessment</field>
+        <field name="arch" type="xml">
+            <list string="Competency Assessments">
+                <field name="student_id"/>
+                <field name="competency_id"/>
+                <field name="level" widget="badge"
+                       decoration-muted="level == 'novice'"
+                       decoration-info="level == 'developing'"
+                       decoration-warning="level == 'proficient'"
+                       decoration-success="level == 'advanced'"/>
+                <field name="course_id"/>
+                <field name="term_id"/>
+                <field name="date"/>
+                <field name="assessed_by"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_competency_assessment_form" model="ir.ui.view">
+        <field name="name">college.competency.assessment.form</field>
+        <field name="model">college.competency.assessment</field>
+        <field name="arch" type="xml">
+            <form string="Competency Assessment">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="competency_id"/>
+                            <field name="level"/>
+                        </group>
+                        <group>
+                            <field name="course_id"/>
+                            <field name="term_id"/>
+                            <field name="date"/>
+                            <field name="assessed_by" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="notes" placeholder="Notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_competency_assessments" model="ir.actions.act_window">
+        <field name="name">Competency Assessments</field>
+        <field name="res_model">college.competency.assessment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

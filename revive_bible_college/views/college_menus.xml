@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <menuitem id="menu_bible_college_root"
+        name="Bible College"
+        action="action_college_students"
+        sequence="17"/>
+
+    <menuitem id="menu_college_students"
+        name="Students"
+        parent="menu_bible_college_root"
+        action="action_college_students"
+        sequence="1"/>
+
+    <menuitem id="menu_college_applicants"
+        name="Applicants"
+        parent="menu_bible_college_root"
+        action="action_college_applicants"
+        sequence="2"/>
+
+    <menuitem id="menu_college_gradebook"
+        name="Gradebook"
+        parent="menu_bible_college_root"
+        action="action_college_gradebook"
+        sequence="3"/>
+
+    <menuitem id="menu_college_assignments"
+        name="Assignments"
+        parent="menu_bible_college_root"
+        action="action_college_assignments"
+        sequence="4"/>
+
+    <menuitem id="menu_college_bible_knowledge"
+        name="Bible Knowledge"
+        parent="menu_bible_college_root"
+        action="action_college_bible_knowledge"
+        sequence="5"/>
+
+    <menuitem id="menu_college_competency_assessments"
+        name="Competency Assessments"
+        parent="menu_bible_college_root"
+        action="action_college_competency_assessments"
+        sequence="6"/>
+
+    <menuitem id="menu_college_sermons"
+        name="Sermons"
+        parent="menu_bible_college_root"
+        action="action_college_sermons"
+        sequence="7"/>
+
+    <menuitem id="menu_college_formation"
+        name="Spiritual Formation"
+        parent="menu_bible_college_root"
+        action="action_college_formation"
+        sequence="8"/>
+
+    <menuitem id="menu_college_placements"
+        name="Fieldwork Placements"
+        parent="menu_bible_college_root"
+        action="action_college_placements"
+        sequence="9"/>
+
+    <menuitem id="menu_college_fees"
+        name="Fees"
+        parent="menu_bible_college_root"
+        action="action_college_fees"
+        sequence="10"/>
+
+    <menuitem id="menu_college_graduation_clearances"
+        name="Graduation Clearances"
+        parent="menu_bible_college_root"
+        action="action_college_graduation_clearances"
+        sequence="11"/>
+
+    <menuitem id="menu_college_setup_root"
+        name="Setup"
+        parent="menu_bible_college_root"
+        groups="group_college_admin"
+        sequence="20"/>
+
+    <menuitem id="menu_college_programs"
+        name="Programs"
+        parent="menu_college_setup_root"
+        action="action_college_programs"
+        sequence="1"/>
+
+    <menuitem id="menu_college_courses"
+        name="Courses"
+        parent="menu_college_setup_root"
+        action="action_college_courses"
+        sequence="2"/>
+
+    <menuitem id="menu_college_terms"
+        name="Academic Terms"
+        parent="menu_college_setup_root"
+        action="action_college_terms"
+        sequence="3"/>
+
+    <menuitem id="menu_college_competencies"
+        name="Ministry Competencies"
+        parent="menu_college_setup_root"
+        action="action_college_competencies"
+        sequence="4"/>
+
+    <menuitem id="menu_college_graduation_requirements"
+        name="Graduation Requirements"
+        parent="menu_college_setup_root"
+        action="action_college_graduation_requirements"
+        sequence="5"/>
+
+</odoo>

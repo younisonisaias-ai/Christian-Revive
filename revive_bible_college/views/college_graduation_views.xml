@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_graduation_requirement_list" model="ir.ui.view">
+        <field name="name">college.graduation.requirement.list</field>
+        <field name="model">college.graduation.requirement</field>
+        <field name="arch" type="xml">
+            <list string="Graduation Requirements">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="program_id"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_graduation_requirement_form" model="ir.ui.view">
+        <field name="name">college.graduation.requirement.form</field>
+        <field name="model">college.graduation.requirement</field>
+        <field name="arch" type="xml">
+            <form string="Graduation Requirement">
+                <sheet>
+                    <group>
+                        <field name="name" placeholder="e.g. Minimum Credits Completed"/>
+                        <field name="program_id"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_graduation_requirements" model="ir.actions.act_window">
+        <field name="name">Graduation Requirements</field>
+        <field name="res_model">college.graduation.requirement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_college_graduation_clearance_list" model="ir.ui.view">
+        <field name="name">college.graduation.clearance.list</field>
+        <field name="model">college.graduation.clearance</field>
+        <field name="arch" type="xml">
+            <list string="Graduation Clearances">
+                <field name="student_id"/>
+                <field name="term_id"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-warning="state == 'cleared'"
+                       decoration-success="state == 'graduated'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_graduation_clearance_form" model="ir.ui.view">
+        <field name="name">college.graduation.clearance.form</field>
+        <field name="model">college.graduation.clearance</field>
+        <field name="arch" type="xml">
+            <form string="Graduation Clearance">
+                <header>
+                    <button name="action_load_requirements" type="object" string="Load Requirements"
+                            invisible="state != 'draft'"/>
+                    <button name="action_mark_cleared" type="object" string="Mark Cleared"
+                            invisible="state != 'draft'" class="oe_highlight"/>
+                    <button name="action_graduate" type="object" string="Graduate"
+                            invisible="state != 'cleared'" class="oe_highlight"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset to Draft"
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="student_id"/>
+                        <field name="term_id"/>
+                    </group>
+                    <group string="Cleared By" invisible="not cleared_by">
+                        <field name="cleared_by" readonly="1"/>
+                        <field name="cleared_date" readonly="1"/>
+                    </group>
+                    <field name="checklist_ids">
+                        <list editable="bottom">
+                            <field name="requirement_id"/>
+                            <field name="done"/>
+                            <field name="notes"/>
+                        </list>
+                    </field>
+                    <field name="notes" placeholder="Notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_graduation_clearances" model="ir.actions.act_window">
+        <field name="name">Graduation Clearances</field>
+        <field name="res_model">college.graduation.clearance</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

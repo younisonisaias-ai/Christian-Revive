@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_assignment_list" model="ir.ui.view">
+        <field name="name">college.assignment.list</field>
+        <field name="model">college.assignment</field>
+        <field name="arch" type="xml">
+            <list string="Assignments">
+                <field name="name"/>
+                <field name="course_id"/>
+                <field name="term_id"/>
+                <field name="due_date"/>
+                <field name="max_score"/>
+                <field name="submission_count"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_assignment_form" model="ir.ui.view">
+        <field name="name">college.assignment.form</field>
+        <field name="model">college.assignment</field>
+        <field name="arch" type="xml">
+            <form string="Assignment">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_submissions" type="object"
+                                class="oe_stat_button" icon="fa-paper-plane">
+                            <field name="submission_count" widget="statinfo" string="Submissions"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Essay: The Exodus Narrative"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="course_id"/>
+                            <field name="term_id"/>
+                        </group>
+                        <group>
+                            <field name="due_date"/>
+                            <field name="max_score"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Instructions for the student..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_assignments" model="ir.actions.act_window">
+        <field name="name">Assignments</field>
+        <field name="res_model">college.assignment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_bible_knowledge_list" model="ir.ui.view">
+        <field name="name">college.bible.knowledge.list</field>
+        <field name="model">college.bible.knowledge</field>
+        <field name="arch" type="xml">
+            <list string="Bible Knowledge Records">
+                <field name="student_id"/>
+                <field name="category"/>
+                <field name="passage"/>
+                <field name="course_id"/>
+                <field name="score"/>
+                <field name="date"/>
+                <field name="verified" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_bible_knowledge_form" model="ir.ui.view">
+        <field name="name">college.bible.knowledge.form</field>
+        <field name="model">college.bible.knowledge</field>
+        <field name="arch" type="xml">
+            <form string="Bible Knowledge Record">
+                <header>
+                    <button name="action_verify" type="object" string="Verify"
+                            invisible="verified" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="course_id"/>
+                            <field name="category"/>
+                        </group>
+                        <group>
+                            <field name="passage"/>
+                            <field name="score"/>
+                            <field name="date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="verified" readonly="1"/>
+                        <field name="verified_by" readonly="1" invisible="not verified_by"/>
+                    </group>
+                    <field name="notes" placeholder="Notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_bible_knowledge" model="ir.actions.act_window">
+        <field name="name">Bible Knowledge</field>
+        <field name="res_model">college.bible.knowledge</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

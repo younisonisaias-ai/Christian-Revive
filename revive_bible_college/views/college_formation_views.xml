@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_formation_list" model="ir.ui.view">
+        <field name="name">college.formation.list</field>
+        <field name="model">college.formation</field>
+        <field name="arch" type="xml">
+            <list string="Spiritual Formation Records">
+                <field name="student_id"/>
+                <field name="activity_type"/>
+                <field name="date"/>
+                <field name="hours"/>
+                <field name="mentor_id"/>
+                <field name="verified" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_formation_form" model="ir.ui.view">
+        <field name="name">college.formation.form</field>
+        <field name="model">college.formation</field>
+        <field name="arch" type="xml">
+            <form string="Spiritual Formation Record">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id"/>
+                            <field name="activity_type"/>
+                            <field name="date"/>
+                        </group>
+                        <group>
+                            <field name="hours"/>
+                            <field name="mentor_id"/>
+                            <field name="verified"/>
+                        </group>
+                    </group>
+                    <field name="description" placeholder="Notes about this activity..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_formation" model="ir.actions.act_window">
+        <field name="name">Spiritual Formation</field>
+        <field name="res_model">college.formation</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>
