@@ -137,6 +137,10 @@ class CollegeStudent(models.Model):
         for attempt in self.env['college.quiz.attempt'].sudo().search([('student_id', '=', self.id)]):
             best_by_quiz[attempt.quiz_id.id] = max(best_by_quiz.get(attempt.quiz_id.id, 0.0), attempt.score)
             attempts_by_quiz[attempt.quiz_id.id] = attempts_by_quiz.get(attempt.quiz_id.id, 0) + 1
+        known_by_deck = {}
+        for progress in self.env['college.flashcard.progress'].sudo().search([('student_id', '=', self.id), ('known', '=', True)]):
+            deck_id = progress.card_id.deck_id.id
+            known_by_deck[deck_id] = known_by_deck.get(deck_id, 0) + 1
 
         def lesson_data(content):
             nonlocal total_lessons, done_lessons
@@ -153,6 +157,8 @@ class CollegeStudent(models.Model):
                 'last_accessed': progress.write_date.isoformat() if progress and progress.write_date else '',
                 'quiz_best_score': best_by_quiz.get(content.quiz_id.id),
                 'quiz_attempt_count': attempts_by_quiz.get(content.quiz_id.id, 0),
+                'flashcards_known': known_by_deck.get(content.deck_id.id, 0),
+                'flashcards_total': len(content.deck_id.card_ids),
             }
 
         modules = [{

@@ -25,6 +25,7 @@
                                     <field name="attachment" filename="attachment_filename"/>
                                     <field name="attachment_filename" column_invisible="1"/>
                                     <field name="quiz_id" invisible="content_type != 'quiz'"/>
+                                    <field name="deck_id" invisible="content_type != 'flashcards'"/>
                                 </list>
                             </field>
                         </page>

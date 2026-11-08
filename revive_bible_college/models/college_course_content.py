@@ -26,12 +26,14 @@ class CollegeCourseContent(models.Model):
         ('link', 'Link'),
         ('text', 'Text'),
         ('quiz', 'Quiz'),
+        ('flashcards', 'Flashcards'),
     ], default='document', required=True)
     attachment = fields.Binary(attachment=True)
     attachment_filename = fields.Char()
     url = fields.Char(string='Link / Video URL')
     body = fields.Text(string='Text Content')
     quiz_id = fields.Many2one('college.quiz', string='Quiz')
+    deck_id = fields.Many2one('college.flashcard.deck', string='Flashcard Deck')
     active = fields.Boolean(default=True)
 
     @api.model_create_multi

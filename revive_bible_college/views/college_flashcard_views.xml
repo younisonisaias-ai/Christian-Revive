@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_flashcard_deck_list" model="ir.ui.view">
+        <field name="name">college.flashcard.deck.list</field>
+        <field name="model">college.flashcard.deck</field>
+        <field name="arch" type="xml">
+            <list string="Flashcard Decks">
+                <field name="name"/>
+                <field name="card_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_flashcard_deck_form" model="ir.ui.view">
+        <field name="name">college.flashcard.deck.form</field>
+        <field name="model">college.flashcard.deck</field>
+        <field name="arch" type="xml">
+            <form string="Flashcard Deck">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_cards" type="object" class="oe_stat_button" icon="fa-clone">
+                            <field name="card_count" widget="statinfo" string="Cards"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. The Books of the Pentateuch"/></h1>
+                    </div>
+                    <field name="description" placeholder="Shown to the student before they start..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_flashcard_decks" model="ir.actions.act_window">
+        <field name="name">Flashcards</field>
+        <field name="res_model">college.flashcard.deck</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_college_flashcard_list" model="ir.ui.view">
+        <field name="name">college.flashcard.list</field>
+        <field name="model">college.flashcard</field>
+        <field name="arch" type="xml">
+            <list string="Cards">
+                <field name="sequence" widget="handle"/>
+                <field name="front"/>
+                <field name="back"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_flashcard_form" model="ir.ui.view">
+        <field name="name">college.flashcard.form</field>
+        <field name="model">college.flashcard</field>
+        <field name="arch" type="xml">
+            <form string="Card">
+                <sheet>
+                    <group>
+                        <field name="deck_id" readonly="1"/>
+                        <field name="sequence"/>
+                    </group>
+                    <label for="front" string="Front"/>
+                    <field name="front" placeholder="e.g. Genesis 1:1"/>
+                    <label for="back" string="Back"/>
+                    <field name="back" placeholder="e.g. In the beginning, God created the heavens and the earth."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -36,47 +36,53 @@
         action="action_college_quizzes"
         sequence="5"/>
 
+    <menuitem id="menu_college_flashcard_decks"
+        name="Flashcards"
+        parent="menu_bible_college_root"
+        action="action_college_flashcard_decks"
+        sequence="6"/>
+
     <menuitem id="menu_college_bible_knowledge"
         name="Bible Knowledge"
         parent="menu_bible_college_root"
         action="action_college_bible_knowledge"
-        sequence="6"/>
+        sequence="7"/>
 
     <menuitem id="menu_college_competency_assessments"
         name="Competency Assessments"
         parent="menu_bible_college_root"
         action="action_college_competency_assessments"
-        sequence="7"/>
+        sequence="8"/>
 
     <menuitem id="menu_college_sermons"
         name="Sermons"
         parent="menu_bible_college_root"
         action="action_college_sermons"
-        sequence="8"/>
+        sequence="9"/>
 
     <menuitem id="menu_college_formation"
         name="Spiritual Formation"
         parent="menu_bible_college_root"
         action="action_college_formation"
-        sequence="9"/>
+        sequence="10"/>
 
     <menuitem id="menu_college_placements"
         name="Fieldwork Placements"
         parent="menu_bible_college_root"
         action="action_college_placements"
-        sequence="10"/>
+        sequence="11"/>
 
     <menuitem id="menu_college_fees"
         name="Fees"
         parent="menu_bible_college_root"
         action="action_college_fees"
-        sequence="11"/>
+        sequence="12"/>
 
     <menuitem id="menu_college_graduation_clearances"
         name="Graduation Clearances"
         parent="menu_bible_college_root"
         action="action_college_graduation_clearances"
-        sequence="12"/>
+        sequence="13"/>
 
     <menuitem id="menu_college_setup_root"
         name="Setup"

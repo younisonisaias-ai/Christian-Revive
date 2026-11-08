@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.13.0',
+    'version': '19.0.1.14.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -25,6 +25,9 @@ A standalone module for running a Bible college or seminary, start to finish:
 * Multiple-choice quizzes with instant scoring and a per-question
   explanation; passing a quiz marks its lesson complete, same as
   finishing a video
+* Flashcard decks for memory work (a verse, a term, an event); a
+  student marks each card known or still learning, and finishing a
+  deck marks its lesson complete too
 * Bible knowledge / scripture memory tracking, and ministry competency
   assessments (Novice -> Developing -> Proficient -> Advanced)
 * Sermon submission and review (draft -> submitted -> reviewed), and
@@ -63,6 +66,7 @@ the one part that depends on Church Management's session system.
         'views/college_course_views.xml',
         'views/college_course_module_views.xml',
         'views/college_quiz_views.xml',
+        'views/college_flashcard_views.xml',
         'views/college_applicant_views.xml',
         'views/college_enrollment_views.xml',
         'views/college_assignment_views.xml',
