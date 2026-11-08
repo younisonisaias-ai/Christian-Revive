@@ -4,12 +4,21 @@ from .college_app_api import public_student, token_student
 
 
 class CollegeCourseContent(models.Model):
+    """One lesson within a course module: a document, a video link, a
+    plain link, or a text reading. "Course Material" was this model's
+    original name, kept so it never needed a rename; students see it as
+    a Lesson (see college.course.module, added for the modules/lessons
+    structure and per-student progress)."""
     _name = 'college.course.content'
     _description = 'Bible College Course Material'
     _order = 'course_id, sequence, id'
 
     name = fields.Char(required=True)
     course_id = fields.Many2one('college.course', required=True, ondelete='cascade')
+    # Not required at the field level: existing rows are backfilled by the
+    # 19.0.1.12.0 migration rather than blocking the upgrade on a NOT NULL
+    # column. New lessons always get one, created from inside a module.
+    module_id = fields.Many2one('college.course.module', ondelete='cascade')
     sequence = fields.Integer(default=10)
     content_type = fields.Selection([
         ('document', 'Document'),
@@ -22,6 +31,16 @@ class CollegeCourseContent(models.Model):
     url = fields.Char(string='Link / Video URL')
     body = fields.Text(string='Text Content')
     active = fields.Boolean(default=True)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # A lesson added from inside a module (the normal path) names only
+        # the module; take its course from there so staff never has to
+        # pick the same course twice.
+        for vals in vals_list:
+            if vals.get('module_id') and not vals.get('course_id'):
+                vals['course_id'] = self.env['college.course.module'].browse(vals['module_id']).course_id.id
+        return super().create(vals_list)
 
     # ── App API (Phase 9: public student side, no login) ─────────
     # A student may only download material for a course they are actually

@@ -3,7 +3,9 @@ from . import hr_employee_college
 from . import college_program
 from . import college_term
 from . import college_course
+from . import college_course_module
 from . import college_course_content
+from . import college_lesson_progress
 from . import college_applicant
 from . import college_student
 from . import college_student_auth

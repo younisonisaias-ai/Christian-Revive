@@ -43,3 +43,7 @@ access_college_graduation_checklist_line_staff,college.graduation.checklist.line
 access_college_graduation_checklist_line_admin,college.graduation.checklist.line admin,model_college_graduation_checklist_line,group_college_admin,1,1,1,1
 access_college_student_session_admin,college.student.session admin,model_college_student_session,group_college_admin,1,0,0,0
 access_college_signin_code_staff,college.signin.code staff,model_college_signin_code,group_college_staff,1,1,1,0
+access_college_course_module_staff,college.course.module staff,model_college_course_module,group_college_staff,1,1,1,0
+access_college_course_module_admin,college.course.module admin,model_college_course_module,group_college_admin,1,1,1,1
+access_college_lesson_progress_staff,college.lesson.progress staff,model_college_lesson_progress,group_college_staff,1,0,0,0
+access_college_lesson_progress_admin,college.lesson.progress admin,model_college_lesson_progress,group_college_admin,1,0,0,0

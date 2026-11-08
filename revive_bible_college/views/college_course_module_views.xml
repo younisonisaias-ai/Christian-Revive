@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_course_module_form" model="ir.ui.view">
+        <field name="name">college.course.module.form</field>
+        <field name="model">college.course.module</field>
+        <field name="arch" type="xml">
+            <form string="Module">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. The Pentateuch"/></h1>
+                    </div>
+                    <group>
+                        <field name="course_id" readonly="1"/>
+                        <field name="sequence"/>
+                    </group>
+                    <notebook>
+                        <page string="Lessons" name="lessons">
+                            <field name="lesson_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="content_type"/>
+                                    <field name="url"/>
+                                    <field name="attachment" filename="attachment_filename"/>
+                                    <field name="attachment_filename" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_college_course_module_list" model="ir.ui.view">
+        <field name="name">college.course.module.list</field>
+        <field name="model">college.course.module</field>
+        <field name="arch" type="xml">
+            <list string="Modules">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="lesson_count"/>
+            </list>
+        </field>
+    </record>
+
+</odoo>
+

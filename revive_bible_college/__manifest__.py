@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.11.0',
+    'version': '19.0.1.12.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -58,6 +58,7 @@ the one part that depends on Church Management's session system.
         'views/college_program_views.xml',
         'views/college_term_views.xml',
         'views/college_course_views.xml',
+        'views/college_course_module_views.xml',
         'views/college_applicant_views.xml',
         'views/college_enrollment_views.xml',
         'views/college_assignment_views.xml',

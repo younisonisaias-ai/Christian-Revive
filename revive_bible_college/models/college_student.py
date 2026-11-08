@@ -114,18 +114,58 @@ class CollegeStudent(models.Model):
 
     def _app_self_detail(self):
         data = self._app_summary()
-        data['enrollments'] = [{
-            'id': e.id, 'course_id': e.course_id.id, 'course_name': e.course_id.name,
-            'term_id': e.term_id.id, 'term_name': e.term_id.name,
-            'state': e.state,
-            'letter_grade': e.letter_grade if e.grade_state == 'published' else '',
-            'grade_pending': e.grade_state != 'published',
-            'content': [{
-                'id': c.id, 'name': c.name, 'content_type': c.content_type,
-                'url': c.url or '', 'body': c.body or '', 'has_attachment': bool(c.attachment),
-            } for c in e.course_id.content_ids],
-        } for e in self.enrollment_ids]
+        data['enrollments'] = [self._app_self_enrollment(e) for e in self.enrollment_ids]
         return data
+
+    def _app_self_enrollment(self, enrollment):
+        """One enrollment's modules, lessons and this student's progress on
+        each — the student's own course_id.content_ids rows that have no
+        module yet (shouldn't happen after the 19.0.1.12.0 migration, but
+        kept as a safety net) are listed under a final "More" module so
+        nothing a teacher posted is ever silently hidden."""
+        self.ensure_one()
+        progress_by_content = {
+            p.content_id.id: p
+            for p in self.env['college.lesson.progress'].sudo().search([
+                ('student_id', '=', self.id), ('content_id.course_id', '=', enrollment.course_id.id),
+            ])
+        }
+        total_lessons = 0
+        done_lessons = 0
+
+        def lesson_data(content):
+            nonlocal total_lessons, done_lessons
+            progress = progress_by_content.get(content.id)
+            completed = bool(progress and progress.completed)
+            total_lessons += 1
+            if completed:
+                done_lessons += 1
+            return {
+                'id': content.id, 'name': content.name, 'content_type': content.content_type,
+                'url': content.url or '', 'body': content.body or '', 'has_attachment': bool(content.attachment),
+                'completed': completed,
+                'video_position': progress.video_position if progress else 0.0,
+                'last_accessed': progress.write_date.isoformat() if progress and progress.write_date else '',
+            }
+
+        modules = [{
+            'id': module.id, 'name': module.name,
+            'lessons': [lesson_data(c) for c in module.lesson_ids.sorted('sequence')],
+        } for module in enrollment.course_id.module_ids.sorted('sequence')]
+        unfiled = enrollment.course_id.content_ids.filtered(lambda c: not c.module_id).sorted('sequence')
+        if unfiled:
+            modules.append({'id': 0, 'name': 'More', 'lessons': [lesson_data(c) for c in unfiled]})
+        return {
+            'id': enrollment.id, 'course_id': enrollment.course_id.id, 'course_name': enrollment.course_id.name,
+            'term_id': enrollment.term_id.id, 'term_name': enrollment.term_id.name,
+            'state': enrollment.state,
+            'letter_grade': enrollment.letter_grade if enrollment.grade_state == 'published' else '',
+            'grade_pending': enrollment.grade_state != 'published',
+            'modules': modules,
+            'percent_complete': round(done_lessons / total_lessons * 100) if total_lessons else 0,
+            'lesson_count': total_lessons,
+            'lessons_done': done_lessons,
+        }
 
     @api.model
     def app_college_student_lookup(self, code, email):
