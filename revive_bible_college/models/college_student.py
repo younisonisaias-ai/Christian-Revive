@@ -115,6 +115,8 @@ class CollegeStudent(models.Model):
     def _app_self_detail(self):
         data = self._app_summary()
         data['enrollments'] = [self._app_self_enrollment(e) for e in self.enrollment_ids]
+        badges = self.env['college.badge.award'].sudo().search([('student_id', '=', self.id)], order='awarded_date desc')
+        data['badges'] = [b._app_payload() for b in badges]
         return data
 
     def _app_self_enrollment(self, enrollment):

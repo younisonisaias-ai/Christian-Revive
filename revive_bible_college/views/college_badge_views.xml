@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_badge_award_list" model="ir.ui.view">
+        <field name="name">college.badge.award.list</field>
+        <field name="model">college.badge.award</field>
+        <field name="arch" type="xml">
+            <list string="Badges" create="false" edit="false">
+                <field name="student_id"/>
+                <field name="kind"/>
+                <field name="awarded_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_badge_award_form" model="ir.ui.view">
+        <field name="name">college.badge.award.form</field>
+        <field name="model">college.badge.award</field>
+        <field name="arch" type="xml">
+            <form string="Badge" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="student_id"/>
+                        <field name="kind"/>
+                        <field name="awarded_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_badges" model="ir.actions.act_window">
+        <field name="name">Badges</field>
+        <field name="res_model">college.badge.award</field>
+        <field name="view_mode">list,form</field>
+        <field name="help">A student earns one automatically the first time they reach a quiet milestone.</field>
+    </record>
+
+</odoo>

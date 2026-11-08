@@ -100,6 +100,9 @@ class CollegeFlashcardDeck(models.Model):
             else:
                 LessonProgress.create({'student_id': student.id, 'content_id': content.id, 'completed': True,
                                        'completed_date': fields.Datetime.now()})
+            Badge = self.env['college.badge.award'].sudo()
+            Badge._award(student, 'first_deck_mastered')
+            Badge._check_lesson_complete(student, content)
         return {'success': True, 'deck_complete': deck_complete}
 
 

@@ -14,6 +14,7 @@ from . import college_student_auth
 from . import ir_ui_menu
 from . import college_enrollment
 from . import college_certificate
+from . import college_badge
 from . import college_assignment
 from . import college_submission
 from . import college_bible_knowledge

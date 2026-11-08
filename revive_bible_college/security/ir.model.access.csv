@@ -65,3 +65,5 @@ access_college_flashcard_progress_staff,college.flashcard.progress staff,model_c
 access_college_flashcard_progress_admin,college.flashcard.progress admin,model_college_flashcard_progress,group_college_admin,1,0,0,0
 access_college_certificate_staff,college.certificate staff,model_college_certificate,group_college_staff,1,0,0,0
 access_college_certificate_admin,college.certificate admin,model_college_certificate,group_college_admin,1,0,0,0
+access_college_badge_award_staff,college.badge.award staff,model_college_badge_award,group_college_staff,1,0,0,0
+access_college_badge_award_admin,college.badge.award admin,model_college_badge_award,group_college_admin,1,0,0,0

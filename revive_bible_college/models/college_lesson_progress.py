@@ -43,4 +43,6 @@ class CollegeLessonProgress(models.Model):
         else:
             vals.update({'student_id': student.id, 'content_id': content_id})
             self.sudo().create(vals)
+        if completed:
+            self.env['college.badge.award'].sudo()._check_lesson_complete(student, content)
         return {'success': True}

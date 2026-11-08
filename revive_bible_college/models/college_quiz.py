@@ -140,6 +140,11 @@ class CollegeQuiz(models.Model):
             else:
                 Progress.create({'student_id': student.id, 'content_id': content.id, 'completed': True,
                                  'completed_date': fields.Datetime.now()})
+            Badge = self.env['college.badge.award'].sudo()
+            Badge._award(student, 'first_quiz_passed')
+            if score >= 100.0:
+                Badge._award(student, 'perfect_quiz_score')
+            Badge._check_lesson_complete(student, content)
         return {
             'success': True, 'attempt_id': attempt.id, 'score': score, 'passed': passed,
             'pass_score': quiz.pass_score, 'results': results,
