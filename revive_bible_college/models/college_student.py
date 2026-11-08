@@ -108,6 +108,21 @@ class CollegeStudent(models.Model):
         })
         return {'success': True, 'student': student._app_detail(is_admin)}
 
+    @api.model
+    def app_college_get_student_progress(self, student_id):
+        """Staff/admin view of one student's LMS journey -- the exact same
+        per-course lesson/quiz/flashcard/certificate detail a student sees
+        about themselves (see _app_self_detail below), plus their earned
+        badges. Reuses that computation rather than deriving it twice."""
+        staff, _is_admin = college_app_staff(self.env)
+        if not staff:
+            return {'success': False, 'error': 'Not authorized'}
+        student = self.sudo().browse(student_id)
+        if not student.exists():
+            return {'success': False, 'error': 'Student not found'}
+        detail = student._app_self_detail()
+        return {'success': True, 'enrollments': detail['enrollments'], 'badges': detail['badges']}
+
     # ── App API (student's own view) ─────────────────────────────
     # Grades only show once published: a student must never see a grade
     # before staff releases it. See college_student_auth.py for sign-in.

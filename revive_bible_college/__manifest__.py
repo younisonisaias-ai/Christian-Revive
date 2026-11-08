@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.16.0',
+    'version': '19.0.1.17.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -48,6 +48,9 @@ A standalone module for running a Bible college or seminary, start to finish:
 * Staff can manage applicants, students and course enrollment from the
   Christian Revive app itself, through their own College Staff and College
   Admin sign-ins. Staff submit grades; admins approve and publish them.
+* Staff can see a student's LMS progress -- lessons done, quiz scores,
+  flashcard mastery, certificate status and earned badges -- the same
+  detail the student sees about themselves
 * Students sign in with their student number and a password, in the app or
   at /college in a browser. A one-time code from the college office sets the
   password. Grades only ever show once staff has published them.
