@@ -168,6 +168,9 @@ class CollegeStudent(models.Model):
         unfiled = enrollment.course_id.content_ids.filtered(lambda c: not c.module_id).sorted('sequence')
         if unfiled:
             modules.append({'id': 0, 'name': 'More', 'lessons': [lesson_data(c) for c in unfiled]})
+        certificate = self.env['college.certificate'].sudo().search([
+            ('student_id', '=', self.id), ('enrollment_id', '=', enrollment.id),
+        ], limit=1)
         return {
             'id': enrollment.id, 'course_id': enrollment.course_id.id, 'course_name': enrollment.course_id.name,
             'term_id': enrollment.term_id.id, 'term_name': enrollment.term_id.name,
@@ -178,6 +181,8 @@ class CollegeStudent(models.Model):
             'percent_complete': round(done_lessons / total_lessons * 100) if total_lessons else 0,
             'lesson_count': total_lessons,
             'lessons_done': done_lessons,
+            'certificate_eligible': total_lessons > 0 and done_lessons == total_lessons,
+            'certificate_issued': bool(certificate),
         }
 
     @api.model

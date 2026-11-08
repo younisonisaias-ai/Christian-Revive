@@ -146,3 +146,12 @@ class CollegePortal(http.Controller):
         if not result.get('success'):
             return _render('portal_assignment', {'a': row, 'answer': text_answer, 'error': result.get('error')})
         return request.redirect('/college/home', local=True)
+
+    @http.route('/college/certificate', type='http', auth='public', methods=['GET'])
+    def verify_certificate(self, code='', **kwargs):
+        checked = bool(code.strip())
+        certificate = None
+        if checked:
+            result = request.env['college.certificate'].app_college_verify_certificate(code)
+            certificate = result['certificate'] if result.get('success') else None
+        return _render('portal_certificate', {'code': code, 'checked': checked, 'certificate': certificate})

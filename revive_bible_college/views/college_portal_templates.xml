@@ -218,6 +218,30 @@
         </t>
     </template>
 
+    <template id="portal_certificate" name="Bible College: verify a certificate">
+        <t t-call="revive_bible_college.portal_layout">
+            <h1>Verify a certificate</h1>
+            <p class="sub">Enter the code printed on the certificate to check it is real.</p>
+            <form class="card" action="/college/certificate" method="get">
+                <label for="code">Verification code</label>
+                <input id="code" name="code" placeholder="e.g. A7K9-QZ4M-XP2V-C8HJ" t-att-value="code" required="required"/>
+                <button type="submit">Verify</button>
+            </form>
+            <t t-if="checked">
+                <div t-if="certificate" class="card">
+                    <p><span class="pill good">Valid certificate</span></p>
+                    <p><b t-esc="certificate['student_name']"/></p>
+                    <p class="sub" t-esc="certificate['course_name']"/>
+                    <p class="sub"><t t-esc="'Issued %s' % certificate['issued_date'][:10]"/></p>
+                </div>
+                <div t-else="" class="card">
+                    <p><span class="pill wait">Not found</span></p>
+                    <p class="sub">No certificate matches that code.</p>
+                </div>
+            </t>
+        </t>
+    </template>
+
     <record id="view_college_signin_code_form" model="ir.ui.view">
         <field name="name">college.signin.code.form</field>
         <field name="model">college.signin.code</field>

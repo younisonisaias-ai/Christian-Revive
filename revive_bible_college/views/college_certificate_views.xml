@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_certificate_list" model="ir.ui.view">
+        <field name="name">college.certificate.list</field>
+        <field name="model">college.certificate</field>
+        <field name="arch" type="xml">
+            <list string="Certificates" create="false" edit="false">
+                <field name="student_id"/>
+                <field name="enrollment_id"/>
+                <field name="verification_code"/>
+                <field name="issued_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_certificate_form" model="ir.ui.view">
+        <field name="name">college.certificate.form</field>
+        <field name="model">college.certificate</field>
+        <field name="arch" type="xml">
+            <form string="Certificate" create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="student_id"/>
+                        <field name="enrollment_id"/>
+                        <field name="verification_code"/>
+                        <field name="issued_date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_certificates" model="ir.actions.act_window">
+        <field name="name">Certificates</field>
+        <field name="res_model">college.certificate</field>
+        <field name="view_mode">list,form</field>
+        <field name="help">A student earns one automatically once every lesson in a course is complete.</field>
+    </record>
+
+</odoo>
