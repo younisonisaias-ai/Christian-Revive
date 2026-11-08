@@ -24,6 +24,7 @@
                                     <field name="url"/>
                                     <field name="attachment" filename="attachment_filename"/>
                                     <field name="attachment_filename" column_invisible="1"/>
+                                    <field name="quiz_id" invisible="content_type != 'quiz'"/>
                                 </list>
                             </field>
                         </page>

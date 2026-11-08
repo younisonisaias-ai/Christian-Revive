@@ -132,6 +132,11 @@ class CollegeStudent(models.Model):
         }
         total_lessons = 0
         done_lessons = 0
+        best_by_quiz = {}
+        attempts_by_quiz = {}
+        for attempt in self.env['college.quiz.attempt'].sudo().search([('student_id', '=', self.id)]):
+            best_by_quiz[attempt.quiz_id.id] = max(best_by_quiz.get(attempt.quiz_id.id, 0.0), attempt.score)
+            attempts_by_quiz[attempt.quiz_id.id] = attempts_by_quiz.get(attempt.quiz_id.id, 0) + 1
 
         def lesson_data(content):
             nonlocal total_lessons, done_lessons
@@ -146,6 +151,8 @@ class CollegeStudent(models.Model):
                 'completed': completed,
                 'video_position': progress.video_position if progress else 0.0,
                 'last_accessed': progress.write_date.isoformat() if progress and progress.write_date else '',
+                'quiz_best_score': best_by_quiz.get(content.quiz_id.id),
+                'quiz_attempt_count': attempts_by_quiz.get(content.quiz_id.id, 0),
             }
 
         modules = [{

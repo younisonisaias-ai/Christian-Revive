@@ -47,3 +47,13 @@ access_college_course_module_staff,college.course.module staff,model_college_cou
 access_college_course_module_admin,college.course.module admin,model_college_course_module,group_college_admin,1,1,1,1
 access_college_lesson_progress_staff,college.lesson.progress staff,model_college_lesson_progress,group_college_staff,1,0,0,0
 access_college_lesson_progress_admin,college.lesson.progress admin,model_college_lesson_progress,group_college_admin,1,0,0,0
+access_college_quiz_staff,college.quiz staff,model_college_quiz,group_college_staff,1,1,1,0
+access_college_quiz_admin,college.quiz admin,model_college_quiz,group_college_admin,1,1,1,1
+access_college_quiz_question_staff,college.quiz.question staff,model_college_quiz_question,group_college_staff,1,1,1,0
+access_college_quiz_question_admin,college.quiz.question admin,model_college_quiz_question,group_college_admin,1,1,1,1
+access_college_quiz_option_staff,college.quiz.option staff,model_college_quiz_option,group_college_staff,1,1,1,0
+access_college_quiz_option_admin,college.quiz.option admin,model_college_quiz_option,group_college_admin,1,1,1,1
+access_college_quiz_attempt_staff,college.quiz.attempt staff,model_college_quiz_attempt,group_college_staff,1,0,0,0
+access_college_quiz_attempt_admin,college.quiz.attempt admin,model_college_quiz_attempt,group_college_admin,1,0,0,0
+access_college_quiz_answer_staff,college.quiz.answer staff,model_college_quiz_answer,group_college_staff,1,0,0,0
+access_college_quiz_answer_admin,college.quiz.answer admin,model_college_quiz_answer,group_college_admin,1,0,0,0

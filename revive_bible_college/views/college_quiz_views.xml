@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+    <record id="view_college_quiz_list" model="ir.ui.view">
+        <field name="name">college.quiz.list</field>
+        <field name="model">college.quiz</field>
+        <field name="arch" type="xml">
+            <list string="Quizzes">
+                <field name="name"/>
+                <field name="question_count"/>
+                <field name="pass_score"/>
+                <field name="attempt_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_quiz_form" model="ir.ui.view">
+        <field name="name">college.quiz.form</field>
+        <field name="model">college.quiz</field>
+        <field name="arch" type="xml">
+            <form string="Quiz">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_questions" type="object" class="oe_stat_button" icon="fa-question-circle">
+                            <field name="question_count" widget="statinfo" string="Questions"/>
+                        </button>
+                        <button name="action_view_attempts" type="object" class="oe_stat_button" icon="fa-bar-chart">
+                            <field name="attempt_count" widget="statinfo" string="Attempts"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. The Exodus"/></h1>
+                    </div>
+                    <group>
+                        <field name="pass_score"/>
+                        <field name="shuffle_questions"/>
+                    </group>
+                    <field name="description" placeholder="Shown to the student before they start..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_college_quizzes" model="ir.actions.act_window">
+        <field name="name">Quizzes</field>
+        <field name="res_model">college.quiz</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_college_quiz_question_list" model="ir.ui.view">
+        <field name="name">college.quiz.question.list</field>
+        <field name="model">college.quiz.question</field>
+        <field name="arch" type="xml">
+            <list string="Questions">
+                <field name="sequence" widget="handle"/>
+                <field name="text"/>
+                <field name="has_correct_option" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_quiz_question_form" model="ir.ui.view">
+        <field name="name">college.quiz.question.form</field>
+        <field name="model">college.quiz.question</field>
+        <field name="arch" type="xml">
+            <form string="Question">
+                <sheet>
+                    <div class="alert alert-warning" role="alert" invisible="has_correct_option">
+                        No option is marked correct — a student can never answer this one right.
+                    </div>
+                    <field name="has_correct_option" invisible="1"/>
+                    <group>
+                        <field name="quiz_id" readonly="1"/>
+                        <field name="sequence"/>
+                    </group>
+                    <field name="text" placeholder="e.g. Who led the Israelites out of Egypt?"/>
+                    <label for="option_ids" string="Options"/>
+                    <field name="option_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="text"/>
+                            <field name="is_correct"/>
+                        </list>
+                    </field>
+                    <label for="explanation" string="Explanation (shown after answering)"/>
+                    <field name="explanation" placeholder="Why that answer is right..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_college_quiz_attempt_list" model="ir.ui.view">
+        <field name="name">college.quiz.attempt.list</field>
+        <field name="model">college.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <list string="Attempts" default_order="submitted_date desc">
+                <field name="student_id"/>
+                <field name="quiz_id"/>
+                <field name="score"/>
+                <field name="passed" widget="boolean_toggle" readonly="1"/>
+                <field name="submitted_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_college_quiz_attempt_form" model="ir.ui.view">
+        <field name="name">college.quiz.attempt.form</field>
+        <field name="model">college.quiz.attempt</field>
+        <field name="arch" type="xml">
+            <form string="Attempt">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="student_id" readonly="1"/>
+                            <field name="quiz_id" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="score" readonly="1"/>
+                            <field name="passed" readonly="1"/>
+                            <field name="submitted_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="answer_ids" readonly="1">
+                        <list>
+                            <field name="question_id"/>
+                            <field name="option_id"/>
+                            <field name="is_correct" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>
