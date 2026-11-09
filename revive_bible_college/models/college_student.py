@@ -176,6 +176,7 @@ class CollegeStudent(models.Model):
                 'quiz_attempt_count': attempts_by_quiz.get(content.quiz_id.id, 0),
                 'flashcards_known': known_by_deck.get(content.deck_id.id, 0),
                 'flashcards_total': len(content.deck_id.card_ids),
+                **content._app_video_fields(),
             }
 
         modules = [{

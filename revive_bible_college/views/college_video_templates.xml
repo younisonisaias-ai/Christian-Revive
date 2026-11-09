@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Staff page for a video lesson's file: upload from a computer with a
+         progress bar, or copy one in from a Google Drive link. Opened in a
+         new tab from the lesson form's "Upload or import video" button. -->
+    <template id="admin_video_upload" name="Bible College: lesson video">
+        <t t-out="doctype"/>
+        <html lang="en">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <meta name="robots" content="noindex, nofollow"/>
+                <title>Lesson video</title>
+                <style>
+                    * { box-sizing: border-box; }
+                    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #F5F3EE; color: #2A2433;
+                           margin: 0; line-height: 1.5; }
+                    main { max-width: 640px; margin: 0 auto; padding: 28px 18px 48px; }
+                    .kicker { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #7A6F63; margin: 0; }
+                    h1 { font-size: 24px; margin: 4px 0 6px; }
+                    .now { color: #5E5566; margin: 0 0 22px; font-size: 14.5px; }
+                    .now b { color: #2A2433; }
+                    .card { background: #fff; border: 1px solid #E6E0D6; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+                    .card h2 { font-size: 16px; margin: 0 0 4px; }
+                    .card p { margin: 0 0 12px; color: #6B6271; font-size: 13.5px; }
+                    input[type=file], input[type=url] { width: 100%; padding: 11px; font: inherit; border: 1px solid #D5CDC0;
+                           border-radius: 10px; background: #fff; }
+                    button { margin-top: 12px; padding: 11px 18px; font: inherit; font-weight: 700; color: #fff; background: #243467;
+                             border: 0; border-radius: 10px; cursor: pointer; }
+                    button:disabled { opacity: .5; cursor: default; }
+                    button.ghost { background: transparent; color: #243467; border: 1.5px solid #243467; }
+                    .bar { height: 8px; border-radius: 99px; background: #EEE9E0; overflow: hidden; margin-top: 14px; display: none; }
+                    .bar i { display: block; height: 100%; width: 0; background: #C8982E; transition: width .2s; }
+                    .status { margin-top: 8px; font-size: 13px; color: #6B6271; min-height: 1em; }
+                    .msg { border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; display: none; font-size: 14px; }
+                    .msg.ok { display: block; background: #E6F1EA; color: #2F6B45; }
+                    .msg.err { display: block; background: #FBEAE9; color: #A3261E; }
+                    .tip { font-size: 13px; color: #7A6F63; }
+                </style>
+            </head>
+            <body>
+                <main t-att-data-upload-url="'/college/admin/lesson/%s/video/upload' % lesson.id"
+                      t-att-data-drive-url="'/college/admin/lesson/%s/video/drive' % lesson.id"
+                      t-att-data-csrf="request.csrf_token()" t-att-data-max-mb="max_mb">
+                    <p class="kicker">Video lesson</p>
+                    <h1 t-esc="lesson.name"/>
+                    <p class="now" id="now">
+                        <t t-if="lesson.video_size">Current video: <b t-esc="lesson.video_filename"/> · <t t-esc="lesson.video_size_label"/></t>
+                        <t t-else="">No video file yet.</t>
+                    </p>
+
+                    <div class="msg" id="msg"/>
+
+                    <section class="card">
+                        <h2>Upload from your computer</h2>
+                        <p>MP4, MOV or WebM, up to <t t-esc="max_mb"/> MB.</p>
+                        <input type="file" id="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.m4v,.mov,.webm"/>
+                        <div class="bar" id="bar"><i id="barFill"/></div>
+                        <div class="status" id="uploadStatus"/>
+                        <button type="button" id="uploadBtn">Upload video</button>
+                    </section>
+
+                    <section class="card">
+                        <h2>Import from Google Drive</h2>
+                        <p>Paste the share link. In Drive, the file must be shared as <b>Anyone with the link</b>.</p>
+                        <input type="url" id="driveLink" placeholder="https://drive.google.com/file/d/…/view"/>
+                        <div class="status" id="driveStatus"/>
+                        <button type="button" id="driveBtn">Import video</button>
+                    </section>
+
+                    <p class="tip">For the smoothest playback on phones, use MP4 at 720p. A 10-minute lesson is usually 100–300 MB.</p>
+                    <button type="button" class="ghost" id="closeBtn" style="display:none" onclick="window.close()">Close this tab</button>
+                </main>
+                <script>
+                (function () {
+                    var main = document.querySelector('main');
+                    var csrf = main.dataset.csrf;
+                    var maxBytes = parseInt(main.dataset.maxMb, 10) * 1024 * 1024;
+                    var msg = document.getElementById('msg');
+                    var busy = false;
+
+                    function show(kind, text) { msg.className = 'msg ' + kind; msg.textContent = text; }
+                    function setBusy(on) {
+                        busy = on;
+                        document.getElementById('uploadBtn').disabled = on;
+                        document.getElementById('driveBtn').disabled = on;
+                    }
+                    function done(data) {
+                        show('ok', 'Saved: ' + data.filename + ' (' + data.size + '). Close this tab and refresh the lesson to see it.');
+                        document.getElementById('now').textContent = 'Current video: ' + data.filename + ' · ' + data.size;
+                        document.getElementById('closeBtn').style.display = 'inline-block';
+                    }
+                    function failed(status, body) {
+                        if (status === 413) return show('err', 'That file is too big for the server to accept. Compress it, or ask whoever runs the server to raise the upload limit.');
+                        try { var data = JSON.parse(body); if (data.error) return show('err', data.error); } catch (e) {}
+                        show('err', 'Something went wrong (error ' + status + '). Check your connection and try again.');
+                    }
+
+                    document.getElementById('uploadBtn').addEventListener('click', function () {
+                        if (busy) return;
+                        var file = document.getElementById('file').files[0];
+                        if (!file) return show('err', 'Choose a video file first.');
+                        if (file.size > maxBytes) return show('err', 'That video is larger than ' + main.dataset.maxMb + ' MB. Compress it (720p MP4 works well) and try again.');
+                        var form = new FormData();
+                        form.append('csrf_token', csrf);
+                        form.append('video', file);
+                        var xhr = new XMLHttpRequest();
+                        var bar = document.getElementById('bar'), fill = document.getElementById('barFill'), status = document.getElementById('uploadStatus');
+                        bar.style.display = 'block';
+                        msg.className = 'msg';
+                        setBusy(true);
+                        xhr.upload.onprogress = function (e) {
+                            if (!e.lengthComputable) return;
+                            var pct = Math.round(e.loaded / e.total * 100);
+                            fill.style.width = pct + '%';
+                            status.textContent = pct &lt; 100 ? 'Uploading… ' + pct + '%' : 'Saving on the server…';
+                        };
+                        xhr.onload = function () {
+                            setBusy(false);
+                            status.textContent = '';
+                            if (xhr.status === 200) { fill.style.width = '100%'; done(JSON.parse(xhr.responseText)); }
+                            else { bar.style.display = 'none'; failed(xhr.status, xhr.responseText); }
+                        };
+                        xhr.onerror = function () { setBusy(false); bar.style.display = 'none'; status.textContent = ''; show('err', 'The upload was interrupted. Check your connection and try again.'); };
+                        xhr.open('POST', main.dataset.uploadUrl);
+                        xhr.send(form);
+                    });
+
+                    document.getElementById('driveBtn').addEventListener('click', function () {
+                        if (busy) return;
+                        var link = document.getElementById('driveLink').value.trim();
+                        if (!link) return show('err', 'Paste a Google Drive link first.');
+                        var form = new FormData();
+                        form.append('csrf_token', csrf);
+                        form.append('drive_url', link);
+                        var status = document.getElementById('driveStatus');
+                        status.textContent = 'Copying from Google Drive… this can take a minute for a long video.';
+                        msg.className = 'msg';
+                        setBusy(true);
+                        fetch(main.dataset.driveUrl, { method: 'POST', body: form, credentials: 'same-origin' })
+                            .then(function (r) { return r.text().then(function (t) { return { status: r.status, body: t }; }); })
+                            .then(function (res) {
+                                setBusy(false);
+                                status.textContent = '';
+                                if (res.status === 200) done(JSON.parse(res.body)); else failed(res.status, res.body);
+                            })
+                            .catch(function () { setBusy(false); status.textContent = ''; show('err', 'Could not reach the server. Check your connection and try again.'); });
+                    });
+                })();
+                </script>
+            </body>
+        </html>
+    </template>
+</odoo>

@@ -6,3 +6,4 @@ from . import test_college_flashcards
 from . import test_college_certificates
 from . import test_college_badges
 from . import test_college_staff_progress
+from . import test_college_video

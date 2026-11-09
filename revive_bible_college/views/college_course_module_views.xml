@@ -26,6 +26,7 @@
                                     <field name="attachment_filename" column_invisible="1"/>
                                     <field name="quiz_id" invisible="content_type != 'quiz'"/>
                                     <field name="deck_id" invisible="content_type != 'flashcards'"/>
+                                    <button name="action_open_lesson" type="object" icon="fa-pencil-square-o" title="Details"/>
                                 </list>
                             </field>
                         </page>
