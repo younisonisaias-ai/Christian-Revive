@@ -59,7 +59,7 @@ class CollegeCourseContent(models.Model):
     _description = 'Bible College Course Material'
     _order = 'course_id, sequence, id'
 
-    name = fields.Char(required=True)
+    name = fields.Char(translate=True, required=True)
     course_id = fields.Many2one('college.course', required=True, ondelete='cascade')
     # Not required at the field level: existing rows are backfilled by the
     # 19.0.1.12.0 migration rather than blocking the upgrade on a NOT NULL
@@ -77,7 +77,7 @@ class CollegeCourseContent(models.Model):
     attachment = fields.Binary(attachment=True)
     attachment_filename = fields.Char()
     url = fields.Char(string='Link / Video URL')
-    body = fields.Text(string='Text Content')
+    body = fields.Text(translate=True, string='Text Content')
     quiz_id = fields.Many2one('college.quiz', string='Quiz')
     deck_id = fields.Many2one('college.flashcard.deck', string='Flashcard Deck')
     active = fields.Boolean(default=True)
@@ -104,7 +104,7 @@ class CollegeCourseContent(models.Model):
     # Chapters are typed the way YouTube descriptions do it, one per line:
     # "4:30 Moses and Pharaoh". Lines that don't read as a chapter are
     # listed back to staff as a warning instead of blocking the save.
-    chapters_text = fields.Text(string='Chapters')
+    chapters_text = fields.Text(translate=True, string='Chapters')
     chapters_unreadable = fields.Char(compute='_compute_chapters_unreadable')
     study_guide = fields.Binary(attachment=True, string='Study guide (PDF)')
     study_guide_filename = fields.Char()

@@ -38,8 +38,8 @@ class CollegeQuiz(models.Model):
     _description = 'Bible College Quiz'
     _order = 'name'
 
-    name = fields.Char(required=True)
-    description = fields.Text()
+    name = fields.Char(translate=True, required=True)
+    description = fields.Text(translate=True)
     pass_score = fields.Float(string='Passing Score (%)', default=60.0)
     shuffle_questions = fields.Boolean(default=False, help='Show each student the questions in a different order.')
     shuffle_answers = fields.Boolean(
@@ -189,12 +189,12 @@ class CollegeQuizQuestion(models.Model):
     quiz_id = fields.Many2one('college.quiz', required=True, ondelete='cascade')
     sequence = fields.Integer(default=10)
     question_type = fields.Selection(QUESTION_TYPES, string='Type', default='single', required=True)
-    text = fields.Text(required=True, string='Question')
+    text = fields.Text(translate=True, required=True, string='Question')
     image = fields.Image(max_width=1600, max_height=1600, help='Optional, e.g. a map. Shown above the question.')
-    explanation = fields.Text(help='Shown to the student after they answer, whether they were right or wrong.')
+    explanation = fields.Text(translate=True, help='Shown to the student after they answer, whether they were right or wrong.')
     option_ids = fields.One2many('college.quiz.option', 'question_id', string='Options')
     tf_answer = fields.Selection([('true', 'True'), ('false', 'False')], string='The statement is')
-    accepted_answers = fields.Text(
+    accepted_answers = fields.Text(translate=True,
         help='One accepted answer per line. Capitals, punctuation and extra spaces are ignored; spelling is not.')
     setup_problem = fields.Char(compute='_compute_setup_problem')
     has_correct_option = fields.Boolean(compute='_compute_setup_problem',
@@ -304,10 +304,10 @@ class CollegeQuizOption(models.Model):
 
     question_id = fields.Many2one('college.quiz.question', required=True, ondelete='cascade')
     sequence = fields.Integer(default=10)
-    text = fields.Char(required=True)
+    text = fields.Char(translate=True, required=True)
     is_correct = fields.Boolean(default=False)
     # Matching questions only: what this item is matched with.
-    match_text = fields.Char(string='Matches')
+    match_text = fields.Char(translate=True, string='Matches')
 
 
 class CollegeQuizAttempt(models.Model):

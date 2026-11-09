@@ -102,7 +102,7 @@ class TestCollegeLessons(TransactionCase):
         orphan_course = self.env['college.course'].create({'name': 'Orphan Course', 'program_id': self.program.id})
         self.env.cr.execute(
             "INSERT INTO college_course_content (name, course_id, content_type, sequence, active, create_date, write_date, create_uid, write_uid) "
-            "VALUES ('Old syllabus', %s, 'document', 1, true, now(), now(), 1, 1)", [orphan_course.id])
+            "VALUES ('{\"en_US\": \"Old syllabus\"}'::jsonb, %s, 'document', 1, true, now(), now(), 1, 1)", [orphan_course.id])
         self.env.flush_all()
         path = os.path.join(os.path.dirname(__file__), '..', 'migrations', '19.0.1.12.0', 'post-migrate.py')
         spec = importlib.util.spec_from_file_location('college_module_migration', path)

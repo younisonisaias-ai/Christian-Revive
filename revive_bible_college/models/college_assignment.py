@@ -8,10 +8,10 @@ class CollegeAssignment(models.Model):
     _description = 'Bible College Assignment'
     _order = 'due_date, id'
 
-    name = fields.Char(required=True)
+    name = fields.Char(translate=True, required=True)
     course_id = fields.Many2one('college.course', required=True)
     term_id = fields.Many2one('college.term', required=True)
-    description = fields.Text()
+    description = fields.Text(translate=True)
     due_date = fields.Date()
     max_score = fields.Float(default=100.0)
     active = fields.Boolean(default=True)

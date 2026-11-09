@@ -32,9 +32,9 @@ class CollegeVideoQuestion(models.Model):
     sequence = fields.Integer(default=10)
     pause_time = fields.Char(string='Pause at', required=True, help='When the video pauses, e.g. 4:30 or 1:02:30.')
     pause_seconds = fields.Integer(compute='_compute_pause_seconds', store=True)
-    text = fields.Text(string='Question', required=True)
+    text = fields.Text(translate=True, string='Question', required=True)
     option_ids = fields.One2many('college.video.question.option', 'question_id', string='Answers', copy=True)
-    explanation = fields.Text(help='Shown after the student answers, right or wrong.')
+    explanation = fields.Text(translate=True, help='Shown after the student answers, right or wrong.')
     has_correct_option = fields.Boolean(compute='_compute_has_correct_option',
                                         help='A question with no correct answer marked can never be answered right.')
     answer_count = fields.Integer(compute='_compute_answer_stats')
@@ -113,7 +113,7 @@ class CollegeVideoQuestionOption(models.Model):
 
     question_id = fields.Many2one('college.video.question', required=True, ondelete='cascade', index=True)
     sequence = fields.Integer(default=10)
-    text = fields.Char(string='Answer', required=True)
+    text = fields.Char(translate=True, string='Answer', required=True)
     is_correct = fields.Boolean(string='Correct')
 
 

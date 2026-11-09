@@ -12,3 +12,4 @@ from . import test_college_video_questions
 from . import test_college_watch
 from . import test_college_quiz_types
 from . import test_college_reports
+from . import test_college_urdu_content

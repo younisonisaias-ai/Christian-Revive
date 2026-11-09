@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.23.0',
+    'version': '19.0.1.24.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -73,6 +73,9 @@ A standalone module for running a Bible college or seminary, start to finish:
   a "Falling behind" filter), videos (with where students stop watching),
   and the quiz and in-video questions students find hardest, each with
   a one-click Excel download
+* Course content in English and Urdu: lessons, readings, quizzes,
+  flashcards and video questions can each have an Urdu version, which
+  the app shows when a student chooses اردو (English when there is none)
 * College staff with no other ERP role see only Bible College in the ERP.
 
 Core record-keeping stays independent of Church Management so it could
@@ -88,6 +91,7 @@ the one part that depends on Church Management's session system.
         'security/ir.model.access.csv',
         'data/college_sequence.xml',
         'data/college_cron.xml',
+        'data/college_language_data.xml',
         'views/college_program_views.xml',
         'views/college_term_views.xml',
         'views/college_course_views.xml',

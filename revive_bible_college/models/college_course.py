@@ -2,12 +2,15 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 
 
+URDU = 'ur_PK'
+
+
 class CollegeCourse(models.Model):
     _name = 'college.course'
     _description = 'Bible College Course'
     _order = 'name'
 
-    name = fields.Char(required=True)
+    name = fields.Char(translate=True, required=True)
     code = fields.Char()
     credits = fields.Float(default=1.0)
     program_id = fields.Many2one('college.program', string='Program')
@@ -24,6 +27,21 @@ class CollegeCourse(models.Model):
     video_require_questions = fields.Boolean(
         string='Must answer every question in the video', default=True,
         help='Answering is enough; a wrong answer still counts.')
+
+    @api.model
+    def _ensure_urdu_language(self):
+        """Course content can be written in Urdu as well as English (the
+        app's اردو switch asks for it). Odoo has no Urdu of its own, so it
+        is added here, right to left, and switched on."""
+        Lang = self.env['res.lang'].sudo().with_context(active_test=False)
+        urdu = Lang.search([('code', '=', URDU)], limit=1)
+        if not urdu:
+            Lang.create({
+                'name': 'Urdu / اردو', 'code': URDU, 'iso_code': 'ur', 'url_code': 'ur',
+                'direction': 'rtl', 'active': True, 'date_format': '%d/%m/%Y',
+            })
+        elif not urdu.active:
+            urdu.active = True
 
     @api.constrains('video_min_watch_percent')
     def _check_video_min_watch_percent(self):

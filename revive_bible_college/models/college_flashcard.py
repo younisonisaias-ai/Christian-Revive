@@ -11,8 +11,8 @@ class CollegeFlashcardDeck(models.Model):
     _description = 'Bible College Flashcard Deck'
     _order = 'name'
 
-    name = fields.Char(required=True)
-    description = fields.Text()
+    name = fields.Char(translate=True, required=True)
+    description = fields.Text(translate=True)
     card_ids = fields.One2many('college.flashcard', 'deck_id', string='Cards')
     card_count = fields.Integer(compute='_compute_card_count')
 
@@ -114,8 +114,8 @@ class CollegeFlashcard(models.Model):
 
     deck_id = fields.Many2one('college.flashcard.deck', required=True, ondelete='cascade')
     sequence = fields.Integer(default=10)
-    front = fields.Text(required=True, help='What the student sees first — a verse reference, a term, a question.')
-    back = fields.Text(required=True, help='What the student sees after turning the card over.')
+    front = fields.Text(translate=True, required=True, help='What the student sees first — a verse reference, a term, a question.')
+    back = fields.Text(translate=True, required=True, help='What the student sees after turning the card over.')
 
 
 class CollegeFlashcardProgress(models.Model):

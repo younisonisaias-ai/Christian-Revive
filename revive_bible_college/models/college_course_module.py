@@ -9,7 +9,7 @@ class CollegeCourseModule(models.Model):
     _description = 'Bible College Course Module'
     _order = 'course_id, sequence, id'
 
-    name = fields.Char(required=True)
+    name = fields.Char(translate=True, required=True)
     course_id = fields.Many2one('college.course', required=True, ondelete='cascade')
     sequence = fields.Integer(default=10)
     lesson_ids = fields.One2many('college.course.content', 'module_id', string='Lessons')

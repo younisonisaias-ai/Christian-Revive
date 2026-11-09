@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Urdu for course content (see college.course._ensure_urdu_language). -->
+    <function model="college.course" name="_ensure_urdu_language"/>
+</odoo>

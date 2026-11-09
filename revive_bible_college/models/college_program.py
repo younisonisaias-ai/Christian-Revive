@@ -8,7 +8,7 @@ class CollegeProgram(models.Model):
     _description = 'Bible College Program'
     _order = 'name'
 
-    name = fields.Char(required=True)
+    name = fields.Char(translate=True, required=True)
     code = fields.Char()
     level = fields.Selection([
         ('certificate', 'Certificate'),
@@ -18,7 +18,7 @@ class CollegeProgram(models.Model):
         ('other', 'Other'),
     ], default='certificate', required=True)
     duration_terms = fields.Integer(string='Duration (terms)', default=1)
-    description = fields.Text()
+    description = fields.Text(translate=True)
     active = fields.Boolean(default=True)
 
     # ── App API (Phase 8: staff side) ────────────────────────────
