@@ -108,6 +108,24 @@ class CollegeCourseContent(models.Model):
     chapters_unreadable = fields.Char(compute='_compute_chapters_unreadable')
     study_guide = fields.Binary(attachment=True, string='Study guide (PDF)')
     study_guide_filename = fields.Char()
+    video_question_ids = fields.One2many('college.video.question', 'content_id', string='Questions during the video')
+    video_question_count = fields.Integer(compute='_compute_video_question_count')
+
+    @api.depends('video_question_ids')
+    def _compute_video_question_count(self):
+        for lesson in self:
+            lesson.video_question_count = len(lesson.video_question_ids)
+
+    def action_view_video_questions(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Questions during "%s"') % self.name,
+            'res_model': 'college.video.question',
+            'view_mode': 'list,form',
+            'domain': [('content_id', '=', self.id)],
+            'context': {'default_content_id': self.id},
+        }
 
     @api.depends('chapters_text')
     def _compute_chapters_unreadable(self):

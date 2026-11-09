@@ -7,6 +7,7 @@ from . import college_course_module
 from . import college_quiz
 from . import college_flashcard
 from . import college_course_content
+from . import college_video_question
 from . import college_lesson_progress
 from . import college_lesson_note
 from . import college_applicant

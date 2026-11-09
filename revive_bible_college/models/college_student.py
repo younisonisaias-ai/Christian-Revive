@@ -154,6 +154,9 @@ class CollegeStudent(models.Model):
         for attempt in self.env['college.quiz.attempt'].sudo().search([('student_id', '=', self.id)]):
             best_by_quiz[attempt.quiz_id.id] = max(best_by_quiz.get(attempt.quiz_id.id, 0.0), attempt.score)
             attempts_by_quiz[attempt.quiz_id.id] = attempts_by_quiz.get(attempt.quiz_id.id, 0) + 1
+        answered_questions = set(self.env['college.video.question.answer'].sudo().search([
+            ('student_id', '=', self.id), ('question_id.content_id.course_id', '=', enrollment.course_id.id),
+        ]).question_id.ids)
         known_by_deck = {}
         for progress in self.env['college.flashcard.progress'].sudo().search([('student_id', '=', self.id), ('known', '=', True)]):
             deck_id = progress.card_id.deck_id.id
@@ -177,6 +180,8 @@ class CollegeStudent(models.Model):
                 'flashcards_known': known_by_deck.get(content.deck_id.id, 0),
                 'flashcards_total': len(content.deck_id.card_ids),
                 **content._app_video_fields(),
+                'video_questions': content.video_question_ids._app_payload(answered_questions)
+                if content.content_type == 'video' else [],
             }
 
         modules = [{
