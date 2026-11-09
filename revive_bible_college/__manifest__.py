@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.18.0',
+    'version': '19.0.1.19.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -25,6 +25,9 @@ A standalone module for running a Bible college or seminary, start to finish:
 * Video lessons from a YouTube link, a file uploaded from a computer, or a
   Google Drive link; uploaded videos stream to the app with seeking, exact
   resume, playback speed and optional captions
+* Study tools on every video: chapters (typed like a YouTube description),
+  a tap-to-jump transcript from the caption file, a PDF study guide, and
+  each student's own private notes and bookmarks at moments in the video
 * Multiple-choice quizzes with instant scoring and a per-question
   explanation; passing a quiz marks its lesson complete, same as
   finishing a video

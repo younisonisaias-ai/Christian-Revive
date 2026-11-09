@@ -28,6 +28,27 @@ def video_mimetype(filename):
     return VIDEO_EXTENSIONS.get(os.path.splitext((filename or '').lower())[1])
 
 
+_CHAPTER_RE = re.compile(r'^\s*(?:(\d{1,2}):)?(\d{1,2}):(\d{2})\s*(?:[-–—|:.]\s*)?(.+?)\s*$')
+
+
+def parse_chapters(text):
+    """([{'seconds', 'title'}] in time order, [lines that weren't understood])
+    from chapter lines like "0:00 Introduction" or "1:02:30 - Closing"."""
+    chapters, unreadable = [], []
+    for line in (text or '').splitlines():
+        if not line.strip():
+            continue
+        match = _CHAPTER_RE.match(line)
+        if not match or int(match.group(3)) > 59 or (match.group(1) and int(match.group(2)) > 59):
+            unreadable.append(line.strip())
+            continue
+        hours, minutes, seconds, title = match.groups()
+        total = int(hours or 0) * 3600 + int(minutes) * 60 + int(seconds)
+        chapters.append({'seconds': total, 'title': title})
+    chapters.sort(key=lambda c: c['seconds'])
+    return chapters, unreadable
+
+
 class CollegeCourseContent(models.Model):
     """One lesson within a course module: a document, a video link, a
     plain link, or a text reading. "Course Material" was this model's
@@ -79,6 +100,25 @@ class CollegeCourseContent(models.Model):
     drive_url = fields.Char(string='Google Drive link', readonly=True)
     caption_file = fields.Binary(attachment=True, string='Captions (.vtt or .srt)')
     caption_filename = fields.Char()
+
+    # Chapters are typed the way YouTube descriptions do it, one per line:
+    # "4:30 Moses and Pharaoh". Lines that don't read as a chapter are
+    # listed back to staff as a warning instead of blocking the save.
+    chapters_text = fields.Text(string='Chapters')
+    chapters_unreadable = fields.Char(compute='_compute_chapters_unreadable')
+    study_guide = fields.Binary(attachment=True, string='Study guide (PDF)')
+    study_guide_filename = fields.Char()
+
+    @api.depends('chapters_text')
+    def _compute_chapters_unreadable(self):
+        for lesson in self:
+            lesson.chapters_unreadable = ', '.join('"%s"' % line for line in parse_chapters(lesson.chapters_text)[1])
+
+    @api.constrains('study_guide_filename')
+    def _check_study_guide_filename(self):
+        for lesson in self:
+            if lesson.study_guide_filename and not lesson.study_guide_filename.lower().endswith('.pdf'):
+                raise ValidationError(_('The study guide must be a PDF file.'))
 
     @api.depends('video_size')
     def _compute_video_size_label(self):
@@ -172,13 +212,30 @@ class CollegeCourseContent(models.Model):
     def _app_video_fields(self):
         """What the app needs to pick a player for this lesson."""
         self.ensure_one()
+        is_video = self.content_type == 'video'
         source = self.video_source or 'youtube'
-        has_file = self.content_type == 'video' and source != 'youtube' and self.video_size > 0
+        has_file = is_video and source != 'youtube' and self.video_size > 0
         return {
-            'video_source': source if self.content_type == 'video' else '',
+            'video_source': source if is_video else '',
             'has_video_file': has_file,
-            'has_captions': has_file and bool(self.caption_filename),
+            # Uploaded videos show captions over the picture; for YouTube the
+            # same file is shown as a tap-to-jump transcript only.
+            'has_captions': is_video and bool(self.caption_filename),
+            'chapters': parse_chapters(self.chapters_text)[0] if is_video else [],
+            'has_study_guide': is_video and bool(self.study_guide_filename),
         }
+
+    @api.model
+    def app_college_my_study_guide(self, token, content_id):
+        student = token_student(self.env, token)
+        if not student:
+            return {'success': False, 'error': 'Please sign in again'}
+        content = self.sudo().browse(content_id)
+        if not content.exists() or content.course_id.id not in set(student.enrollment_ids.course_id.ids) \
+                or not content.study_guide:
+            return {'success': False, 'error': 'Not found'}
+        data = content.study_guide.decode() if isinstance(content.study_guide, bytes) else content.study_guide
+        return {'success': True, 'filename': content.study_guide_filename or 'study_guide.pdf', 'data': data}
 
     @api.model_create_multi
     def create(self, vals_list):

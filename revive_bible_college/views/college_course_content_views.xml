@@ -44,11 +44,28 @@
                         <button name="action_remove_video_file" type="object" class="btn-secondary ms-2"
                                 string="Remove video file" icon="fa-trash" invisible="not video_size"
                                 confirm="Remove this lesson's video file from the server? Students won't be able to watch it until you add another."/>
-                        <group string="Captions (optional)" class="mt-3">
-                            <field name="caption_file" filename="caption_filename"/>
-                            <field name="caption_filename" invisible="1"/>
-                        </group>
                     </div>
+
+                    <!-- For every video source, YouTube included. -->
+                    <group string="Study extras (all optional)" class="mt-3" invisible="content_type != 'video'">
+                        <group>
+                            <label for="chapters_text" string="Chapters (one per line)" colspan="2"/>
+                            <field name="chapters_text" nolabel="1" colspan="2"
+                                   placeholder="One chapter per line, like a YouTube description:&#10;0:00 Introduction&#10;4:30 Moses and Pharaoh&#10;12:10 The Passover"/>
+                            <field name="chapters_unreadable" invisible="1"/>
+                            <div class="alert alert-warning" role="status" colspan="2" invisible="not chapters_unreadable">
+                                These lines aren't read as chapters (use a time, then a title): <field name="chapters_unreadable" readonly="1" class="d-inline"/>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="caption_file" filename="caption_filename" string="Captions (.vtt or .srt)"
+                                   help="Shown over uploaded videos, and as a tap-to-jump transcript for every video."/>
+                            <field name="caption_filename" invisible="1"/>
+                            <field name="study_guide" filename="study_guide_filename"
+                                   help="A PDF students can open from the video page."/>
+                            <field name="study_guide_filename" invisible="1"/>
+                        </group>
+                    </group>
 
                     <group invisible="content_type != 'document'">
                         <field name="attachment" filename="attachment_filename" string="File"/>

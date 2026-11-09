@@ -26,7 +26,7 @@ class CollegeVideo(http.Controller):
 
     # ── Students ────────────────────────────────────────────────
 
-    def _student_lesson(self, content_id):
+    def _student_lesson(self, content_id, needs_file=True):
         """The video lesson, if this request's student is enrolled in its course."""
         student = token_student(request.env, request.httprequest.headers.get(TOKEN_HEADER))
         if not student:
@@ -34,7 +34,7 @@ class CollegeVideo(http.Controller):
         content = request.env['college.course.content'].sudo().browse(content_id)
         if not content.exists() or content.course_id.id not in set(student.enrollment_ids.course_id.ids):
             return None
-        if not content._app_video_fields()['has_video_file']:
+        if content.content_type != 'video' or (needs_file and not content._app_video_fields()['has_video_file']):
             return None
         return content
 
@@ -52,7 +52,8 @@ class CollegeVideo(http.Controller):
 
     @http.route('/college/video/<int:content_id>/captions', type='http', auth='public', methods=['GET'])
     def stream_captions(self, content_id, **kwargs):
-        content = self._student_lesson(content_id)
+        # YouTube lessons can have captions too, shown as a transcript.
+        content = self._student_lesson(content_id, needs_file=False)
         if not content or not content.caption_filename:
             return request.not_found()
         stream = request.env['ir.binary']._get_stream_from(
