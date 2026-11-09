@@ -26,3 +26,4 @@ from . import college_formation
 from . import college_placement
 from . import college_fee
 from . import college_graduation
+from . import college_reports

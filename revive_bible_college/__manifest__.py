@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.22.0',
+    'version': '19.0.1.23.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -69,6 +69,10 @@ A standalone module for running a Bible college or seminary, start to finish:
   password. Grades only ever show once staff has published them.
 * Anyone can apply from the app with no account needed, and check their
   application afterwards using their application number plus their email.
+* Reports for staff and admins: each student's progress per course (with
+  a "Falling behind" filter), videos (with where students stop watching),
+  and the quiz and in-video questions students find hardest, each with
+  a one-click Excel download
 * College staff with no other ERP role see only Bible College in the ERP.
 
 Core record-keeping stays independent of Church Management so it could
@@ -109,6 +113,7 @@ the one part that depends on Church Management's session system.
         'views/college_student_views.xml',
         'views/college_portal_templates.xml',
         'views/college_menus.xml',
+        'views/college_report_views.xml',
     ],
     'installable': True,
     'application': True,

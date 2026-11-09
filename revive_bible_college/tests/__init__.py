@@ -11,3 +11,4 @@ from . import test_college_study_tools
 from . import test_college_video_questions
 from . import test_college_watch
 from . import test_college_quiz_types
+from . import test_college_reports
