@@ -162,6 +162,16 @@ class CollegeStudent(models.Model):
             deck_id = progress.card_id.deck_id.id
             known_by_deck[deck_id] = known_by_deck.get(deck_id, 0) + 1
 
+        def video_watch(content, progress):
+            min_percent, require_questions = content._completion_rule()
+            return {
+                'watched_percent': round(progress.watched_percent, 1) if progress else 0.0,
+                'watched_ranges': (progress.watched_ranges or '') if progress else '',
+                'min_watch_percent': min_percent,
+                'require_questions': require_questions,
+                'questions_left': content._questions_left(answered_questions),
+            }
+
         def lesson_data(content):
             nonlocal total_lessons, done_lessons
             progress = progress_by_content.get(content.id)
@@ -182,6 +192,7 @@ class CollegeStudent(models.Model):
                 **content._app_video_fields(),
                 'video_questions': content.video_question_ids._app_payload(answered_questions)
                 if content.content_type == 'video' else [],
+                **(video_watch(content, progress) if content.content_type == 'video' else {}),
             }
 
         modules = [{

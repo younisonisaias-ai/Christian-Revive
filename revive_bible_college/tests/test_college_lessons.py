@@ -61,7 +61,8 @@ class TestCollegeLessons(TransactionCase):
         self.assertEqual(self.student._app_self_detail()['enrollments'][0]['percent_complete'], 0)
         token = self._token()
         Progress = self.env['college.lesson.progress']
-        self.assertTrue(Progress.app_college_my_progress_save(token, self.video.id, completed=True)['success'])
+        # A video is finished by watching it (see test_college_watch.py).
+        self.assertTrue(Progress.app_college_my_progress_save(token, self.video.id, watched='0-23', duration=120)['completed'])
         enrollment = self.student._app_self_detail()['enrollments'][0]
         self.assertEqual(enrollment['percent_complete'], 50)
         self.assertEqual(enrollment['lessons_done'], 1)
@@ -83,7 +84,7 @@ class TestCollegeLessons(TransactionCase):
     def test_marking_complete_can_be_undone(self):
         token = self._token()
         Progress = self.env['college.lesson.progress']
-        Progress.app_college_my_progress_save(token, self.video.id, completed=True)
+        Progress.app_college_my_progress_save(token, self.video.id, watched='0-23', duration=120)
         self.assertTrue(self.student._app_self_detail()['enrollments'][0]['modules'][0]['lessons'][0]['completed'])
         Progress.app_college_my_progress_save(token, self.video.id, completed=False)
         self.assertFalse(self.student._app_self_detail()['enrollments'][0]['modules'][0]['lessons'][0]['completed'])

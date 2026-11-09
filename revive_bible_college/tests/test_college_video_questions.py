@@ -59,7 +59,10 @@ class TestCollegeVideoQuestions(_VideoSetup, TransactionCase):
         moses = self.q_early.option_ids.filtered('is_correct')
         joshua = self.q_early.option_ids - moses
         wrong = self.Question.app_college_my_video_answer(token, self.q_early.id, joshua.id)
-        self.assertEqual(wrong, {'success': True, 'is_correct': False, 'correct_option_id': moses.id, 'explanation': ''})
+        self.assertEqual(wrong, {
+            'success': True, 'is_correct': False, 'correct_option_id': moses.id, 'explanation': '',
+            'lesson_completed': False,  # nothing watched yet (see test_college_watch.py)
+        })
         right = self.Question.app_college_my_video_answer(token, self.q_late.id, self.q_late.option_ids.filtered('is_correct').id)
         self.assertTrue(right['is_correct'])
         self.assertEqual(right['explanation'], 'Exodus 12:13.')
@@ -91,10 +94,13 @@ class TestCollegeVideoQuestions(_VideoSetup, TransactionCase):
         self.assertEqual(Q.app_college_my_video_answer(token, other_q.id, other_q.option_ids.id)['error'], 'Not found')
         self.assertFalse(self.env['college.video.question.answer'].search_count([('student_id', '=', self.student.id)]))
 
-    def test_practice_answers_never_touch_progress_grades_or_badges(self):
+    def test_practice_answers_never_touch_grades_or_badges(self):
         token = self._token(self.student)
-        self.Question.app_college_my_video_answer(token, self.q_early.id, self.q_early.option_ids.filtered('is_correct').id)
-        self.assertFalse(self.env['college.lesson.progress'].search_count([('student_id', '=', self.student.id)]))
+        result = self.Question.app_college_my_video_answer(
+            token, self.q_early.id, self.q_early.option_ids.filtered('is_correct').id)
+        self.assertFalse(result['lesson_completed'])  # nothing watched yet
+        self.assertFalse(self.env['college.lesson.progress'].search_count(
+            [('student_id', '=', self.student.id), ('completed', '=', True)]))
         self.assertFalse(self.env['college.badge.award'].search_count([('student_id', '=', self.student.id)]))
         self.assertFalse(self.env['college.quiz.attempt'].search_count([('student_id', '=', self.student.id)]))
 

@@ -1,4 +1,5 @@
-from odoo import fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class CollegeCourse(models.Model):
@@ -15,6 +16,20 @@ class CollegeCourse(models.Model):
     content_count = fields.Integer(compute='_compute_content_count')
     module_ids = fields.One2many('college.course.module', 'course_id', string='Modules')
     module_count = fields.Integer(compute='_compute_module_count')
+
+    # When a video lesson counts as finished. Each lesson can override these.
+    video_min_watch_percent = fields.Integer(
+        string='Watch at least (%)', default=90,
+        help='How much of a video a student must actually play (skipped parts do not count) to finish it.')
+    video_require_questions = fields.Boolean(
+        string='Must answer every question in the video', default=True,
+        help='Answering is enough; a wrong answer still counts.')
+
+    @api.constrains('video_min_watch_percent')
+    def _check_video_min_watch_percent(self):
+        for course in self:
+            if not 0 <= course.video_min_watch_percent <= 100:
+                raise ValidationError(_('"Watch at least" must be between 0 and 100%.'))
 
     def _compute_content_count(self):
         for course in self:

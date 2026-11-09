@@ -39,6 +39,16 @@
                             <field name="active"/>
                         </group>
                     </group>
+                    <group string="Finishing a video lesson">
+                        <group>
+                            <field name="video_min_watch_percent"/>
+                            <field name="video_require_questions"/>
+                        </group>
+                        <div class="text-muted" colspan="2">
+                            Applies to every video in this course. Skipped parts don't count as watched.
+                            A single lesson can set its own rule instead.
+                        </div>
+                    </group>
                 </sheet>
             </form>
         </field>

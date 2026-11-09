@@ -96,9 +96,12 @@ class CollegeVideoQuestion(models.Model):
         else:
             Answer.create({**vals, 'student_id': student.id, 'question_id': question.id})
         correct = question.option_ids.filtered('is_correct')[:1]
+        # Answering the last required question can be what finishes the video.
+        progress = self.env['college.lesson.progress'].sudo()._sync_video_completion(student, question.content_id)
         return {
             'success': True, 'is_correct': option.is_correct,
             'correct_option_id': correct.id or False, 'explanation': question.explanation or '',
+            'lesson_completed': progress.completed,
         }
 
 

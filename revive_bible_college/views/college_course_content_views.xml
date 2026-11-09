@@ -47,6 +47,16 @@
                     </div>
 
                     <!-- For every video source, YouTube included. -->
+                    <group string="Finishing this video" class="mt-3" invisible="content_type != 'video'">
+                        <group>
+                            <field name="completion_override"/>
+                            <field name="min_watch_percent" invisible="not completion_override"/>
+                            <field name="require_questions" invisible="not completion_override"/>
+                        </group>
+                        <div class="text-muted" colspan="2" invisible="completion_override">
+                            Uses the course's rule (set on the course form).
+                        </div>
+                    </group>
                     <div class="mt-3" invisible="content_type != 'video' or not id">
                         <button name="action_view_video_questions" type="object" class="btn-secondary"
                                 icon="fa-question-circle">

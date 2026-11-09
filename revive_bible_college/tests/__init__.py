@@ -9,3 +9,4 @@ from . import test_college_staff_progress
 from . import test_college_video
 from . import test_college_study_tools
 from . import test_college_video_questions
+from . import test_college_watch

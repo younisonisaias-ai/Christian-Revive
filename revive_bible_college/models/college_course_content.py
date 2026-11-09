@@ -108,6 +108,10 @@ class CollegeCourseContent(models.Model):
     chapters_unreadable = fields.Char(compute='_compute_chapters_unreadable')
     study_guide = fields.Binary(attachment=True, string='Study guide (PDF)')
     study_guide_filename = fields.Char()
+    # Leave off to use the course's video completion rule.
+    completion_override = fields.Boolean(string='Own completion rule for this video')
+    min_watch_percent = fields.Integer(string='Watch at least (%)', default=90)
+    require_questions = fields.Boolean(string='Must answer every question in the video', default=True)
     video_question_ids = fields.One2many('college.video.question', 'content_id', string='Questions during the video')
     video_question_count = fields.Integer(compute='_compute_video_question_count')
 
@@ -131,6 +135,26 @@ class CollegeCourseContent(models.Model):
     def _compute_chapters_unreadable(self):
         for lesson in self:
             lesson.chapters_unreadable = ', '.join('"%s"' % line for line in parse_chapters(lesson.chapters_text)[1])
+
+    @api.constrains('min_watch_percent')
+    def _check_min_watch_percent(self):
+        for lesson in self:
+            if not 0 <= lesson.min_watch_percent <= 100:
+                raise ValidationError(_('"Watch at least" must be between 0 and 100%.'))
+
+    def _completion_rule(self):
+        """(minimum percent watched, must answer every question) for this video."""
+        self.ensure_one()
+        if self.completion_override:
+            return self.min_watch_percent, self.require_questions
+        return self.course_id.video_min_watch_percent, self.course_id.video_require_questions
+
+    def _questions_left(self, answered_ids):
+        """How many of this video's questions still need an answer under its rule."""
+        self.ensure_one()
+        if not self._completion_rule()[1]:
+            return 0
+        return len(self.video_question_ids.filtered(lambda q: q.option_ids and q.id not in answered_ids))
 
     @api.constrains('study_guide_filename')
     def _check_study_guide_filename(self):
