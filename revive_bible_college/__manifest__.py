@@ -1,6 +1,6 @@
 {
     'name': 'Bible College & Theology Management',
-    'version': '19.0.1.21.0',
+    'version': '19.0.1.22.0',
     'category': 'Education',
     'summary': 'Admissions, academics, gradebook, LMS, formation, fieldwork, fees, graduation and app access for a Bible college',
     # Phase 9 adds public, no-login endpoints: app_college_public_apply,
@@ -33,9 +33,11 @@ A standalone module for running a Bible college or seminary, start to finish:
 * Real watch tracking: a video counts as finished only once the student
   has actually played enough of it (90% by default, skipped parts don't
   count) and answered its questions; set per course, or per lesson
-* Multiple-choice quizzes with instant scoring and a per-question
-  explanation; passing a quiz marks its lesson complete, same as
-  finishing a video
+* Quizzes with instant scoring and a per-question explanation, in six
+  question types: pick one, true/false, choose all that apply, fill in
+  the blank, matching and put in order (partial marks for the last
+  three), with an optional picture per question and shuffled answers;
+  passing a quiz marks its lesson complete, same as finishing a video
 * Flashcard decks for memory work (a verse, a term, an event); a
   student marks each card known or still learning, and finishing a
   deck marks its lesson complete too

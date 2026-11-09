@@ -34,6 +34,7 @@
                     <group>
                         <field name="pass_score"/>
                         <field name="shuffle_questions"/>
+                        <field name="shuffle_answers"/>
                     </group>
                     <field name="description" placeholder="Shown to the student before they start..."/>
                 </sheet>
@@ -53,6 +54,7 @@
         <field name="arch" type="xml">
             <list string="Questions">
                 <field name="sequence" widget="handle"/>
+                <field name="question_type"/>
                 <field name="text"/>
                 <field name="has_correct_option" column_invisible="1"/>
             </list>
@@ -66,22 +68,49 @@
             <form string="Question">
                 <sheet>
                     <div class="alert alert-warning" role="alert" invisible="has_correct_option">
-                        No option is marked correct — a student can never answer this one right.
+                        <field name="setup_problem" readonly="1"/>
                     </div>
                     <field name="has_correct_option" invisible="1"/>
                     <group>
-                        <field name="quiz_id" readonly="1"/>
-                        <field name="sequence"/>
+                        <group>
+                            <field name="quiz_id" readonly="1"/>
+                            <field name="question_type" widget="radio"/>
+                        </group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="image" widget="image" options="{'size': [0, 160]}"/>
+                        </group>
                     </group>
+                    <label for="text"/>
                     <field name="text" placeholder="e.g. Who led the Israelites out of Egypt?"/>
-                    <label for="option_ids" string="Options"/>
-                    <field name="option_ids">
-                        <list editable="bottom">
-                            <field name="sequence" widget="handle"/>
-                            <field name="text"/>
-                            <field name="is_correct"/>
-                        </list>
-                    </field>
+
+                    <group invisible="question_type != 'true_false'">
+                        <field name="tf_answer" widget="radio" options="{'horizontal': true}"/>
+                    </group>
+
+                    <div invisible="question_type != 'fill_blank'">
+                        <label for="accepted_answers" string="Accepted answers (one per line)"/>
+                        <field name="accepted_answers" placeholder="heavens and the earth&#10;heaven and earth"/>
+                        <div class="text-muted small">Capitals, punctuation and extra spaces are ignored. Spelling mistakes are not.</div>
+                    </div>
+
+                    <div invisible="question_type in ('true_false', 'fill_blank')">
+                        <label for="option_ids" string="Options (tick every correct one)" invisible="question_type != 'multiple'"/>
+                        <label for="option_ids" string="Options (tick the correct one)" invisible="question_type != 'single'"/>
+                        <label for="option_ids" string="Pairs: each item and what it matches" invisible="question_type != 'matching'"/>
+                        <label for="option_ids" string="Items, in the correct order (drag to reorder)" invisible="question_type != 'ordering'"/>
+                        <field name="option_ids">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="text" string="Item"/>
+                                <field name="match_text" column_invisible="parent.question_type != 'matching'"/>
+                                <field name="is_correct" column_invisible="parent.question_type not in ('single', 'multiple')"/>
+                            </list>
+                        </field>
+                        <div class="text-muted small" invisible="question_type not in ('multiple', 'matching', 'ordering')">
+                            Partial marks: a student gets part of this question's points for each right pick, pair or position.
+                        </div>
+                    </div>
                     <label for="explanation" string="Explanation (shown after answering)"/>
                     <field name="explanation" placeholder="Why that answer is right..."/>
                 </sheet>
@@ -123,7 +152,9 @@
                     <field name="answer_ids" readonly="1">
                         <list>
                             <field name="question_id"/>
-                            <field name="option_id"/>
+                            <field name="option_id" optional="hide"/>
+                            <field name="answer_text"/>
+                            <field name="credit" string="Points (0-1)"/>
                             <field name="is_correct" widget="boolean_toggle"/>
                         </list>
                     </field>

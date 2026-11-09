@@ -62,6 +62,25 @@ class CollegeVideo(http.Controller):
         response.headers['Cache-Control'] = 'private'
         return response
 
+    @http.route('/college/quiz/question/<int:question_id>/image', type='http', auth='public', methods=['GET'])
+    def quiz_question_image(self, question_id, **kwargs):
+        """A quiz question's picture, for a student enrolled in a course that
+        uses that quiz."""
+        student = token_student(request.env, request.httprequest.headers.get(TOKEN_HEADER))
+        question = request.env['college.quiz.question'].sudo().browse(question_id)
+        if not student or not question.exists() or not question.image:
+            return request.not_found()
+        uses_quiz = request.env['college.course.content'].sudo().search_count([
+            ('content_type', '=', 'quiz'), ('quiz_id', '=', question.quiz_id.id),
+            ('course_id', 'in', student.enrollment_ids.course_id.ids),
+        ])
+        if not uses_quiz:
+            return request.not_found()
+        stream = request.env['ir.binary']._get_image_stream_from(question, 'image')
+        response = stream.get_response(as_attachment=False)
+        response.headers['Cache-Control'] = 'private'
+        return response
+
     # ── Staff: upload page ──────────────────────────────────────
 
     def _staff_lesson(self, content_id):
